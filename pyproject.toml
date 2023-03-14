@@ -26,7 +26,9 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-
+    "monai",
+    "pytorch-lightning",
+    "torch",
 ]
 
 # extras
@@ -36,7 +38,6 @@ test = ["pytest>=6.0", "pytest-cov"]
 dev = [
     "black",
     "ipython",
-    "mypy",
     "pdbpp",
     "pre-commit",
     "pytest-cov",
