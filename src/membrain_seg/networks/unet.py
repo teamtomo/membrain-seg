@@ -6,6 +6,7 @@ from monai.data import decollate_batch
 from monai.inferers import sliding_window_inference
 from monai.losses import DiceFocalLoss
 from monai.metrics import DiceMetric
+from monai.networks.layers import Norm
 from monai.networks.nets import UNet as MonaiUnet
 from monai.transforms import AsDiscrete, Compose, EnsureType
 
@@ -60,6 +61,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
         label_key: str = "label",
         roi_size: Tuple[int, ...] = (160, 160, 160),
     ):
+        super().__init__()
+
         # store parameters
         self.learning_rate = learning_rate
         self.image_key = image_key
@@ -67,13 +70,14 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.roi_size = roi_size
 
         # make the network
-        self.model = MonaiUnet(
+        self._model = MonaiUnet(
             spatial_dims=spatial_dims,
             in_channels=in_channels,
             out_channels=out_channels,
             channels=channels,
             strides=strides,
             num_res_units=num_res_units,
+            norm=Norm.BATCH,
         )
         self.loss_function = DiceFocalLoss()
 
@@ -99,7 +103,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         See the pytorch-lightning module documentation for details.
         """
-        return self.model(x)
+        return self._model(x)
 
     def configure_optimizers(self):
         """Set up the Adam optimzier.
