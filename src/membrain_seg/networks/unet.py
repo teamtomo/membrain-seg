@@ -81,12 +81,12 @@ class SemanticSegmentationUnet(pl.LightningModule):
             num_res_units=num_res_units,
             norm=Norm.BATCH,
         )
-        self.loss_function = DiceFocalLoss(
-            include_background=False, reduction="mean", get_not_nans=False
-        )
+        self.loss_function = DiceFocalLoss()
 
         # validation metric
-        self.dice_metric = DiceMetric
+        self.dice_metric = DiceMetric(
+            include_background=False, reduction="mean", get_not_nans=False
+        )
 
         # transforms for val metric calculation
         self.post_pred = Compose(
