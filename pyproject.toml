@@ -21,12 +21,13 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Typing :: Typed",
 ]
 dynamic = ["version"]
 dependencies = [
-
+    "monai",
+    "pytorch-lightning",
+    "torch",
 ]
 
 # extras
@@ -36,7 +37,6 @@ test = ["pytest>=6.0", "pytest-cov"]
 dev = [
     "black",
     "ipython",
-    "mypy",
     "pdbpp",
     "pre-commit",
     "pytest-cov",
