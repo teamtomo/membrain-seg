@@ -81,7 +81,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
             num_res_units=num_res_units,
             norm=Norm.BATCH,
         )
-        self.loss_function = DiceFocalLoss()
+        self.loss_function = DiceFocalLoss(
+            include_background=False, reduction="mean", get_not_nans=False
+        )
 
         # validation metric
         self.dice_metric = DiceMetric
@@ -144,5 +146,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         loss = self.loss_function(outputs, labels)
         outputs = [self.post_pred(i) for i in decollate_batch(outputs)]
         labels = [self.post_label(i) for i in decollate_batch(labels)]
-        self.dice_metric(y_pred=outputs, y=labels)
+        val_metric = self.dice_metric(y_pred=outputs, y=labels)
+        self.log("val_loss", loss, batch_size=len(images))
+        self.log("val_metric", val_metric, batch_size=len(images))
         return {"val_loss": loss, "val_number": len(outputs)}
