@@ -34,6 +34,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
     strides : Tuple[int, ...]
         The strides for the convolutions. Must have len(channels - 1) elements.
         Default value is (2, 2, 2, 2)
+    num_res_units : int
+        The number of residual subunits.
     learning_rate : float
         The learning rate for the Adam optimizer.
         Default value is 1e-4.
@@ -55,7 +57,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         out_channels: int = 1,
         channels: Tuple[int, ...] = (16, 32, 64, 128, 256),
         strides: Tuple[int, ...] = (2, 2, 2, 2),
-        num_res_units=2,
+        num_res_units: int = 2,
         learning_rate: float = 1e-4,
         image_key: str = "image",
         label_key: str = "label",
