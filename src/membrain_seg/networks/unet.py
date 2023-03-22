@@ -84,7 +84,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.loss_function = DiceFocalLoss()
 
         # validation metric
-        self.dice_metric = DiceMetric
+        self.dice_metric = DiceMetric(
+            include_background=False, reduction="mean", get_not_nans=False
+        )
 
         # transforms for val metric calculation
         self.post_pred = Compose(
@@ -146,3 +148,18 @@ class SemanticSegmentationUnet(pl.LightningModule):
         labels = [self.post_label(i) for i in decollate_batch(labels)]
         self.dice_metric(y_pred=outputs, y=labels)
         return {"val_loss": loss, "val_number": len(outputs)}
+        
+
+        def validation_epoch_end(self, outputs):
+            """Calculate validation loss/metric summary."""
+            val_loss, num_items = 0, 0
+            for output in outputs:
+                val_loss += output["val_loss"].sum().item()
+                num_items += output["val_number"]
+            mean_val_dice = self.dice_metric.aggregate().item()
+            self.dice_metric.reset()
+            mean_val_loss = torch.tensor(val_loss / num_items)
+
+            self.log("val_loss", mean_val_loss, batch_size=num_items)
+            self.log("val_metric", mean_val_dice, batch_size=num_items)
+            return {"val_loss": mean_val_loss, "val_metric":  mean_val_dice}
