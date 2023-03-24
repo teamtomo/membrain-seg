@@ -3,7 +3,7 @@ from time import time
 
 import imageio
 import numpy as np
-from memseg_dataset import read_nifti
+from data_utils import read_nifti
 from monai.transforms import (
     Compose,
     OneOf,
@@ -189,6 +189,18 @@ def get_training_transforms(prob_to_one=False, return_as_list=False):
         DownsampleSegForDeepSupervisionTransform(
             keys=["label"], ds_scales=deep_supervision_scales, order="nearest"
         ),
+    ]
+    if return_as_list:
+        return aug_sequence
+    return Compose(aug_sequence)
+
+
+def get_validation_transforms(return_as_list=False):
+    """Returns the data augmentation transforms for training phase."""
+    aug_sequence = [
+        DownsampleSegForDeepSupervisionTransform(
+            keys=["label"], ds_scales=deep_supervision_scales, order="nearest"
+        )
     ]
     if return_as_list:
         return aug_sequence
