@@ -1,8 +1,9 @@
 import os
 
+# from skimage import io
+import imageio as io
 import numpy as np
 import SimpleITK as sitk
-from skimage import io
 from torch.utils.data import Dataset
 
 

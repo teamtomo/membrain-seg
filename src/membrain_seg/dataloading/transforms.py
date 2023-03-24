@@ -1,24 +1,19 @@
-from time import time
-from typing import Optional
+from typing import Optional, Tuple, Union
 
 import numpy as np
+import torch
 from monai.transforms import (
     Compose,
     MapTransform,
     OneOf,
     RandAdjustContrastd,
-    RandAxisFlipd,
-    RandGaussianNoised,
-    RandGaussianSmoothd,
     Randomizable,
-    RandRotate90d,
-    RandRotated,
-    RandZoomd,
+    Resize,
     Transform,
     Transposed,
     Zoomd,
 )
-from scipy.ndimage import median_filter
+from scipy.ndimage import convolve, median_filter
 
 
 class RandApplyTransform(Randomizable, Transform):
@@ -56,15 +51,23 @@ class MedianFilterd(Transform):
 
     def __init__(self, keys, radius=1):
         self.keys = keys
-        if isinstance(radius, int):
-            self.radius = radius
-        elif isinstance(radius, tuple):
-            self.radius = np.random.randint(radius[0], radius[1])
+        self.radius_range = radius
+
+    def randomize(self, data: None) -> None:
+        """Randomly draw median filter range."""
+        if isinstance(self.radius_range, int):
+            self.radius = self.radius_range
+        elif isinstance(self.radius_range, tuple):
+            self.radius = np.random.randint(self.radius_range[0], self.radius_range[1])
 
     def __call__(self, data):
         """Apply median filter."""
+        self.randomize(None)
         for key in self.keys:
-            data[key] = median_filter(data[key], size=self.radius, mode="reflect")
+            for c in range(data[key].shape[0]):
+                data[key][c] = torch.from_numpy(
+                    median_filter(data[key][c], size=self.radius, mode="reflect")
+                )  # TODO: Is this very inefficient?
         return data
 
 
@@ -132,7 +135,7 @@ class RandAdjustContrastWithInversionAndStats(RandAdjustContrastd):
     def __call__(self, data):
         """Apply the transform."""
         for key in self.keys:
-            if self._do_transform():
+            if self._do_transform:
                 img = data[key]
                 mean_before = img.mean()
                 std_before = img.std()
@@ -179,11 +182,12 @@ class SimulateLowResolutionTransform(Randomizable, Transform):
         """Apply the transform."""
         self.randomize(data)
         downscale_transform = Zoomd(
-            self.keys, zoom=1.0 / self.downscale_factor, mode=self.downscale_mode
+            self.keys, zoom=self.downscale_factor, mode=self.downscale_mode
         )
         upscale_transform = Zoomd(
-            self.keys, zoom=self.downscale_factor, mode=self.upscale_mode
+            self.keys, zoom=1.0 / self.downscale_factor, mode=self.upscale_mode
         )
+
         data = downscale_transform(data)
         data = upscale_transform(data)
         return data
@@ -251,9 +255,9 @@ class BlankCuboidTransform(Randomizable, MapTransform):
                 y = self.R.randint(0, y_max - height)
                 x = self.R.randint(0, x_max - width)
                 if self.replace_with == "mean":
-                    image[..., z : z + depth, y : y + height, x : x + width] = np.mean(
-                        image
-                    )
+                    image[
+                        ..., z : z + depth, y : y + height, x : x + width
+                    ] = torch.mean(torch.Tensor(image))
                 elif self.replace_with == 0.0:
                     image[..., z : z + depth, y : y + height, x : x + width] = 0.0
             d[key] = image
@@ -261,12 +265,13 @@ class BlankCuboidTransform(Randomizable, MapTransform):
         return d
 
 
-def sample_scalar(value, image=None, kernel=None):
+def sample_scalar(value, *args):
     """Sample scalar function from batchgenerators."""
     if isinstance(value, (tuple, list)):
         return np.random.uniform(value[0], value[1])
     elif callable(value):
-        return value(image, kernel)
+        # return value(image, kernel)
+        return value(*args)
     else:
         return value
 
@@ -286,17 +291,16 @@ class BrightnessGradientAdditiveTransform(Randomizable, MapTransform):
         loc=(-1, 2),
         max_strength=1.0,
         mean_centered=True,
-        p_per_sample=1.0,
         clip_intensities=False,
     ):
         super().__init__(keys)
         self.scale = scale
         self.loc = loc
         self.max_strength = max_strength
-        self.p_per_sample = p_per_sample
         self.mean_centered = mean_centered
 
     def _generate_kernel(self, img_shape):
+        img_shape = img_shape[2:]
         scale = [sample_scalar(self.scale, img_shape, i) for i in range(len(img_shape))]
         loc = [sample_scalar(self.loc, img_shape, i) for i in range(len(img_shape))]
         coords = [
@@ -307,6 +311,7 @@ class BrightnessGradientAdditiveTransform(Randomizable, MapTransform):
         kernel = np.exp(
             -0.5 * sum([(meshgrid[i] / scale[i]) ** 2 for i in range(len(img_shape))])
         )
+        kernel = np.expand_dims(kernel, 0)
         return kernel
 
     def __call__(self, data):
@@ -315,24 +320,189 @@ class BrightnessGradientAdditiveTransform(Randomizable, MapTransform):
         for key in self.keys:
             image = d[key]
             img_shape = image.shape
-            if np.random.uniform() < self.p_per_sample:
-                kernel = self._generate_kernel(img_shape)
-                if self.mean_centered:
-                    kernel -= kernel.mean()
-                max_kernel_val = max(np.max(np.abs(kernel)), 1e-8)
-                strength = sample_scalar(self.max_strength, image, kernel)
-                kernel = kernel / max_kernel_val * strength
-                image += kernel
+            kernel = self._generate_kernel(img_shape)
+            if self.mean_centered:
+                kernel -= kernel.mean()
+            max_kernel_val = max(np.max(np.abs(kernel)), 1e-8)
+            strength = sample_scalar(self.max_strength, image, kernel)
+            kernel = kernel / max_kernel_val * strength
+            image += kernel
 
-                d[key] = image
+            d[key] = image
 
         return d
 
 
-data_aug_params = {}
-data_aug_params["rotation_x"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
-data_aug_params["rotation_y"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
-data_aug_params["rotation_z"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
+class LocalGammaTransform(Randomizable, MapTransform):
+    """Locally adjusts the Gamma value using Gaussian kernel.(from batchgenerators)."""
+
+    def __init__(self, keys, scale, loc=(-1, 2), gamma=(0.5, 1)):
+        super().__init__(keys)
+        self.scale = scale
+        self.loc = loc
+        self.gamma = gamma
+
+    def _generate_kernel(self, img_shape):
+        img_shape = img_shape[2:]
+        scale = [sample_scalar(self.scale, img_shape, i) for i in range(len(img_shape))]
+        loc = [sample_scalar(self.loc, img_shape, i) for i in range(len(img_shape))]
+        coords = [
+            np.linspace(-loc[i], img_shape[i] - loc[i], img_shape[i])
+            for i in range(len(img_shape))
+        ]
+        meshgrid = np.meshgrid(*coords, indexing="ij")
+        kernel = np.exp(
+            -0.5 * sum([(meshgrid[i] / scale[i]) ** 2 for i in range(len(img_shape))])
+        )
+        kernel = np.expand_dims(kernel, 0)
+        return kernel
+
+    def _apply_gamma_gradient(self, img, kernel):
+        mn, mx = img.min(), img.max()
+        img = (img - mn) / (max(mx - mn, 1e-8))
+
+        gamma = sample_scalar(self.gamma)
+        img_modified = np.power(img, gamma)
+
+        return self.run_interpolation(img, img_modified, kernel) * (mx - mn) + mn
+
+    def run_interpolation(self, img, img_modified, kernel):
+        """Interpolate between image and modified image, weighted with kernel."""
+        return img + kernel * (img_modified - img)
+
+    def __call__(self, data):
+        """Apply the transform."""
+        d = dict(data)
+        for key in self.keys:
+            image = d[key]
+            img_shape = image.shape
+            kernel = self._generate_kernel(img_shape)
+            d[key] = self._apply_gamma_gradient(image, kernel)
+        return d
+
+
+class SharpeningTransformMONAI(MapTransform):
+    """Laplacian Sharpening transform. (from batchgenerators)."""
+
+    filter_2d = np.array([[0, -1, 0], [-1, 4, -1], [0, -1, 0]])
+    filter_3d = np.array(
+        [
+            [[0, 0, 0], [0, -1, 0], [0, 0, 0]],
+            [[0, -1, 0], [-1, 6, -1], [0, -1, 0]],
+            [[0, 0, 0], [0, -1, 0], [0, 0, 0]],
+        ]
+    )
+
+    def __init__(
+        self,
+        strength: Union[float, Tuple[float, float]] = 0.2,
+        same_for_each_channel: bool = False,
+        p_per_channel: float = 0.5,
+        keys: str = "image",
+    ):
+        super().__init__(keys)
+        self.strength = strength
+        self.same_for_each_channel = same_for_each_channel
+        self.p_per_channel = p_per_channel
+
+    def __call__(self, data):
+        """Apply the transform."""
+        d = dict(data)
+        for key in self.keys:
+            img = d[key]
+            if len(img.shape) == 2:
+                img = np.expand_dims(img, axis=0)
+            if self.same_for_each_channel:
+                strength_here = (
+                    self.strength
+                    if isinstance(self.strength, float)
+                    else np.random.uniform(*self.strength)
+                )
+                filter_here = (
+                    self.filter_2d if img.ndim == 3 else self.filter_3d
+                ) * strength_here
+                filter_here[tuple([1] * (img.ndim - 1))] += 1
+                for c in range(img.shape[0]):
+                    if np.random.uniform() < self.p_per_channel:
+                        img[c] = torch.from_numpy(
+                            convolve(img[c], filter_here, mode="reflect")
+                        )
+                        img[c] = np.clip(img[c], img[c].min(), img[c].max())
+            else:
+                for c in range(img.shape[0]):
+                    if np.random.uniform() < self.p_per_channel:
+                        strength_here = (
+                            self.strength
+                            if isinstance(self.strength, float)
+                            else np.random.uniform(*self.strength)
+                        )
+                        filter_here = (
+                            self.filter_2d if img.ndim == 3 else self.filter_3d
+                        ) * strength_here
+                        filter_here[tuple([1] * (img.ndim - 1))] += 1
+                        img[c] = torch.from_numpy(
+                            convolve(img[c], filter_here, mode="reflect")
+                        )
+                        img[c] = torch.from_numpy(
+                            np.clip(img[c], img[c].min(), img[c].max())
+                        )
+            d[key] = img.squeeze() if len(img.shape) == 5 and img.shape[0] == 1 else img
+        return d
+
+
+class DownsampleSegForDeepSupervisionTransform(MapTransform):
+    """Downsample labels for deep supervision (from nnUNet)."""
+
+    def __init__(
+        self,
+        keys: Union[str, Tuple[str]],
+        ds_scales: Tuple[float, float, float] = (1, 0.5, 0.25),
+        order: int = 0,
+        axes: Union[None, Tuple[int, int, int]] = None,
+    ):
+        super().__init__(keys)
+        self.axes = axes
+        self.order = order
+        self.ds_scales = ds_scales
+
+    def __call__(self, data_dict):
+        """Apply the transform."""
+        for key in self.keys:
+            data_dict[key] = downsample_seg_for_ds_transform(
+                data_dict[key], self.ds_scales, self.order, self.axes
+            )
+        return data_dict
+
+
+def downsample_seg_for_ds_transform(
+    seg: np.ndarray,
+    ds_scales: Tuple[float, float, float] = (1, 0.5, 0.25),
+    order: str = "nearest",
+    axes: Union[None, Tuple[int, int, int]] = None,
+):
+    """Downsampling of segmentations."""
+    if axes is None:
+        axes = list(range(1, len(seg.shape)))
+    output = []
+    for s in ds_scales:
+        if all([i == 1 for i in s]):
+            output.append(seg)
+        else:
+            new_shape = np.array(seg.shape).astype(float)
+            for i, a in enumerate(axes):
+                new_shape[a] *= s[i]
+            new_shape = np.round(new_shape).astype(int)
+            resize_transform = Resize(
+                new_shape[1:],
+                mode=order,
+                align_corners=(None if order == "nearest" else False),
+            )
+            out_seg = np.zeros(new_shape, dtype=np.array(seg).dtype)
+            for c in range(seg.shape[0]):
+                out_seg[c] = resize_transform(np.expand_dims(seg[c], 0)).squeeze()
+            output.append(out_seg)
+    return output
+
 
 AxesSwap = OneOf(
     [
@@ -348,108 +518,3 @@ AxesShuffle = Compose(
         RandApplyTransform(transform=AxesSwap, prob=0.5),
     ]
 )
-
-aug_sequence = [
-    RandRotated(
-        keys=("image", "label"),
-        range_x=data_aug_params["rotation_x"],
-        range_y=data_aug_params["rotation_y"],
-        range_z=data_aug_params["rotation_x"],
-        prob=0.5,
-        mode=("bilinear", "nearest"),
-    ),
-    RandZoomd(
-        keys=("image", "label"),
-        prob=0.3,
-        min_zoom=0.7,
-        max_zoom=1.4,
-        mode=("trilinear", "nearest"),
-    ),
-    RandRotate90d(keys=("image", "label"), prob=0.5, max_k=3, spatial_axes=(0, 1)),
-    RandRotate90d(keys=("image", "label"), prob=0.5, max_k=3, spatial_axes=(0, 2)),
-    RandRotate90d(keys=("image", "label"), prob=0.5, max_k=3, spatial_axes=(1, 2)),
-    AxesShuffle,
-    OneOf(
-        [
-            RandApplyTransform(
-                transform=MedianFilterd(keys=("image"), radius=(2, 8)), prob=0.2
-            ),
-            RandGaussianSmoothd(
-                keys=("image"),
-                sigma_x=(0.3, 1.5),
-                sigma_y=(0.3, 1.5),
-                sigma_z=(0.3, 1.5),
-                prob=0.2,
-            ),
-        ]
-    ),
-    RandGaussianNoised(keys=("image"), prob=0.1, mean=0.0, std=0.1),
-    RandomBrightnessTransformd(keys=("image"), mu=0.0, sigma=0.5, prob=0.1),
-    OneOf(
-        [
-            RandomContrastTransformd(
-                keys=("image"), contrast_range=(0.5, 2.0), preserve_range=True, prob=0.1
-            ),
-            RandomContrastTransformd(
-                keys=("image"),
-                contrast_range=(0.5, 2.0),
-                preserve_range=False,
-                prob=0.1,
-            ),
-        ]
-    ),
-    SimulateLowResolutionTransform(
-        keys=("image"),
-        downscale_factor_range=(0.25, 1.0),
-        upscale_mode="trilinear",
-        downscale_mode="nearest",
-    ),
-    RandApplyTransform(
-        Compose(
-            [
-                RandAdjustContrastWithInversionAndStats(keys=("image"), prob=1.0),
-                RandAdjustContrastWithInversionAndStats(keys=("image"), prob=1.0),
-            ]
-        ),
-        prob=0.1,
-    ),
-    RandAxisFlipd(keys=("image", "label"), prob=0.5),
-    BlankCuboidTransform(
-        keys=("image"),
-        prob=0.2,
-        cuboid_area=(160 // 10, 160 // 3),
-        is_3d=True,
-        max_cuboids=5,
-        replace_with="mean",
-    ),  # patch size of 160 hard-coded. Should we make it flexible?
-    RandApplyTransform(
-        BrightnessGradientAdditiveTransform(
-            keys=("image"),
-            scale=lambda x, y: np.exp(
-                np.random.uniform(np.log(x[y] // 6), np.log(x[y]))
-            ),
-            loc=(-0.5, 1.5),
-            max_strength=lambda x, y: np.random.uniform(-5, -1)
-            if np.random.uniform() < 0.5
-            else np.random.uniform(1, 5),
-            mean_centered=False,
-        ),
-        prob=0.15,
-    ),
-]
-
-
-imgs, labels = np.random.randn(2, 1, 160, 160, 160), np.random.randint(
-    0, 2, (2, 1, 160, 160, 160)
-)
-
-for img, label in zip(imgs, labels):
-    cur_dict = {"image": img, "label": label}
-    time_zero = time()
-    for aug in aug_sequence:
-        cur_dict = aug(cur_dict)
-        print(cur_dict["image"].shape)
-        print(cur_dict["label"].shape)
-        print(type(aug))
-        print("")
-    print("This sample took", time() - time_zero, "seconds.")
