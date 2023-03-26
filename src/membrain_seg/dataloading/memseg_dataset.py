@@ -3,9 +3,13 @@ import os
 # from skimage import io
 import imageio as io
 import numpy as np
-from data_utils import read_nifti
-from memseg_augmentation import get_training_transforms, get_validation_transforms
 from torch.utils.data import Dataset
+
+from membrain_seg.dataloading.data_utils import read_nifti
+from membrain_seg.dataloading.memseg_augmentation import (
+    get_training_transforms,
+    get_validation_transforms,
+)
 
 
 class CryoETMemSegDataset(Dataset):
@@ -27,7 +31,7 @@ class CryoETMemSegDataset(Dataset):
             "label": np.expand_dims(self.labels[idx], 0),
         }
         idx_dict = self.transforms(idx_dict)
-        return idx_dict["image"], idx_dict["label"]
+        return idx_dict
 
     def __len__(self):
         """Returns the length of the dataset."""
@@ -121,11 +125,8 @@ def collate_tr_val(augmentations):
 
 
 if __name__ == "__main__":
-    img_folder = "/scicore/home/engel0006/GROUP/pool-engel/Lorenz/nnUNet_training/\
-training_dirs/nnUNet_raw_data_base/nnUNet_raw_data/Task527_ChlamyV1/imagesTr"
-    mask_folder = "/scicore/home/engel0006/GROUP/pool-engel/Lorenz/nnUNet_training/\
-training_dirs/nnUNet_raw_data_base/nnUNet_raw_data/Task527_ChlamyV1/labelsTr"
-    out_dir = "/scicore/home/engel0006/GROUP/pool-engel/Lorenz/MemBrain-seg/\
-membrain-seg/sanity_imgs/dataloader"
+    img_folder = "../../../../data/imagesTr"
+    mask_folder = "../../../../data/labelsTr"
+    out_dir = "../../../sanity_imgs/dataloader"
     ds = CryoETMemSegDataset(img_folder, mask_folder, train=True)
     ds.test(out_dir, num_files=20)

@@ -3,7 +3,7 @@ from time import time
 
 import imageio
 import numpy as np
-from data_utils import read_nifti
+import torch
 from monai.transforms import (
     Compose,
     OneOf,
@@ -13,8 +13,11 @@ from monai.transforms import (
     RandRotate90d,
     RandRotated,
     RandZoomd,
+    ToTensord,
 )
-from transforms import (
+
+from membrain_seg.dataloading.data_utils import read_nifti
+from membrain_seg.dataloading.transforms import (
     AxesShuffle,
     BlankCuboidTransform,
     BrightnessGradientAdditiveTransform,
@@ -189,6 +192,7 @@ def get_training_transforms(prob_to_one=False, return_as_list=False):
         DownsampleSegForDeepSupervisionTransform(
             keys=["label"], ds_scales=deep_supervision_scales, order="nearest"
         ),
+        ToTensord(keys=["image"], dtype=torch.float),
     ]
     if return_as_list:
         return aug_sequence
@@ -200,7 +204,8 @@ def get_validation_transforms(return_as_list=False):
     aug_sequence = [
         DownsampleSegForDeepSupervisionTransform(
             keys=["label"], ds_scales=deep_supervision_scales, order="nearest"
-        )
+        ),
+        ToTensord(keys=["image"], dtype=torch.float),
     ]
     if return_as_list:
         return aug_sequence
