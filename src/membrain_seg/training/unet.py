@@ -74,11 +74,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
         batch_size: int = 32,
         image_key: str = "image",
         label_key: str = "label",
-        # path_dict: dict = {
-        #     "train": ("../../../../data/imagesTr", "../../../../data/labelsTr"),
-        #     "val": ("../../../../data/imagesVal", "../../../../data/labelsVal"),
-        # },
-        # TODO: Remove hard-coded stuff? Ideally won't need here.
         roi_size: Tuple[int, ...] = (160, 160, 160),
         max_epochs: int = 1000,
     ):
@@ -164,29 +159,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
         )
         return [optimizer], [scheduler]
 
-    # TODO Does it also work with dataloaders commented? They should already be in the
-    # datamodule
-    # def train_dataloader(self):
-    #     self.train_dataset = CryoETMemSegDataset(self.path_dict['train'][0],
-    #         self.path_dict['train'][1], train=True)
-    #     return DataLoader(self.train_dataset, batch_size=self.batch_size,
-    # shuffle=True, num_workers=4)
-
-    # def val_dataloader(self):
-    #     self.val_dataset = CryoETMemSegDataset(self.path_dict['val'][0],
-    #         self.path_dict['val'][1], train=False)
-    #     return DataLoader(self.val_dataset, batch_size=self.batch_size,
-    # shuffle=False, num_workers=4)
-
-    # def test_dataloader(self):
-    #     if 'test' in self.path_dict.keys():
-    #         self.test_dataset = CryoETMemSegDataset(self.path_dict['test'][0],
-    #             self.path_dict['test'][1], train=False)
-    #         return DataLoader(self.test_dataset, batch_size=self.batch_size,
-    # shuffle=False, num_workers=4)
-    #     else:
-    #         return None
-
     def training_step(
         self, batch: Dict[str, torch.Tensor], batch_idx: int
     ) -> Dict[str, float]:
@@ -265,7 +237,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
         outputs = self.validation_step_outputs
         val_loss, num_items = 0, 0
         for output in outputs:
-            val_loss += output["val_loss"].sum().item()
+            val_loss += output["val_loss"].sum().item() * output["val_number"]
+            # Need to multiply by output["val_number"] because it's later normalized.
             num_items += output["val_number"]
         mean_val_dice = self.dice_metric.aggregate().item()
         self.dice_metric.reset()

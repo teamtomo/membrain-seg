@@ -58,7 +58,7 @@ if __name__ == "__main__":
         "--data_dir",
         type=str,
         default="/scicore/home/engel0006/GROUP/pool-engel/\
-    Lorenz/MemBrain-seg/data",
+Lorenz/MemBrain-seg/data",
     )
     parser.add_argument("--log_dir", type=str, default="logs/")
     parser.add_argument("--batch_size", type=int, default=2)
