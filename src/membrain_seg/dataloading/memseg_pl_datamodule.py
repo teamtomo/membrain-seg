@@ -9,7 +9,7 @@ from membrain_seg.dataloading.memseg_dataset import CryoETMemSegDataset
 class MemBrainSegDataModule(pl.LightningDataModule):
     """Pytorch Lightning datamodule for membrane segmentation."""
 
-    def __init__(self, data_dir, batch_size, num_workers):
+    def __init__(self, data_dir, batch_size, num_workers, aug_prob_to_one=False):
         super().__init__()
         self.data_dir = data_dir
         self.train_img_dir = os.path.join(self.data_dir, "imagesTr")
@@ -18,6 +18,7 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         self.val_lab_dir = os.path.join(self.data_dir, "labelsVal")
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.aug_prob_to_one = aug_prob_to_one
 
     def setup(self, stage=None):
         """Load datasets."""
@@ -26,6 +27,7 @@ class MemBrainSegDataModule(pl.LightningDataModule):
                 img_folder=self.train_img_dir,
                 label_folder=self.train_lab_dir,
                 train=True,
+                aug_prob_to_one=self.aug_prob_to_one,
             )
             self.val_dataset = CryoETMemSegDataset(
                 img_folder=self.val_img_dir, label_folder=self.val_lab_dir, train=False

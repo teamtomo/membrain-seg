@@ -15,13 +15,15 @@ from membrain_seg.dataloading.memseg_augmentation import (
 class CryoETMemSegDataset(Dataset):
     """Dataset of Cryo-ET membrane segmentation patches."""
 
-    def __init__(self, img_folder, label_folder, train=False):
+    def __init__(self, img_folder, label_folder, train=False, aug_prob_to_one=False):
         self.train = train
         self.img_folder, self.label_folder = img_folder, label_folder
         self.initialize_imgs_paths()
         self.load_data()
         self.transforms = (
-            get_training_transforms() if self.train else get_validation_transforms()
+            get_training_transforms(prob_to_one=aug_prob_to_one)
+            if self.train
+            else get_validation_transforms()
         )
 
     def __getitem__(self, idx):
@@ -84,23 +86,22 @@ class CryoETMemSegDataset(Dataset):
 
         for i in range(num_files):
             test_sample = self.__getitem__(i % self.__len__())
-
-            for num_img in range(0, test_sample[0].shape[-1], 30):
+            for num_img in range(0, test_sample["image"].shape[-1], 30):
                 io.imsave(
                     os.path.join(test_folder, f"test_img{i}_group{num_img}.png"),
-                    test_sample[0][0, :, :, num_img],
+                    test_sample["image"][0, :, :, num_img],
                 )
 
-            for num_mask in range(0, test_sample[1][0].shape[-1], 30):
+            for num_mask in range(0, test_sample["label"][0].shape[-1], 30):
                 io.imsave(
                     os.path.join(test_folder, f"test_mask{i}_group{num_mask}.png"),
-                    test_sample[1][0][0, :, :, num_mask],
+                    test_sample["label"][0][0, :, :, num_mask],
                 )
 
-            for num_mask in range(0, test_sample[1][1].shape[0], 15):
+            for num_mask in range(0, test_sample["label"][1].shape[0], 15):
                 io.imsave(
                     os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
-                    test_sample[1][1][0, :, :, num_mask],
+                    test_sample["label"][1][0, :, :, num_mask],
                 )
 
 

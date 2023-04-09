@@ -6,7 +6,8 @@ import torch
 from monai.data import decollate_batch
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete, Compose, EnsureType, Lambda
-from torch.optim.lr_scheduler import CosineAnnealingLR
+
+from ..training.metric_utils import masked_accuracy, threshold_function
 
 # from monai.networks.nets import UNet as MonaiUnet
 # The normal Monai DynUNet upsamples low-resolution layers to compare directly to GT
@@ -17,7 +18,6 @@ from ..training.optim_utils import (
     DeepSuperVisionLoss,
     DynUNetDirectDeepSupervision,  # I like to use deep supervision
     IgnoreLabelDiceCELoss,
-    threshold_function,
 )
 
 
@@ -65,17 +65,21 @@ class SemanticSegmentationUnet(pl.LightningModule):
         spatial_dims: int = 3,
         in_channels: int = 1,
         out_channels: int = 1,
-        channels: Tuple[int, ...] = (16, 32, 64, 128, 256),
+        # channels: Tuple[int, ...] = (16, 32, 64, 128, 256),
+        # channels: Tuple[int, ...] = [64, 96, 128, 192, 256],
+        channels: Tuple[int, ...] = [32, 64, 128, 256, 512, 1024],
         # TODO: Do channel numbers need to be adjusted?
-        strides: Tuple[int, ...] = (1, 2, 2, 2),
+        strides: Tuple[int, ...] = (1, 2, 2, 2, 2, 2),
+        # strides: Tuple[int, ...] = (1, 2, 2, 2, 2),
         num_res_units: int = 2,
-        learning_rate: float = 1e-4,
+        learning_rate: float = 1e-2,
         min_learning_rate: float = 1e-6,
         batch_size: int = 32,
         image_key: str = "image",
         label_key: str = "label",
         roi_size: Tuple[int, ...] = (160, 160, 160),
         max_epochs: int = 1000,
+        use_deep_supervision: bool = False,
     ):
         super().__init__()
 
@@ -94,16 +98,19 @@ class SemanticSegmentationUnet(pl.LightningModule):
             spatial_dims=spatial_dims,
             in_channels=in_channels,
             out_channels=out_channels,
-            kernel_size=(3, 3, 3, 3),
+            kernel_size=(3, 3, 3, 3, 3, 3),
+            # kernel_size=(3, 3, 3, 3, 3),
             strides=strides,
-            upsample_kernel_size=(1, 2, 2, 2),
-            # filters=channels,
+            upsample_kernel_size=(1, 2, 2, 2, 2, 2),
+            # upsample_kernel_size=(1, 2, 2, 2, 2),
+            filters=channels,
+            res_block=True,
             # channels=channels,
             # num_res_units=num_res_units, #TODO: Residual units
             # apparently not supported for DynUnet
             # Reimplement? Or better switch to UNet and leave deep supervision?
             # Or adjust UNet to output deep layers?
-            norm_name="INSTANCE",
+            # norm_name="INSTANCE",
             # norm=Norm.INSTANCE,  # I like the instance normalization better than
             # batchnorm in this case, as we will probably have
             # only small batch sizes, making BN more noisy
@@ -112,7 +119,10 @@ class SemanticSegmentationUnet(pl.LightningModule):
         )
         ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
         self.loss_function = DeepSuperVisionLoss(
-            ignore_dice_loss, weights=[1.0, 0.5, 0.25]
+            ignore_dice_loss,
+            weights=[1.0, 0.5, 0.25, 0.125, 0.0675]
+            if use_deep_supervision
+            else [1.0, 0.0, 0.0, 0.0, 0.0],
         )
 
         # validation metric
@@ -140,6 +150,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         self.training_step_outputs = []
         self.validation_step_outputs = []
+        self.running_train_acc = 0.0
+        self.running_val_acc = 0.0
 
     def forward(self, x) -> torch.Tensor:
         """Implementation of the forward pass.
@@ -153,10 +165,20 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         See the pytorch-lightning module documentation for details.
         """
-        optimizer = torch.optim.Adam(self._model.parameters(), self.learning_rate)
-        scheduler = CosineAnnealingLR(
-            optimizer, T_max=self.max_epochs, eta_min=self.min_learning_rate
-        )
+        # optimizer = torch.optim.Adam(self._model.parameters(), self.learning_rate)
+        optimizer = torch.optim.SGD(
+            self._model.parameters(),
+            lr=self.learning_rate,
+            momentum=0.99,
+            weight_decay=3e-5,
+            nesterov=True,
+        )  # SGD as in nnUNet
+        # scheduler = CosineAnnealingLR(
+        #     optimizer, T_max=self.max_epochs, eta_min=self.min_learning_rate
+        # )
+        scheduler = torch.optim.lr_scheduler.LambdaLR(
+            optimizer, lr_lambda=lambda epoch: (1 - epoch / self.max_epochs) ** 0.9
+        )  # PolyLR from nnUNet
         return [optimizer], [scheduler]
 
     def training_step(
@@ -175,6 +197,11 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         stats_dict = {"train_loss": loss, "train_number": output[0].shape[0]}
         self.training_step_outputs.append(stats_dict)
+        self.running_train_acc += (
+            masked_accuracy(output[0], labels[0], ignore_label=2.0, threshold_value=0.0)
+            * output[0].shape[0]
+        )
+
         return {"loss": loss}
 
     def on_train_epoch_end(self):
@@ -183,10 +210,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
         Learning rate scheduler makes one step.
         Then training loss is logged.
         """
-        # Perform 1 LR scheduler step
-        sch = self.lr_schedulers()
-        sch.step()
-
         outputs = self.training_step_outputs
         train_loss, num_items = 0, 0
         for output in outputs:
@@ -194,10 +217,15 @@ class SemanticSegmentationUnet(pl.LightningModule):
             num_items += output["train_number"]
         mean_train_loss = torch.tensor(train_loss / num_items)
 
-        self.log("train_loss", mean_train_loss, batch_size=num_items)
+        mean_train_acc = self.running_train_acc / num_items
+        self.running_train_acc = 0.0
+        self.log("train_loss", mean_train_loss)  # , batch_size=num_items)
+        self.log("train_acc", mean_train_acc)  # , batch_size=num_items)
 
-        self.validation_step_outputs = []
-        print("EPOCH Training loss", mean_train_loss)
+        self.training_step_outputs = []
+        print("EPOCH Training loss", mean_train_loss.item())
+        print("EPOCH Training acc", mean_train_acc.item())
+        # Accuracy not the most informative metric, but a good sanity check
         return {"train_loss": mean_train_loss}
 
     def validation_step(self, batch, batch_idx):
@@ -213,7 +241,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
         #     images, self.roi_size, sw_batch_size, self.forward
         # )
         outputs = self.forward(images)
-
         loss = self.loss_function(outputs, labels)
 
         # Cloning and adjusting preds & labels for Dice.
@@ -221,7 +248,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         # compute more stats?
         outputs4dice = outputs[0].clone()
         labels4dice = labels[0].clone()
-        outputs4dice[labels4dice == 2] = 0
+        outputs4dice[
+            labels4dice == 2
+        ] = -1.0  # Setting to -1 here leads to 0-labels after thresholding
         labels4dice[labels4dice == 2] = 0  # Need to set to zero before post_label
         # Otherwise we have 3 classes
         outputs4dice = [self.post_pred(i) for i in decollate_batch(outputs4dice)]
@@ -230,6 +259,12 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         stats_dict = {"val_loss": loss, "val_number": outputs[0].shape[0]}
         self.validation_step_outputs.append(stats_dict)
+        self.running_val_acc += (
+            masked_accuracy(
+                outputs[0], labels[0], ignore_label=2.0, threshold_value=0.0
+            )
+            * outputs[0].shape[0]
+        )
         return stats_dict
 
     def on_validation_epoch_end(self):
@@ -244,10 +279,15 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.dice_metric.reset()
         mean_val_loss = torch.tensor(val_loss / num_items)
 
-        self.log("val_loss", mean_val_loss, batch_size=num_items)
-        self.log("val_metric", mean_val_dice, batch_size=num_items)
+        mean_val_acc = self.running_val_acc / num_items
+        self.running_val_acc = 0.0
+        # Batch sizes are used for averaging, but we already have that, no?
+        self.log("val_loss", mean_val_loss),  # batch_size=num_items)
+        self.log("val_dice", mean_val_dice)  # , batch_size=num_items)
+        self.log("val_accuracy", mean_val_acc)
 
         self.validation_step_outputs = []
-        print("EPOCH Validation loss", mean_val_loss)
+        print("EPOCH Validation loss", mean_val_loss.item())
         print("EPOCH Validation dice", mean_val_dice)
+        print("EPOCH Validation acc", mean_val_acc.item())
         return {"val_loss": mean_val_loss, "val_metric": mean_val_dice}

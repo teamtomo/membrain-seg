@@ -167,11 +167,5 @@ def test_loss_fn():
     print("All ignore loss assertions passed.")
 
 
-def threshold_function(predictions, threshold_value=0.5):
-    """Return 0-1 Array from thresholding."""
-    binary_mask = (predictions >= threshold_value).float()
-    return binary_mask
-
-
 if __name__ == "__main__":
     test_loss_fn()
