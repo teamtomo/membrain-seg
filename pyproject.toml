@@ -28,6 +28,9 @@ dependencies = [
     "monai",
     "pytorch-lightning",
     "torch",
+    "imageio",
+    "scipy",
+    "mrcfile"
 ]
 
 # extras
