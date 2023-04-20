@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_loss_fn_correctness():
     """Test function for above defined loss functions.
@@ -42,7 +43,7 @@ def test_loss_fn_correctness():
 
     def test_ignore_dice_loss(ignore_dice_loss, pred_labels, gt_labels):
         losses = [
-            ignore_dice_loss(input=pl, target=gt_labels.clone()) for pl in pred_labels
+            ignore_dice_loss(data=pl, target=gt_labels.clone()) for pl in pred_labels
         ]
         assert losses[0] == losses[1] == losses[2] == losses[4] != losses[3]
         return losses
