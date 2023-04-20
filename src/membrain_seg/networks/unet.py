@@ -256,10 +256,12 @@ class SemanticSegmentationUnet(pl.LightningModule):
         for output in outputs:
             val_loss += output["val_loss"].sum().item() * output["val_number"]
             # Need to multiply by output["val_number"] because it's later normalized.
+
             num_items += output["val_number"]
         mean_val_dice = self.dice_metric.aggregate().item()
         self.dice_metric.reset()
         mean_val_loss = torch.tensor(val_loss / num_items)
+
 
         mean_val_acc = self.running_val_acc / num_items
         self.running_val_acc = 0.0
