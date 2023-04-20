@@ -1,7 +1,3 @@
-import os
-from time import time
-
-import imageio
 import numpy as np
 import torch
 from monai.transforms import (
@@ -17,7 +13,6 @@ from monai.transforms import (
     ToTensord,
 )
 
-from membrain_seg.dataloading.data_utils import read_nifti
 from membrain_seg.dataloading.transforms import (
     AxesShuffle,
     BlankCuboidTransform,
@@ -260,102 +255,3 @@ def get_prediction_transforms():
         ]
     )
     return transforms
-
-
-def store_test_images(out_dir, img, label, aug_sequence):
-    """
-    Stores sample augmented images.
-
-    Phase 1: For each transform, 5 isolated applications are stored.
-    Phase 2: 50 examples of full applications of all transforms are stored.
-    """
-    orig_dict = {"image": img, "label": label}
-
-    def save_images(prefix, out_img, out_label, slice_idx=80):
-        imageio.imwrite(
-            os.path.join(out_dir, f"{prefix}_dens.png"), out_img[0, :, :, slice_idx]
-        )
-        if not isinstance(out_label, list):
-            imageio.imwrite(
-                os.path.join(out_dir, f"{prefix}_label.png"),
-                out_label[0, :, :, slice_idx],
-            )
-        else:
-            for i, lbl in enumerate(out_label):
-                imageio.imwrite(
-                    os.path.join(out_dir, f"{prefix}_label_ds{i+1}.png"),
-                    lbl[0, :, :, slice_idx // (2**i)],
-                )
-
-    for aug_nr, aug in enumerate(aug_sequence):
-        print(aug_nr, type(aug))
-        for sub_aug_nr in range(5):
-            cur_dict = {
-                "image": orig_dict["image"].copy(),
-                "label": orig_dict["label"].copy(),
-            }
-            out_dict = aug(cur_dict)
-            out_img = out_dict["image"]
-            out_label = out_dict["label"]
-            prefix = f"trafo{aug_nr}_{sub_aug_nr}_isolated"
-            save_images(prefix, out_img, out_label)
-
-    for combined_nr in range(50):
-        cur_dict = {
-            "image": orig_dict["image"].copy(),
-            "label": orig_dict["label"].copy(),
-        }
-        for aug in aug_sequence:
-            cur_dict = aug(cur_dict)
-        out_img = cur_dict["image"]
-        out_label = cur_dict["label"]
-        prefix = f"combined_{combined_nr}"
-        save_images(prefix, out_img, out_label)
-
-
-def get_augmentation_timing(imgs, labels, aug_sequence):
-    """Track the timing of all augmentation methods."""
-    start_time = time()
-    aug_time_dict = {i: [] for i in range(len(aug_sequence))}
-
-    for i in range(1000):
-        for img, label in zip(imgs, labels):
-            cur_dict = {"image": img, "label": label}
-
-            for aug_nr, aug in enumerate(aug_sequence):
-                aug_start_time = time()
-                cur_dict = aug(cur_dict)
-                aug_time_dict[aug_nr].append(time() - aug_start_time)
-
-        print(f"{i} / 1000")
-        print(f"Current average time: {(time() - start_time) / (i + 1):.2f}")
-
-        if i % 20 == 0:
-            for k in range(len(aug_sequence)):
-                avg_time = np.mean(aug_time_dict[k])
-                print(f"Augmentation {k} avg time: {avg_time:.2f}")
-
-
-if __name__ == "__main__":
-    out_dir = "/scicore/home/engel0006/GROUP/pool-engel/Lorenz/MemBrain-seg/\
-                membrain-seg/sanity_imgs"
-    patch_path1 = "/scicore/home/engel0006/GROUP/pool-engel/Lorenz/nnUNet_training/\
-                training_dirs/nnUNet_raw_data_base/nnUNet_raw_data/Task527_ChlamyV1/\
-                imagesTr/tomo02_patch000_0000.nii.gz"
-    label_path1 = "/scicore/home/engel0006/GROUP/pool-engel/Lorenz/nnUNet_training/\
-                training_dirs/nnUNet_raw_data_base/nnUNet_raw_data/Task527_ChlamyV1/\
-                labelsTr/tomo02_patch000.nii.gz"
-    img = np.expand_dims(read_nifti(patch_path1), 0)
-    label = np.expand_dims(read_nifti(label_path1), 0)
-
-    store_test_images(
-        out_dir,
-        img,
-        label,
-        get_training_transforms(prob_to_one=True, return_as_list=True),
-    )
-    get_augmentation_timing(
-        imgs=[img, img],
-        labels=[label, label],
-        aug_sequence=get_training_transforms(prob_to_one=False, return_as_list=True),
-    )

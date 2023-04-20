@@ -103,31 +103,3 @@ class CryoETMemSegDataset(Dataset):
                     os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
                     test_sample["label"][1][0, :, :, num_mask],
                 )
-
-
-def collate_tr_val(augmentations):
-    """
-    Batch augmentation collate function.
-
-    This collate function can perform data augmentations using
-    batchgenerators package for the entire batch.
-    Will be redundant once all augmentations are performed on single samples.
-    """
-
-    def cur_collate(batch):
-        data_stack = np.stack([sample[0] for sample in batch], axis=0)
-        label_stack = np.stack([sample[1] for sample in batch], axis=0)
-        data_dict = {"data": data_stack, "seg": label_stack}
-        for trafo in augmentations:
-            data_dict = trafo(**data_dict)
-        return data_dict["data"], data_dict["target"]
-
-    return cur_collate
-
-
-if __name__ == "__main__":
-    img_folder = "../../../../data/imagesTr"
-    mask_folder = "../../../../data/labelsTr"
-    out_dir = "../../../sanity_imgs/dataloader"
-    ds = CryoETMemSegDataset(img_folder, mask_folder, train=True)
-    ds.test(out_dir, num_files=20)

@@ -44,8 +44,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
     strides : Tuple[int, ...]
         The strides for the convolutions. Must have len(channels - 1) elements.
         Default value is (2, 2, 2, 2)
-    num_res_units : int
-        The number of residual subunits.
     learning_rate : float
         The learning rate for the Adam optimizer.
         Default value is 1e-4.
@@ -65,13 +63,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
         spatial_dims: int = 3,
         in_channels: int = 1,
         out_channels: int = 1,
-        # channels: Tuple[int, ...] = (16, 32, 64, 128, 256),
-        # channels: Tuple[int, ...] = [64, 96, 128, 192, 256],
         channels: Tuple[int, ...] = [32, 64, 128, 256, 512, 1024],
-        # TODO: Do channel numbers need to be adjusted?
         strides: Tuple[int, ...] = (1, 2, 2, 2, 2, 2),
-        # strides: Tuple[int, ...] = (1, 2, 2, 2, 2),
-        num_res_units: int = 2,
         learning_rate: float = 1e-2,
         min_learning_rate: float = 1e-6,
         batch_size: int = 32,
@@ -89,7 +82,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.batch_size = batch_size
         self.image_key = image_key
         self.label_key = label_key
-        # self.path_dict = path_dict
         self.roi_size = roi_size
         self.max_epochs = max_epochs
 
@@ -99,17 +91,10 @@ class SemanticSegmentationUnet(pl.LightningModule):
             in_channels=in_channels,
             out_channels=out_channels,
             kernel_size=(3, 3, 3, 3, 3, 3),
-            # kernel_size=(3, 3, 3, 3, 3),
             strides=strides,
             upsample_kernel_size=(1, 2, 2, 2, 2, 2),
-            # upsample_kernel_size=(1, 2, 2, 2, 2),
             filters=channels,
             res_block=True,
-            # channels=channels,
-            # num_res_units=num_res_units, #TODO: Residual units
-            # apparently not supported for DynUnet
-            # Reimplement? Or better switch to UNet and leave deep supervision?
-            # Or adjust UNet to output deep layers?
             # norm_name="INSTANCE",
             # norm=Norm.INSTANCE,  # I like the instance normalization better than
             # batchnorm in this case, as we will probably have
@@ -191,9 +176,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
         images, labels = batch["image"], batch["label"]
         output = self.forward(images)
         loss = self.loss_function(output, labels)
-
-        # self.log("training_loss", loss, batch_size=len(images))
-        # Should we log every training step or only epoch-wise?
 
         stats_dict = {"train_loss": loss, "train_number": output[0].shape[0]}
         self.training_step_outputs.append(stats_dict)
@@ -281,7 +263,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         mean_val_acc = self.running_val_acc / num_items
         self.running_val_acc = 0.0
-        # Batch sizes are used for averaging, but we already have that, no?
         self.log("val_loss", mean_val_loss),  # batch_size=num_items)
         self.log("val_dice", mean_val_dice)  # , batch_size=num_items)
         self.log("val_accuracy", mean_val_acc)

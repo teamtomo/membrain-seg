@@ -7,8 +7,8 @@ from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
 from membrain_seg.dataloading.memseg_pl_datamodule import MemBrainSegDataModule
+from membrain_seg.networks.unet import SemanticSegmentationUnet
 from membrain_seg.parse_utils import str2bool
-from membrain_seg.training.unet import SemanticSegmentationUnet
 
 warnings.filterwarnings("ignore", category=UserWarning, module="torch._tensor")
 warnings.filterwarnings("ignore", category=UserWarning, module="monai.data")
@@ -91,6 +91,26 @@ if __name__ == "__main__":
         default="/scicore/home/engel0006/GROUP/pool-engel/\
 Lorenz/MemBrain-seg/data",
     )
+    """
+    The data_dir should have the following structure:
+        data_dir/
+        ├── imagesTr/       # Directory containing training images
+        │   ├── img1.nii.gz    # Image file (currently requires nii.gz format)
+        │   ├── img2.nii.gz    # Image file
+        │   └── ...
+        ├── imagesVal/      # Directory containing validation images
+        │   ├── img3.nii.gz    # Image file
+        │   ├── img4.nii.gz    # Image file
+        │   └── ...
+        ├── labelsTr/       # Directory containing training labels
+        │   ├── img1.nii.gz  # Label file (currently requires nii.gz format)
+        │   ├── img2.nii.gz  # Label file
+        │   └── ...
+        └── labelsVal/      # Directory containing validation labels
+            ├── img3.nii.gz  # Label file
+            ├── img4.nii.gz  # Label file
+            └── ...
+    """
     parser.add_argument("--log_dir", type=str, default="logs/")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--num_workers", type=int, default=8)

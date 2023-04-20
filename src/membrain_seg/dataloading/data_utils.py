@@ -33,15 +33,17 @@ def store_segmented_tomograms(
     predictions = network_output[0]
     predictions_np = predictions.squeeze(0).squeeze(0).cpu().numpy()
     out_folder = out_folder
-    out_file = os.path.join(out_folder, os.path.basename(orig_data_path))
-    store_tomogram(out_file, predictions_np)
     if store_probabilities:
-        predictions_np_thres = predictions.squeeze(0).squeeze(0).cpu().numpy() > 0.0
-        out_file_thres = os.path.join(
-            out_folder,
-            os.path.basename(orig_data_path)[:-4] + "_" + ckpt_token + "_segmented.mrc",
+        out_file = os.path.join(
+            out_folder, os.path.basename(orig_data_path)[:-4] + "_scores.mrc"
         )
-        store_tomogram(out_file_thres, predictions_np_thres)
+        store_tomogram(out_file, predictions_np)
+    predictions_np_thres = predictions.squeeze(0).squeeze(0).cpu().numpy() > 0.0
+    out_file_thres = os.path.join(
+        out_folder,
+        os.path.basename(orig_data_path)[:-4] + "_" + ckpt_token + "_segmented.mrc",
+    )
+    store_tomogram(out_file_thres, predictions_np_thres)
     print("MemBrain has finished segmenting your tomogram.")
 
 

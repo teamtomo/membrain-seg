@@ -10,6 +10,27 @@ class MemBrainSegDataModule(pl.LightningDataModule):
     """Pytorch Lightning datamodule for membrane segmentation."""
 
     def __init__(self, data_dir, batch_size, num_workers, aug_prob_to_one=False):
+        """Initialization of data paths and data loaders.
+
+        The data_dir should have the following structure:
+        data_dir/
+        ├── imagesTr/       # Directory containing training images
+        │   ├── img1.nii.gz    # Image file (currently requires nii.gz format)
+        │   ├── img2.nii.gz    # Image file
+        │   └── ...
+        ├── imagesVal/      # Directory containing validation images
+        │   ├── img1.nii.gz    # Image file
+        │   ├── img2.nii.gz    # Image file
+        │   └── ...
+        ├── labelsTr/       # Directory containing training labels
+        │   ├── label1.nii.gz  # Label file (currently requires nii.gz format)
+        │   ├── label2.nii.gz  # Label file
+        │   └── ...
+        └── labelsVal/      # Directory containing validation labels
+            ├── label1.nii.gz  # Label file
+            ├── label2.nii.gz  # Label file
+            └── ...
+        """
         super().__init__()
         self.data_dir = data_dir
         self.train_img_dir = os.path.join(self.data_dir, "imagesTr")

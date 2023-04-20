@@ -291,7 +291,6 @@ class BrightnessGradientAdditiveTransform(Randomizable, MapTransform):
         loc=(-1, 2),
         max_strength=1.0,
         mean_centered=True,
-        clip_intensities=False,
     ):
         super().__init__(keys)
         self.scale = scale

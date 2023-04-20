@@ -9,7 +9,7 @@ from dataloading.data_utils import (
 from dataloading.memseg_augmentation import get_mirrored_img, get_prediction_transforms
 from monai.inferers import SlidingWindowInferer
 
-from membrain_seg.training.unet import SemanticSegmentationUnet
+from membrain_seg.networks.unet import SemanticSegmentationUnet
 
 # Argument parser for the tomogram path
 parser = argparse.ArgumentParser(
