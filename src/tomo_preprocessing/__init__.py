@@ -1,1 +1,1 @@
-""" Empty init. """
+"""Empty init."""

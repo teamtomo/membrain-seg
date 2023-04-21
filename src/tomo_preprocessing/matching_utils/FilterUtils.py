@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------------
-# Copyright (C) 2022 ZauggGroup 
+# Copyright (C) 2022 ZauggGroup
 #
 # This file is a copy (or a modified version) of the original file from the
 # following GitHub repository:
@@ -7,8 +7,8 @@
 # Repository: https://github.com/ZauggGroup/DeePiCt
 # Original file: https://github.com/ZauggGroup/DeePiCt/blob/main/spectrum_filter/FilterUtils.py
 # Repository URL: https://github.com/ZauggGroup/DeePiCt
-# Original author(s): de Teresa, I.*, Goetz S.K.*, Mattausch, A., Stojanovska, F., 
-#   Zimmerli C., Toro-Nahuelpan M., Cheng, D.W.C., Tollervey, F. , Pape, C., 
+# Original author(s): de Teresa, I.*, Goetz S.K.*, Mattausch, A., Stojanovska, F.,
+#   Zimmerli C., Toro-Nahuelpan M., Cheng, D.W.C., Tollervey, F. , Pape, C.,
 #   Beck, M., Diz-Muñoz, A., Kreshuk, A., Mahamid, J. and Zaugg, J.
 # License: Apache License 2.0
 #
@@ -32,7 +32,7 @@ from scipy.interpolate import interp1d
 
 
 def hypot_nd(axes, offset=0.5):
-    """ Function to compute the hypotenuse for n-dimensional axes"""
+    """Function to compute the hypotenuse for n-dimensional axes."""
     if len(axes) == 2:
         return np.hypot(
             axes[0] - max(axes[0].shape) * offset,
@@ -44,29 +44,29 @@ def hypot_nd(axes, offset=0.5):
             axes[0] - max(axes[0].shape) * offset,
         )
 
-    
+
 def rad_avg(image):
-    """ Compute the radially averaged intensity of an image. """
-    bins = np.max(image.shape)/2
-    axes = np.ogrid[tuple(slice(0,s) for s in image.shape)]
+    """Compute the radially averaged intensity of an image."""
+    bins = np.max(image.shape) / 2
+    axes = np.ogrid[tuple(slice(0, s) for s in image.shape)]
     r = hypot_nd(axes)
-    rbin = (bins*r/r.max()).astype(int)
-    radial_mean = ndimage.mean(image, labels=rbin, index=np.arange(1, rbin.max()+1))
-    
+    rbin = (bins * r / r.max()).astype(int)
+    radial_mean = ndimage.mean(image, labels=rbin, index=np.arange(1, rbin.max() + 1))
+
     return radial_mean
 
 
 def rot_kernel(arr, shape):
-    """ Create a rotational kernel from an input array. """
+    """Create a rotational kernel from an input array."""
     func = interp1d(np.arange(len(arr)), arr, bounds_error=False, fill_value=0)
-    
-    axes = np.ogrid[tuple(slice(0, np.ceil(s/2)) for s in shape)]
+
+    axes = np.ogrid[tuple(slice(0, np.ceil(s / 2)) for s in shape)]
     kernel = hypot_nd(axes, offset=0).astype("f4")
     kernel = func(kernel).astype("f4")
     for idx, s in enumerate(shape):
-        padding = [(0,0)]*len(shape)
-        padding[idx] = (int(np.floor(s/2)), 0)
-        
+        padding = [(0, 0)] * len(shape)
+        padding[idx] = (int(np.floor(s / 2)), 0)
+
         mode = "reflect" if s % 2 else "symmetric"
         kernel = np.pad(kernel, padding, mode=mode)
     return kernel

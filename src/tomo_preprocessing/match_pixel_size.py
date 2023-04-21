@@ -2,8 +2,12 @@ import argparse
 import os
 
 from membrain_seg.dataloading.data_utils import load_tomogram, store_tomogram
+
 from tomo_preprocessing.matching_utils.px_matching_utils import (
-    determine_output_shape, fourier_cropping, fourier_extend)
+    determine_output_shape,
+    fourier_cropping,
+    fourier_extend,
+)
 
 # Set up the argument parser
 parser = argparse.ArgumentParser(description="Match tomogram pixel size")
@@ -19,14 +23,16 @@ parser.add_argument(
     "--pixel_size_in",
     type=float,
     default=None,
-    help="Input pixel size (optional). If not specified, it will be read from the tomogram's header. "
-    "ATTENTION: This can lead to severe errors if the header pixel size is not correct.",
+    help="Input pixel size (optional). If not specified, it will be read"
+    "from the tomogram's header. ATTENTION: This can lead to severe errors if the"
+    " header pixel size is not correct.",
 )
 parser.add_argument(
     "--disable_smooth",
     type=bool,
     default=False,
-    help="Disable smoothing (ellipsoid mask + cosine decay). Disable if causing problems or for speed up",
+    help="Disable smoothing (ellipsoid mask + cosine decay). Disable if "
+    "causing problems or for speed up",
 )
 
 # Parse the command-line arguments
@@ -52,7 +58,8 @@ print(
 # Calculate the output shape after pixel size matching
 output_shape = determine_output_shape(pixel_size_in, pixel_size_out, data.shape)
 
-# Perform Fourier-based resizing (cropping or extending) using the determined output shape
+# Perform Fourier-based resizing (cropping or extending) using the determined
+# output shape
 if (pixel_size_in / pixel_size_out) < 1.0:
     resized_data, exponential_filter = fourier_cropping(data, output_shape, smoothing)
 else:

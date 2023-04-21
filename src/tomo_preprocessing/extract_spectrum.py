@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------------
-# Copyright (C) 2022 ZauggGroup 
+# Copyright (C) 2022 ZauggGroup
 #
 # This file is a copy (or a modified version) of the original file from the
 # following GitHub repository:
@@ -7,8 +7,8 @@
 # Repository: https://github.com/ZauggGroup/DeePiCt
 # Original file: https://github.com/ZauggGroup/DeePiCt/blob/main/spectrum_filter/extract_spectrum.py
 # Repository URL: https://github.com/ZauggGroup/DeePiCt
-# Original author(s): de Teresa, I.*, Goetz S.K.*, Mattausch, A., Stojanovska, F., 
-#   Zimmerli C., Toro-Nahuelpan M., Cheng, D.W.C., Tollervey, F. , Pape, C., 
+# Original author(s): de Teresa, I.*, Goetz S.K.*, Mattausch, A., Stojanovska, F.,
+#   Zimmerli C., Toro-Nahuelpan M., Cheng, D.W.C., Tollervey, F. , Pape, C.,
 #   Beck, M., Diz-Muñoz, A., Kreshuk, A., Mahamid, J. and Zaugg, J.
 # License: Apache License 2.0
 #
@@ -26,16 +26,18 @@
 # --------------------------------------------------------------------------------
 
 import argparse
+
 from membrain_seg.dataloading.data_utils import load_tomogram
+
 from tomo_preprocessing.matching_utils.spec_matching_utils import extract_spectrum
 
 
-
 def main():
+    """Extract the spectrum from the target tomogram."""
     # Parse command line arguments.
     parser = get_cli()
     args = parser.parse_args()
-    
+
     # Read input tomogram.
     tomo = args.input
 
@@ -47,27 +49,26 @@ def main():
 
 
 def get_cli():
-    """ Function to set up the command line interface. """
-    
+    """Function to set up the command line interface."""
     parser = argparse.ArgumentParser(
         description="Extract radially averaged amplitude spectrum from cryo-ET data."
     )
 
-    parser.add_argument( 
+    parser.add_argument(
         "-i",
         "--input",
         required=True,
         type=load_tomogram,
-        help="Tomogram to extract spectrum from (.mrc/.rec format)"
+        help="Tomogram to extract spectrum from (.mrc/.rec format)",
     )
 
-    parser.add_argument( 
+    parser.add_argument(
         "-o",
         "--output",
         required=True,
-        help="Output destination for extracted spectrum (.tsv format)"
+        help="Output destination for extracted spectrum (.tsv format)",
     )
-    
+
     return parser
 
 
