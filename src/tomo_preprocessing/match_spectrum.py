@@ -42,8 +42,6 @@ def main():
     # Read input tomogram
     tomo = load_tomogram(args.input)
 
-    if not args.cutoff:  # TODO: This is leading to some heavy low-pass filtering!!
-        args.cutoff = int(sorted(tomo.shape)[1] / 2)
     # Read target spectrum
     target_spectrum = pd.read_csv(args.target, sep="\t")["intensity"].values
 

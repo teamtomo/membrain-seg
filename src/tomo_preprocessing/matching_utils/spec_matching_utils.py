@@ -26,16 +26,29 @@
 
 
 import warnings
+from typing import Optional, Union
 
 import numpy as np
 import numpy.fft as fft
 import pandas as pd
 
-from tomo_preprocessing.matching_utils.FilterUtils import rad_avg, rot_kernel
+from tomo_preprocessing.matching_utils.filter_utils import rad_avg, rot_kernel
 
 
-def extract_spectrum(tomo):
-    """Extract radially averaged amplitude spectrum."""
+def extract_spectrum(tomo: np.ndarray) -> pd.Series:
+    """
+    Extract the radially averaged amplitude spectrum from the input tomogram.
+
+    Parameters
+    ----------
+    tomo : np.ndarray
+        Input tomogram as a 3D numpy array.
+
+    Returns
+    -------
+    pd.Series
+        Radially averaged amplitude spectrum as a pandas Series.
+    """
     # Normalize input tomogram intensities.
     tomo -= tomo.min()
     tomo /= tomo.max()
@@ -52,8 +65,31 @@ def extract_spectrum(tomo):
     return spectrum
 
 
-def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
-    """Match the amplitude spectrum of the input tomogram to the target spectrum."""
+def match_spectrum(
+    tomo: np.ndarray,
+    target_spectrum: np.ndarray,
+    cutoff: Optional[int] = None,
+    smooth: Union[float, int] = 0,
+) -> np.ndarray:
+    """
+    Match the amplitude spectrum of the input tomogram to the target spectrum.
+
+    Parameters
+    ----------
+    tomo : np.ndarray
+        Input tomogram as a 3D numpy array.
+    target_spectrum : np.ndarray
+        Target amplitude spectrum as a 1D numpy array.
+    cutoff : Optional[int], default=None
+        Frequency index at which to apply the cutoff. (LP filtering)
+    smooth : Union[float, int], default=0
+        Smoothing factor for the cutoff.
+
+    Returns
+    -------
+    np.ndarray
+        The filtered tomogram with the matched amplitude spectrum.
+    """
     # Make a copy of the target spectrum and normalize the input tomogram
     target_spectrum = target_spectrum.copy()
     tomo -= tomo.min()
@@ -103,6 +139,6 @@ def match_spectrum(tomo, target_spectrum, cutoff=None, smooth=0):
 
     # Compute the inverse Fourier transform and return the filtered tomogram
     t = fft.ifftn(t)
-    t = np.abs(t).astype("f4")
+    t = np.abs(t).astype("float32")
 
     return t

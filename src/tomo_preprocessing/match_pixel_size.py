@@ -42,7 +42,6 @@ args = parser.parse_args()
 file_path = args.input_tomogram
 data, input_pixel_sizes = load_tomogram(file_path, return_pixel_size=True)
 pixel_size_in = args.pixel_size_in or input_pixel_sizes.x
-pixel_size_out = args.pixel_size_out
 smoothing = not args.disable_smooth
 
 print(
@@ -51,16 +50,16 @@ print(
     "from pixel size",
     pixel_size_in,
     "to pixel size",
-    pixel_size_out,
+    args.pixel_size_out,
     ".",
 )
 
 # Calculate the output shape after pixel size matching
-output_shape = determine_output_shape(pixel_size_in, pixel_size_out, data.shape)
+output_shape = determine_output_shape(pixel_size_in, args.pixel_size_out, data.shape)
 
 # Perform Fourier-based resizing (cropping or extending) using the determined
 # output shape
-if (pixel_size_in / pixel_size_out) < 1.0:
+if (pixel_size_in / args.pixel_size_out) < 1.0:
     resized_data, exponential_filter = fourier_cropping(data, output_shape, smoothing)
 else:
     resized_data = fourier_extend(data, output_shape, smoothing)

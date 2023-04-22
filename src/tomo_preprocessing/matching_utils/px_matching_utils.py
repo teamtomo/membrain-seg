@@ -1,13 +1,27 @@
+from typing import Tuple, Union
+
 import numpy as np
 from scipy.fft import fftn, ifftn
 from scipy.ndimage import distance_transform_edt
 
 
-def smooth_cosine_dropoff(mask, decay_width):
+def smooth_cosine_dropoff(mask: np.ndarray, decay_width: float) -> np.ndarray:
     """Smooth a given mask.
 
     Given a binary (1-0) mask, the mask is extended by a smooth drop-off
     using cosine decay.
+
+    Parameters
+    ----------
+    mask : np.ndarray
+        A binary (1-0) numpy array representing the mask.
+    decay_width : float
+        The width of the smooth drop-off region in the mask.
+
+    Returns
+    -------
+    np.ndarray
+        A numpy array representing the smoothed mask.
     """
     # Create a distance map based on the given mask
     distance_map = distance_transform_edt(1 - mask)
@@ -28,12 +42,30 @@ def smooth_cosine_dropoff(mask, decay_width):
     return result
 
 
-def cosine_ellipsoid_filter(image_shape, radius_factors):
-    """Ellipsoid masking with smooth cosine edges.
+def cosine_ellipsoid_filter(
+    image_shape: Tuple[int, int, int], radius_factors: Tuple[float, float, float]
+) -> np.ndarray:
+    """
+    Ellipsoid masking with smooth cosine edges.
 
     An ellipsoid is created that extends maximally in the image shape with
     a border of 12.5 voxels. Then a Cosine decay is applied to extend the
-    mask by a smooth drop-off towards the image boundaries (reaches 0 at Nyquist)
+    mask by a smooth drop-off towards the image boundaries (reaches 0 at Nyquist).
+
+    Parameters
+    ----------
+    image_shape : Tuple[int, int, int]
+        The shape of the input image as a tuple (x, y, z).
+    radius_factors : Tuple[float, float, float]
+        The factors for each axis (x, y, z) to determine the ellipsoid size.
+        (0.5, 0.5, 0.5) means that the ellipse extends fully to its maximum extent,
+        i.e., to a distance of 12.5 voxels to the image border.
+
+
+    Returns
+    -------
+    np.ndarray
+        A numpy array representing the ellipsoid filter with smooth cosine edges.
     """
     z_len, y_len, x_len = image_shape
     z, y, x = np.meshgrid(
@@ -57,8 +89,32 @@ def cosine_ellipsoid_filter(image_shape, radius_factors):
     return filter_mask
 
 
-def fourier_cropping(data, new_shape, smoothing):
-    """Fourier cropping in case the new shape is smaller than the original shape."""
+def fourier_cropping(
+    data: np.ndarray, new_shape: Tuple[int, int, int], smoothing: bool
+) -> np.ndarray:
+    """
+    Fourier cropping in case the new shape is smaller than the original shape.
+
+    The data's FFT is computed, cropped to the new image size, and transformed back
+    to real space.
+    If specified (smoothing), en ellipsoid mask with cosine decay towards the edges
+    is applied to avoid artifacts.
+
+    Parameters
+    ----------
+    data : ndarray
+        The input data as a 3D numpy array.
+    new_shape : Tuple[int, int, int]
+        The target shape for the cropped data as a tuple (x, y, z).
+    smoothing : bool
+        If True, apply a smoothing filter to the cropped data; otherwise, skip the
+        smoothing step.
+
+    Returns
+    -------
+    np.ndarray
+        A tuple containing the resized data.
+    """
     # Calculate the FFT of the input data
     data_fft = fftn(data)
     data_fft = np.fft.fftshift(data_fft)
@@ -89,11 +145,35 @@ def fourier_cropping(data, new_shape, smoothing):
     # Calculate the inverse FFT of the cropped data and normalize
     resized_data = np.real(ifftn(unshifted_cropped_fft))
 
-    return resized_data, exponential_filter
+    return resized_data
 
 
-def fourier_extend(data, new_shape, smoothing):
-    """Fourier padding in case the new shape is larger than the original shape."""
+def fourier_extend(
+    data: np.ndarray, new_shape: Tuple[int, int, int], smoothing: bool
+) -> np.ndarray:
+    """
+    Fourier padding in case the new shape is larger than the original shape.
+
+    The data's FFT is computed, padded with zeros to the new image shape,
+    and transformed back to real space.
+    If specified (smoothing), en ellipsoid mask with cosine decay towards the edges
+    is applied to avoid artifacts (before padding).
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The input data as a 3D numpy array.
+    new_shape : Tuple[int, int, int]
+        The target shape for the extended data as a tuple (x, y, z).
+    smoothing : bool
+        If True, apply a smoothing filter to the data; otherwise, skip the
+        smoothing step.
+
+    Returns
+    -------
+    ndarray
+        The resized data as a 3D numpy array.
+    """
     data_fft = fftn(data)
     data_fft = np.fft.fftshift(data_fft)
 
@@ -115,8 +195,28 @@ def fourier_extend(data, new_shape, smoothing):
     return resized_data
 
 
-def determine_output_shape(pixel_size_in, pixel_size_out, orig_shape):
-    """Determine the new output shape given in/out pixel sizes & original shape."""
+def determine_output_shape(
+    pixel_size_in: Union[float, int],
+    pixel_size_out: Union[float, int],
+    orig_shape: Tuple[int, int, int],
+) -> Tuple[int, int, int]:
+    """
+    Determine the new output shape given in/out pixel sizes & original shape.
+
+    Parameters
+    ----------
+    pixel_size_in : Union[float, int]
+        The pixel size of the input data.
+    pixel_size_out : Union[float, int]
+        The target pixel size.
+    orig_shape : Tuple[int, int, int]
+        The original shape of the data as a tuple (x, y, z).
+
+    Returns
+    -------
+    Tuple[int, int, int]
+        The new output shape as a tuple (x, y, z).
+    """
     output_shape = np.array(orig_shape) * (pixel_size_in / pixel_size_out)
     output_shape = np.round(output_shape)
     if output_shape[0] % 2 != 0:
