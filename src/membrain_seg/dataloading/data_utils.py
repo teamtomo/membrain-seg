@@ -75,6 +75,7 @@ def load_tomogram(
             "pixel_spacing": pixel_spacing,
         }
         if normalize_data:
+            data = data.astype(float)
             data -= np.mean(data)
             data /= np.std(data)
         if return_pixel_size:
@@ -95,3 +96,10 @@ def store_tomogram(filename, tomogram, header_dict=None):
             mrc.header.cella = header_dict["cella"]
             mrc.header.cellb = header_dict["cellb"]
             mrc.header.origin = header_dict["origin"]
+
+
+def normalize_tomogram(tomogram):
+    """Normalize tomogram to zero mean and unit standard deviation."""
+    tomogram -= np.mean(tomogram)
+    tomogram /= np.std(tomogram)
+    return tomogram
