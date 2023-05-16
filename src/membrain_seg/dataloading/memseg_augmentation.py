@@ -182,7 +182,7 @@ def get_training_transforms(prob_to_one=False, return_as_list=False):
             ),
             prob=(1.0 if prob_to_one else 0.25),
         ),
-        RandAxisFlipd(keys=("image", "label"), prob=(1.0 if prob_to_one else 0.5)),
+        RandAxisFlipd(keys=("image", "label"), prob=(0.5 if prob_to_one else 0.5)),
         BlankCuboidTransform(
             keys=["image"],
             prob=(1.0 if prob_to_one else 0.4),
