@@ -28,7 +28,12 @@
 import argparse
 
 import pandas as pd
-from membrain_seg.dataloading.data_utils import load_tomogram, store_tomogram
+from membrain_seg.dataloading.data_utils import (
+    load_tomogram,
+    normalize_tomogram,
+    store_tomogram,
+)
+from membrain_seg.parse_utils import str2bool
 
 from tomo_preprocessing.matching_utils.spec_matching_utils import match_spectrum
 
@@ -40,14 +45,21 @@ def main():
     args = parser.parse_args()
 
     # Read input tomogram
-    tomo = load_tomogram(args.input)
+    tomo = load_tomogram(args.input, normalize_data=True)
 
     # Read target spectrum
     target_spectrum = pd.read_csv(args.target, sep="\t")["intensity"].values
 
     # Match the amplitude spectrum of the input tomogram to the target spectrum
-    filtered_tomo = match_spectrum(tomo, target_spectrum, args.cutoff, args.smoothen)
-
+    filtered_tomo = match_spectrum(
+        tomo,
+        target_spectrum,
+        args.cutoff,
+        args.smoothen,
+        args.almost_zero_cutoff,
+        args.shrink_excessive_value,
+    )
+    filtered_tomo = normalize_tomogram(filtered_tomo)
     # Save the filtered tomogram to a file
     store_tomogram(args.output, filtered_tomo)
 
@@ -59,18 +71,18 @@ def get_cli():
     )
 
     parser.add_argument(
-        "-i", "--input", required=True, help="Tomogram to match (.mrc/.rec)"
+        "-i", "--input", required=False, help="Tomogram to match (.mrc/.rec)"
     )
 
     parser.add_argument(
         "-t",
         "--target",
-        required=True,
+        required=False,
         help="Target spectrum to match the input tomogram to (.tsv)",
     )
 
     parser.add_argument(
-        "-o", "--output", required=True, help="Output location for matched tomogram"
+        "-o", "--output", required=False, help="Output location for matched tomogram"
     )
 
     parser.add_argument(
@@ -79,14 +91,34 @@ def get_cli():
         required=False,
         default=False,
         type=int,
-        help="Lowpass cutoff to apply",
+        help="Lowpass cutoff to apply. All frequencies above this value will \
+            be set to zero.",
+    )
+
+    parser.add_argument(
+        "--shrink_excessive_value",
+        required=False,
+        default=5e1,
+        type=int,
+        help="Regularization for excessive values. All Fourier coefficients \
+            above this values will be set to the value.",
+    )
+
+    parser.add_argument(
+        "--almost_zero_cutoff",
+        type=str2bool,
+        default=True,
+        help='Pass "True" or "False". Should Fourier coefficients close to \
+            zero be ignored?\
+            Recommended particularly in combination with pixel size matching. \
+            Defaults to True. ',
     )
 
     parser.add_argument(
         "-s",
         "--smoothen",
         required=False,
-        default=0,
+        default=10,
         type=float,
         help="Smoothening to apply to lowpass filter. Value roughly resembles sigmoid"
         " width in pixels",
