@@ -1,8 +1,8 @@
-site_name: teamtomo docs template
-site_url: https://teamtomo.org/docs-template
+site_name: membrain-seg
+site_url: https://teamtomo.org/membrain-seg
 site_author: teamtomo
 site_description: >-
-  Documentation for docs-template
+  Membrane segmentation in cryo-electron tomography data.
 repo_name: teamtomo/docs-template
 repo_url: https://github.com/teamtomo/docs-template
 edit_uri: edit/main/docs/
@@ -10,7 +10,7 @@ edit_uri: edit/main/docs/
 copyright: Copyright &copy; 2022 - 2022 teamtomo
 
 
-# Custom navigation can be specified
+# Custom navigation can be specified but isn't strictly necessary
 #nav:
 #  - Overview: index.md
 #  - Section:
