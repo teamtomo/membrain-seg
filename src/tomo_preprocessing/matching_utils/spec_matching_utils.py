@@ -50,6 +50,7 @@ def extract_spectrum(tomo: np.ndarray) -> pd.Series:
         Radially averaged amplitude spectrum as a pandas Series.
     """
     # Normalize input tomogram intensities.
+    tomo = tomo.astype(float)
     tomo -= tomo.min()
     tomo /= tomo.max()
 
@@ -70,6 +71,8 @@ def match_spectrum(
     target_spectrum: np.ndarray,
     cutoff: Optional[int] = None,
     smooth: Union[float, int] = 0,
+    almost_zero_cutoff: bool = True,
+    shrink_excessive_value: Optional[int] = None,
 ) -> np.ndarray:
     """
     Match the amplitude spectrum of the input tomogram to the target spectrum.
@@ -84,6 +87,13 @@ def match_spectrum(
         Frequency index at which to apply the cutoff. (LP filtering)
     smooth : Union[float, int], default=0
         Smoothing factor for the cutoff.
+    almost_zero_cutoff : bool, default=True
+        If True, applies an almost zero cutoff based on the input and target spectra.
+        The cutoff value is determined by the minimum frequency index with an almost
+        zero value.
+    shrink_excessive_value : Optional[int], default=None
+        If specified, any values in the equalization vector (equal_v) that are greater
+        than shrink_excessive_value will be replaced with the shrink_excessive_value.
 
     Returns
     -------
@@ -92,6 +102,7 @@ def match_spectrum(
     """
     # Make a copy of the target spectrum and normalize the input tomogram
     target_spectrum = target_spectrum.copy()
+    tomo = tomo.astype(float)
     tomo -= tomo.min()
     tomo /= tomo.max()
 
@@ -106,22 +117,41 @@ def match_spectrum(
     input_spectrum = rad_avg(np.abs(t))
 
     # Resize the target spectrum to match the input spectrum's length
-    target_spectrum.resize(len(input_spectrum))
+    target_spectrum = np.resize(target_spectrum, len(input_spectrum))
+
+    almost_zeros_input = np.argwhere(input_spectrum < 1e-1)
+    almost_zeros_target = np.argwhere(target_spectrum < 1e-4)
+    if len(almost_zeros_input) == 0:
+        almost_zeros_input = np.array([99999])
+    if len(almost_zeros_target) == 0:
+        almost_zeros_target = np.array([99999])
+
+    almost_zero_cutoff_value = np.maximum(
+        np.minimum(np.min(almost_zeros_input) - 4, np.min(almost_zeros_target) - 4), 0
+    )
 
     # Compute the equalization vector
     equal_v = target_spectrum / input_spectrum
-
+    if almost_zero_cutoff:
+        if not cutoff:
+            cutoff = almost_zero_cutoff_value
+        else:
+            cutoff = np.minimum(cutoff, almost_zero_cutoff_value)
     # Apply cutoff and smoothing if specified
     if cutoff:
         if smooth:
             slope = len(equal_v) / smooth
-            offset = 2 * slope * ((cutoff - len(equal_v) / 2) / len(equal_v))
-
+            offset = 2 * slope * ((cutoff - len(equal_v) / 2) / len(equal_v)) - 8
             cutoff_v = 1 / (
                 1 + np.exp(np.linspace(-slope, slope, len(equal_v)) - offset)
             )
+            try:
+                equal_v[cutoff:] = 0
+            except IndexError:
+                warnings.warn("Flat cutoff is higher than maximum frequency")
 
         else:
+            print("Were shrinking")
             cutoff_v = np.ones_like(equal_v)
             try:
                 equal_v[cutoff:] = 0
@@ -130,6 +160,8 @@ def match_spectrum(
 
         equal_v *= cutoff_v
 
+    if shrink_excessive_value:
+        equal_v[equal_v > shrink_excessive_value] = shrink_excessive_value
     # Create the equalization kernel
     equal_kernel = rot_kernel(equal_v, t.shape)
 
