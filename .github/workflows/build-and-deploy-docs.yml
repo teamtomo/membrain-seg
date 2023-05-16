@@ -1,0 +1,38 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+
+# This job installs dependencies, builds the book, and pushes it to
+# the `gh-pages` branch of the same repository.
+jobs:
+  deploy-book:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          # pip install -e .
+          pip install mkdocs mkdocs-material mkdocstrings[python]
+
+      # Build the book
+      - name: Build the book
+        run: |
+          mkdocs build
+
+      # Push the site to github-pages
+      - name: GitHub Pages action
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_dir: ./site
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+

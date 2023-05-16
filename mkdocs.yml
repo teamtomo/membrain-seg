@@ -1,0 +1,52 @@
+site_name: teamtomo docs template
+site_url: https://teamtomo.org/docs-template
+site_author: teamtomo
+site_description: >-
+  Documentation for docs-template
+repo_name: teamtomo/docs-template
+repo_url: https://github.com/teamtomo/docs-template
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2022 - 2022 teamtomo
+
+
+# Custom navigation can be specified
+#nav:
+#  - Overview: index.md
+#  - Section:
+#      - Title: directory/file.md
+
+theme:
+  icon:
+    logo: material/cube-outline
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+
+  features:
+    - navigation.instant
+    - search.highlight
+    - search.suggest
+    - content.tabs.link
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - md_in_html
+  - pymdownx.arithmatex:
+      generic: true
+
+plugins:
+  - search
