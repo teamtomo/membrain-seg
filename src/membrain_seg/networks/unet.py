@@ -195,7 +195,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         outputs = self.training_step_outputs
         train_loss, num_items = 0, 0
         for output in outputs:
-            train_loss += output["train_loss"].sum().item()
+            train_loss += output["train_loss"].sum().item() * output["train_number"]
             num_items += output["train_number"]
         mean_train_loss = torch.tensor(train_loss / num_items)
 
