@@ -27,7 +27,7 @@
 
 import argparse
 
-from membrain_seg.dataloading.data_utils import load_tomogram
+from membrain_seg.dataloading.data_utils import load_tomogram, normalize_tomogram
 
 from tomo_preprocessing.matching_utils.spec_matching_utils import extract_spectrum
 
@@ -40,6 +40,7 @@ def main():
 
     # Read input tomogram.
     tomo = args.input
+    tomo = normalize_tomogram(tomo)
 
     # Extract amplitude spectrum.
     spectrum = extract_spectrum(tomo)
