@@ -53,7 +53,9 @@ def read_nifti(nifti_file):
     return a
 
 
-def load_tomogram(filename, return_header=False, normalize_data=False):
+def load_tomogram(
+    filename, return_pixel_size=False, return_header=False, normalize_data=False
+):
     """
     Loads data and transposes s.t. we have data in the form x,y,z.
 
@@ -73,8 +75,11 @@ def load_tomogram(filename, return_header=False, normalize_data=False):
             "pixel_spacing": pixel_spacing,
         }
         if normalize_data:
+            data = data.astype(float)
             data -= np.mean(data)
             data /= np.std(data)
+        if return_pixel_size:
+            return data, mrc.voxel_size
         if return_header:
             return data, header_dict
     return data
@@ -91,3 +96,10 @@ def store_tomogram(filename, tomogram, header_dict=None):
             mrc.header.cella = header_dict["cella"]
             mrc.header.cellb = header_dict["cellb"]
             mrc.header.origin = header_dict["origin"]
+
+
+def normalize_tomogram(tomogram):
+    """Normalize tomogram to zero mean and unit standard deviation."""
+    tomogram -= np.mean(tomogram)
+    tomogram /= np.std(tomogram)
+    return tomogram

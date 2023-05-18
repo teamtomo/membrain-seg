@@ -195,7 +195,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         outputs = self.training_step_outputs
         train_loss, num_items = 0, 0
         for output in outputs:
-            train_loss += output["train_loss"].sum().item()
+            train_loss += output["train_loss"].sum().item() * output["train_number"]
             num_items += output["train_number"]
         mean_train_loss = torch.tensor(train_loss / num_items)
 
@@ -261,7 +261,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
         mean_val_dice = self.dice_metric.aggregate().item()
         self.dice_metric.reset()
         mean_val_loss = torch.tensor(val_loss / num_items)
-
 
         mean_val_acc = self.running_val_acc / num_items
         self.running_val_acc = 0.0
