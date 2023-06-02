@@ -29,6 +29,11 @@ def match_pixel_size(
             cosine decay). Disable if causing problems or for speed up",
     ),
 ):
+    """Tomogram pixel size matching.
+
+    Resize your tomogram to the specified target pixel size. We recommend
+    to use MemBrain-seg with a pixel size of around 10A/pixel.
+    """
     _match_pixel_size(
         input_tomogram, output_path, pixel_size_in, pixel_size_out, disable_smooth
     )
@@ -50,5 +55,14 @@ def match_seg_to_tomo(
         **PKWARGS,
     ),
 ):
+    """
+    Segmentation pixel size matching.
+
+    Using this function, you can resize a segmentation (binary / multi-label) to
+    the size of a specified tomogram.
+    Use case: You have matched your input tomogram's pixel size to the training
+    pixel size (around 10A), have performed MemBrain-seg's segmentation, and now
+    would like to have the segmentation in the scale of the original tomogram.
+    """
     # Call your function here
     match_segmentation_pixel_size_to_tomo(seg_path, orig_tomo_path, output_path)
