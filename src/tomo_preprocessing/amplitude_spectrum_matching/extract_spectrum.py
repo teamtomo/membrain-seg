@@ -25,53 +25,22 @@
 # limitations under the License.
 # --------------------------------------------------------------------------------
 
-import argparse
 
-from membrain_seg.dataloading.data_utils import load_tomogram, normalize_tomogram
+from membrain_seg.dataloading.data_utils import normalize_tomogram
 
 from tomo_preprocessing.matching_utils.spec_matching_utils import extract_spectrum
 
 
-def main():
+def _extract_spectrum(input_path, output_path):
     """Extract the spectrum from the target tomogram."""
     # Parse command line arguments.
-    parser = get_cli()
-    args = parser.parse_args()
 
     # Read input tomogram.
-    tomo = args.input
+    tomo = input_path
     tomo = normalize_tomogram(tomo)
 
     # Extract amplitude spectrum.
     spectrum = extract_spectrum(tomo)
 
     # Save the spectrum to a file
-    spectrum.to_csv(args.output, sep="\t", header=["intensity"], index_label="freq")
-
-
-def get_cli():
-    """Function to set up the command line interface."""
-    parser = argparse.ArgumentParser(
-        description="Extract radially averaged amplitude spectrum from cryo-ET data."
-    )
-
-    parser.add_argument(
-        "-i",
-        "--input",
-        required=True,
-        type=load_tomogram,
-        help="Tomogram to extract spectrum from (.mrc/.rec format)",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        help="Output destination for extracted spectrum (.tsv format)",
-    )
-
-    return parser
-
-
-if __name__ == "__main__":
-    main()
+    spectrum.to_csv(output_path, sep="\t", header=["intensity"], index_label="freq")
