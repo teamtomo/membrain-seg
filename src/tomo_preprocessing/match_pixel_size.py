@@ -82,6 +82,7 @@ def get_cli():
         help="Disable smoothing (ellipsoid mask + cosine decay). Disable if "
         "causing problems or for speed up",
     )
+    return parser
 
 
 if __name__ == "__main__":
