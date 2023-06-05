@@ -32,15 +32,13 @@ from scipy import ndimage
 from scipy.interpolate import interp1d
 
 
-def hypot_nd(axes: List[np.ndarray], offset: float = 0.5) -> np.ndarray:
+def hypotenuse_ndim(axes: List[np.ndarray], offset: float = 0.5) -> np.ndarray:
     """Function to compute the hypotenuse for n-dimensional axes.
 
     This is used to compute the distance of each voxel to the center point.
     Each 2D hypotenuse is computed by a^2 + b^2 = c^2
     Thus, this also gives the Euclidean distance of a 2D point.
     This is extended recursively to any dimension.
-
-    But why do we not just compute the Euclidean distance??
 
     Parameters
     ----------
@@ -53,7 +51,16 @@ def hypot_nd(axes: List[np.ndarray], offset: float = 0.5) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        The computed hypotenuse.
+        An n-dimensional numpy array representing the computed hypotenuse. The shape of
+        the returned array is determined by the shape of the input axes.
+
+
+    Notes
+    -----
+    The reason to use this function instead of simply computing the Euclidean distance
+    directly is to calculate the hypotenuse with respect to an offset from the center
+    point of the axes. This offset is subtracted from the maximum of each axis shape
+    before the hypotenuse is calculated.
     """
     if len(axes) == 2:
         return np.hypot(
@@ -62,13 +69,17 @@ def hypot_nd(axes: List[np.ndarray], offset: float = 0.5) -> np.ndarray:
         )
     else:
         return np.hypot(
-            hypot_nd(axes[1:], offset),
+            hypotenuse_ndim(axes[1:], offset),
             axes[0] - max(axes[0].shape) * offset,
         )
 
 
-def rad_avg(image: np.ndarray) -> np.ndarray:
+def radial_average(image: np.ndarray) -> np.ndarray:
     """Compute the radially averaged intensity of an image.
+
+    This function calculates the radially averaged intensity of an input image.
+    It first calculates a radial grid of the image using the `hypotenuse_ndim` function,
+    then uses this grid to compute the mean intensity in each radial bin.
 
     Parameters
     ----------
@@ -80,17 +91,26 @@ def rad_avg(image: np.ndarray) -> np.ndarray:
     np.ndarray
         The radially averaged intensity of the input image.
         (1-D array with bins corresponding to maximum image axis)
+
+    Notes
+    -----
+    The `radial_average` function operates on an image represented as a numpy array,
+    which can have any number of dimensions. The function first creates a radial
+    grid of the image using the `hypotenuse_ndim` function, with the size of the grid
+    equal to half the maximum size of the input image's axes. The function then computes
+    the mean intensity in each bin of this radial grid to obtain the radially
+    averaged intensity.
     """
     bins = np.max(image.shape) / 2
     axes = np.ogrid[tuple(slice(0, s) for s in image.shape)]
-    r = hypot_nd(axes)
+    r = hypotenuse_ndim(axes)
     rbin = (bins * r / r.max()).astype(int)
     radial_mean = ndimage.mean(image, labels=rbin, index=np.arange(1, rbin.max() + 1))
 
     return radial_mean
 
 
-def rot_kernel(arr: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
+def rotational_kernel(arr: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
     """Create a rotational kernel from an input array.
 
     This function uses given input array and extends its values
@@ -100,7 +120,7 @@ def rot_kernel(arr: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
     ----------
     arr : np.ndarray
         Input array used to create the rotational kernel.
-        This should be a 1D array as output by rad_avg()
+        This should be a 1D array as output by radial_average()
     shape : Tuple[int, ...]
         Shape of the desired rotational kernel.
 
@@ -112,7 +132,7 @@ def rot_kernel(arr: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
     func = interp1d(np.arange(len(arr)), arr, bounds_error=False, fill_value=0)
 
     axes = np.ogrid[tuple(slice(0, np.ceil(s / 2)) for s in shape)]
-    kernel = hypot_nd(axes, offset=0).astype("f4")
+    kernel = hypotenuse_ndim(axes, offset=0).astype("f4")
     kernel = func(kernel).astype("f4")
     for idx, s in enumerate(shape):
         padding = [(0, 0)] * len(shape)

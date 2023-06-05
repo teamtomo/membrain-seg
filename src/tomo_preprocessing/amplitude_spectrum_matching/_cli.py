@@ -4,8 +4,8 @@ from typer import Option
 
 from ..cli import OPTION_PROMPT_KWARGS as PKWARGS
 from ..cli import cli
-from .extract_spectrum import _extract_spectrum
-from .match_spectrum import match_amplitude_spectrum
+from .extract_spectrum import extract_spectrum_from_file as _extract_spectrum
+from .match_spectrum import match_amplitude_spectrum_for_files
 
 
 @cli.command(name="extract_spectrum", no_args_is_help=True)
@@ -17,6 +17,7 @@ def extract(
         ..., help="Output destination for extracted spectrum (.tsv format)", **PKWARGS
     ),
 ):
+    """Extracts the radially averaged amplitude spectrum from the input tomogram."""
     # Call your function here
     input_tomo = load_tomogram(input_path)
     _extract_spectrum(input_tomo, output_path)
@@ -56,8 +57,9 @@ Defaults to True.',
 width in pixels",
     ),
 ):
+    """Match the input tomogram's spectrum to the target spectrum."""
     # Call your function here
-    match_amplitude_spectrum(
+    match_amplitude_spectrum_for_files(
         input,
         target,
         output,

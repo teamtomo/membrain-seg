@@ -14,9 +14,7 @@ def match_pixel_size(
     output_path: str = Option(  # noqa: B008
         ..., help="Path to store the output files", **PKWARGS
     ),
-    pixel_size_out: float = Option(  # noqa: B008
-        10.0, help="Target pixel size (default: 10.0)"
-    ),
+    pixel_size_out: float = Option(10.0, help="Target pixel size."),  # noqa: B008
     pixel_size_in: float = Option(  # noqa: B008
         None,
         help="Input pixel size (optional). If not \

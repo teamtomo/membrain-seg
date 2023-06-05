@@ -32,12 +32,20 @@ import numpy as np
 import numpy.fft as fft
 import pandas as pd
 
-from tomo_preprocessing.matching_utils.filter_utils import rad_avg, rot_kernel
+from tomo_preprocessing.matching_utils.filter_utils import (
+    radial_average,
+    rotational_kernel,
+)
 
 
 def extract_spectrum(tomo: np.ndarray) -> pd.Series:
     """
     Extract the radially averaged amplitude spectrum from the input tomogram.
+
+    This function normalizes the input tomogram to fall between 0 and 1,
+    computes the absolute value of its Fourier transform, and then performs
+    a radial average of the transformed data. The resulting spectrum is
+    returned as a pandas Series.
 
     Parameters
     ----------
@@ -48,6 +56,13 @@ def extract_spectrum(tomo: np.ndarray) -> pd.Series:
     -------
     pd.Series
         Radially averaged amplitude spectrum as a pandas Series.
+
+    Notes
+    -----
+    This function uses the FFT algorithms from numpy.fft for performing the Fourier
+    transform, and it assumes that the input tomogram has voxel intensities that
+    can be converted to floating point numbers.
+
     """
     # Normalize input tomogram intensities.
     tomo = tomo.astype(float)
@@ -60,7 +75,7 @@ def extract_spectrum(tomo: np.ndarray) -> pd.Series:
     t = np.abs(t)
 
     # Compute the radially averaged amplitude spectrum.
-    spectrum = rad_avg(t)
+    spectrum = radial_average(t)
     spectrum = pd.Series(spectrum, index=np.arange(len(spectrum)))
 
     return spectrum
@@ -77,6 +92,13 @@ def match_spectrum(
     """
     Match the amplitude spectrum of the input tomogram to the target spectrum.
 
+    This function performs spectrum matching in the Fourier domain. The input
+    tomogram is first Fourier-transformed and its amplitude spectrum is extracted.
+    An equalization vector is computed from the ratio of the target spectrum to the
+    input spectrum. The function then applies this equalization vector back to the
+    Fourier-transformed tomogram, and performs inverse Fourier transformation to
+    obtain the tomogram with a matched spectrum.
+
     Parameters
     ----------
     tomo : np.ndarray
@@ -84,21 +106,31 @@ def match_spectrum(
     target_spectrum : np.ndarray
         Target amplitude spectrum as a 1D numpy array.
     cutoff : Optional[int], default=None
-        Frequency index at which to apply the cutoff. (LP filtering)
+        Frequency index at which to apply the low-pass filter. The frequencies
+        higher than this value will be removed.
     smooth : Union[float, int], default=0
-        Smoothing factor for the cutoff.
+        Smoothing factor for the low-pass filter. The higher the factor, the
+        smoother the transition will be between the retained and removed frequencies.
     almost_zero_cutoff : bool, default=True
-        If True, applies an almost zero cutoff based on the input and target spectra.
-        The cutoff value is determined by the minimum frequency index with an almost
-        zero value.
+        If True, the function will automatically find a cutoff frequency based on
+        the minimum frequency index where the input or target spectrum approaches zero.
     shrink_excessive_value : Optional[int], default=None
-        If specified, any values in the equalization vector (equal_v) that are greater
-        than shrink_excessive_value will be replaced with the shrink_excessive_value.
+        If specified, any values in the equalization vector that are greater than
+        this value will be replaced with this value. This is used to avoid applying
+        excessive amplification to some frequencies.
 
     Returns
     -------
     np.ndarray
-        The filtered tomogram with the matched amplitude spectrum.
+        The filtered tomogram as a 3D numpy array. The voxel intensities in the
+        filtered tomogram now have a matched spectrum to the target spectrum.
+
+    Notes
+    -----
+    This function uses the FFT algorithms from numpy.fft for performing the Fourier
+    transformations. It also assumes that the input tomogram and target spectrum have
+    intensities and amplitudes that can be converted to floating point numbers.
+
     """
     # Make a copy of the target spectrum and normalize the input tomogram
     target_spectrum = target_spectrum.copy()
@@ -114,7 +146,7 @@ def match_spectrum(
     del tomo
 
     # Compute the radially averaged amplitude spectrum of the input tomogram
-    input_spectrum = rad_avg(np.abs(t))
+    input_spectrum = radial_average(np.abs(t))
 
     # Resize the target spectrum to match the input spectrum's length
     target_spectrum = np.resize(target_spectrum, len(input_spectrum))
@@ -163,7 +195,7 @@ def match_spectrum(
     if shrink_excessive_value:
         equal_v[equal_v > shrink_excessive_value] = shrink_excessive_value
     # Create the equalization kernel
-    equal_kernel = rot_kernel(equal_v, t.shape)
+    equal_kernel = rotational_kernel(equal_v, t.shape)
 
     # Apply the equalization kernel to the input tomogram's Fourier transform
     t *= equal_kernel

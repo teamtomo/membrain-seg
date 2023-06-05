@@ -7,8 +7,38 @@ from membrain_seg.dataloading.data_utils import (
 from scipy import ndimage
 
 
-def match_segmentation_pixel_size_to_tomo(seg_path, orig_tomo_path, output_path):
-    """Match the pixel size if your input tomo to the target."""
+def match_segmentation_pixel_size_to_tomo(
+    seg_path: str, orig_tomo_path: str, output_path: str
+) -> None:
+    """
+    Match the pixel size of the input segmentation to the target tomogram.
+
+    Parameters
+    ----------
+    seg_path : str
+        The file path to the input segmentation (e.g. .mrc file) to be processed.
+    orig_tomo_path : str
+        The file path to the target tomogram that the pixel size should be matched to.
+    output_path : str
+        The file path where the processed segmentation will be stored.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file specified in `seg_path` or `orig_tomo_path` does not exist.
+
+    Notes
+    -----
+    This function reads the input segmentation and the target tomogram from the given
+    paths, rescales the pixel size of the input segmentation to match that of the
+    target tomogram, and stores the processed tomogram to the specified output path.
+    The rescaling process is achieved by calculating the rescaling factors for each
+    dimension and applying a zoom operation to the input tomogram.
+    """
     # Load the input tomogram and its pixel size
     file_path = seg_path
     data = load_tomogram(file_path, return_pixel_size=False, normalize_data=False)

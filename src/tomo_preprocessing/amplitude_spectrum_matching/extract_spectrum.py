@@ -31,8 +31,32 @@ from membrain_seg.dataloading.data_utils import normalize_tomogram
 from tomo_preprocessing.matching_utils.spec_matching_utils import extract_spectrum
 
 
-def _extract_spectrum(input_path, output_path):
-    """Extract the spectrum from the target tomogram."""
+def extract_spectrum_from_file(input_path: str, output_path: str) -> None:
+    """
+    Extract the radially averaged Fourier spectrum from the target tomogram.
+
+    Parameters
+    ----------
+    input_path : str
+        The file path to the input tomogram to be processed.
+    output_path : str
+        The file path where the extracted spectrum will be stored.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file specified in `input_path` does not exist.
+
+    Notes
+    -----
+    This function reads the input tomogram from the given path, extracts its Fourier
+    amplitude spectrum, and stores the spectrum to the specified output path.
+    The extracted spectrum is saved as a CSV file.
+    """
     # Parse command line arguments.
 
     # Read input tomogram.
