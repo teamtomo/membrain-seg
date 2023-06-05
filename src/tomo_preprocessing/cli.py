@@ -29,8 +29,9 @@ def callback():
     Example:
     -------
     To extract the spectrum, type:
-        "preprocessing match_pixel_size --input_tomogram <tomogram_file>
-            --output_path <matched_tomogram_file>
-            --pixel_size_out 10.0 --pixel_size_in 15.0"
+
+    "preprocessing match_pixel_size --input_tomogram <tomogram_file>
+    --output_path <matched_tomogram_file>
+    --pixel_size_out 10.0 --pixel_size_in 15.0"
 
     """
