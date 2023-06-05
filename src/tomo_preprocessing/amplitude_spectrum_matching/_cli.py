@@ -1,5 +1,4 @@
 from membrain_seg.dataloading.data_utils import load_tomogram
-from membrain_seg.parse_utils import str2bool
 from typer import Option
 
 from ..cli import OPTION_PROMPT_KWARGS as PKWARGS
@@ -49,7 +48,6 @@ this values will be set to the value.",
         help='Pass "True" or "False". Should Fourier coefficients close to zero be \
 ignored? Recommended particularly in combination with pixel size matching. \
 Defaults to True.',
-        callback=str2bool,
     ),
     smoothen: float = Option(  # noqa: B008
         10,
