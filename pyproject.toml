@@ -30,7 +30,8 @@ dependencies = [
     "torch",
     "imageio",
     "scipy",
-    "mrcfile"
+    "mrcfile",
+    "typer"
 ]
 
 # extras
@@ -55,6 +56,8 @@ repository = "https://github.com/teamtomo/membrain-seg"
 # same as console_scripts entry point
 # [project.scripts]
 # spam-cli = "spam:main_cli"
+[project.scripts]
+tomo_preprocessing = "tomo_preprocessing:cli"
 
 # Entry points
 # https://peps.python.org/pep-0621/#entry-points
