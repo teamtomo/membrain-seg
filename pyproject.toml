@@ -46,7 +46,8 @@ dev = [
     "pytest-cov",
     "pytest",
     "rich",
-    "ruff",
+    "ruff",    
+    "mkdocs-material",
 ]
 
 [project.urls]
