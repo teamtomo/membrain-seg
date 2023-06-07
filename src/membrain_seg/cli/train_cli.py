@@ -1,8 +1,8 @@
 from typer import Option
 
+from ..train import train as _train
 from .cli import OPTION_PROMPT_KWARGS as PKWARGS
 from .cli import cli
-from .train import train as _train
 
 
 @cli.command(name="train", no_args_is_help=True)
@@ -24,7 +24,9 @@ def train(
         data structure.
 
     Note
+
     ----
+
     The actual training logic resides in the function '_train'.
     """
     log_dir = "./logs"
@@ -123,7 +125,9 @@ def train_advanced(
         Sub-name for the project, by default '1'.
 
     Note
+
     ----
+
     The actual training logic resides in the function '_train'.
     """
     _train(

@@ -7,7 +7,12 @@ from torch.nn.modules.loss import _Loss
 
 
 class DynUNetDirectDeepSupervision(DynUNet):
-    """Adjusted DynUNet outputting low-resolution deep supervision images."""
+    """Adjusted DynUNet outputting low-resolution deep supervision images.
+
+    This is in contrast to the original DynUNet implementation: Here, images
+    from lower stages are first upsampled, and then compared to the original
+    resolution GT image.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -16,8 +21,6 @@ class DynUNetDirectDeepSupervision(DynUNet):
         """Forward pass."""
         out = self.skip_layers(x)
         out = self.output_block(out)
-        # if self.training and self.deep_supervision:
-        # #TODO: Should this only be used for training or also validation?
         if self.deep_supervision:
             out_all = [out]
             for feature_map in self.heads:
@@ -27,7 +30,22 @@ class DynUNetDirectDeepSupervision(DynUNet):
 
 
 class IgnoreLabelDiceCELoss(_Loss):
-    """Mix of Dice & Cross-entropy loss, adding ignore labels."""
+    """
+    Mix of Dice & Cross-entropy loss, adding ignore labels.
+
+    Parameters
+    ----------
+    ignore_label : int
+        The label to ignore when calculating the loss.
+    reduction : str, optional
+        Specifies the reduction to apply to the output, by default "mean".
+    lambda_dice : float, optional
+        The weight for the Dice loss, by default 1.0.
+    lambda_ce : float, optional
+        The weight for the Cross-Entropy loss, by default 1.0.
+    kwargs : dict
+        Additional keyword arguments.
+    """
 
     def __init__(
         self,
@@ -45,7 +63,21 @@ class IgnoreLabelDiceCELoss(_Loss):
         self.lambda_ce = lambda_ce
 
     def forward(self, data: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """Compute the loss."""
+        """
+        Compute the loss.
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            Tensor of model outputs.
+        target : torch.Tensor
+            Tensor of target labels.
+
+        Returns
+        -------
+        torch.Tensor
+            The calculated loss.
+        """
         # Create a mask to ignore the specified label in the target
         data = sigmoid(data)
         mask = target != self.ignore_label
@@ -65,7 +97,18 @@ class IgnoreLabelDiceCELoss(_Loss):
 
 
 class DeepSuperVisionLoss(_Loss):
-    """Deep Supervision loss using downsampled GT and low-res outputs."""
+    """
+    Deep Supervision loss using downsampled GT and low-res outputs.
+
+    Parameters
+    ----------
+    loss_fn : _Loss, optional
+        The loss function to use, by default IgnoreLabelDiceCELoss.
+    weights : list, optional
+        List of weights for each input/target pair, by default None.
+    kwargs : dict
+        Additional keyword arguments.
+    """
 
     def __init__(
         self,
@@ -78,7 +121,21 @@ class DeepSuperVisionLoss(_Loss):
         self.weights = weights
 
     def forward(self, inputs: list, targets: list) -> torch.Tensor:
-        """Compute the loss."""
+        """
+        Compute the loss.
+
+        Parameters
+        ----------
+        inputs : list
+            List of tensors of model outputs.
+        targets : list
+            List of tensors of target labels.
+
+        Returns
+        -------
+        torch.Tensor
+            The calculated loss.
+        """
         loss = 0.0
         for weight, data, target in zip(self.weights, inputs, targets):
             loss += weight * self.loss_fn(data, target)

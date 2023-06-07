@@ -1,8 +1,8 @@
 from typer import Option
 
+from ..segment import segment as _segment
 from .cli import OPTION_PROMPT_KWARGS as PKWARGS
 from .cli import cli
-from .segment import segment as _segment
 
 
 @cli.command(name="segment", no_args_is_help=True)
