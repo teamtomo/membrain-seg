@@ -3,8 +3,8 @@ site_url: https://teamtomo.org/membrain-seg
 site_author: teamtomo
 site_description: >-
   Membrane segmentation in cryo-electron tomography data.
-repo_name: teamtomo/docs-template
-repo_url: https://github.com/teamtomo/docs-template
+repo_name: teamtomo/membrain-seg
+repo_url: https://github.com/teamtomo/membrain-seg
 edit_uri: edit/main/docs/
 
 copyright: Copyright &copy; 2022 - 2022 teamtomo
