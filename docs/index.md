@@ -10,12 +10,16 @@ To enhance segmentation, MemBrain-seg includes preprocessing functions. These he
 
 Explore MemBrain-seg, use it for your needs, and let us know how it works for you!
 
+# Installation
+For detailed installation instructions, please look [here](./installation.md).
+
 # Features
 ## Segmentation
-... explain segmentation ...
+Segmenting the membranes in your tomograms is the main feature of this repository. 
+Please find more detailed instructions [here](./Usage/Segmentation.md).
 
 ## Model training
-... explain training ...
+... explaination tbd. ...
 
 ## Preprocessing
 Currently, we provide the following two [preprocessing](https://github.com/teamtomo/membrain-seg/tree/add_docs/src/tomo_preprocessing) options:
