@@ -5,6 +5,12 @@ import numpy as np
 import SimpleITK as sitk
 
 
+def make_directory_if_not_exists(path: str):
+    """Create a directory if it does not exist."""
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 def load_data_for_inference(data_path, transforms, device):
     """Load tomogram for inference.
 
@@ -30,6 +36,9 @@ def store_segmented_tomograms(
     os.path.join(out_folder, os.path.basename(orig_data_path))
     If specified, also logits are stored before thresholding.
     """
+    # Create out directory if it doesn't exist yet
+    make_directory_if_not_exists(out_folder)
+
     predictions = network_output[0]
     predictions_np = predictions.squeeze(0).squeeze(0).cpu().numpy()
     out_folder = out_folder
