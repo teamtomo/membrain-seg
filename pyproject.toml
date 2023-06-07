@@ -59,7 +59,7 @@ repository = "https://github.com/teamtomo/membrain-seg"
 # spam-cli = "spam:main_cli"
 [project.scripts]
 tomo_preprocessing = "tomo_preprocessing:cli"
-membrain = "membrain_seg:cli"
+membrain = "membrain_seg.cli:cli"
 
 # Entry points
 # https://peps.python.org/pep-0621/#entry-points
