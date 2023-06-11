@@ -8,4 +8,4 @@
 
 membrane segmentation in 3D for cryo-ET
 
-For some preliminary documentation, please check this: [DOCUMENTIATION](https://github.com/teamtomo/membrain-seg/blob/training_docs/docs/index.md)
+For some preliminary documentation, please check this [DOCUMENTATION](https://github.com/teamtomo/membrain-seg/blob/training_docs/docs/index.md)
