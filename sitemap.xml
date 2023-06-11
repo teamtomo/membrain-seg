@@ -2,17 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://teamtomo.org/membrain-seg/</loc>
-         <lastmod>2023-06-06</lastmod>
+         <lastmod>2023-06-11</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://teamtomo.org/membrain-seg/page/</loc>
-         <lastmod>2023-06-06</lastmod>
+         <loc>https://teamtomo.org/membrain-seg/installation/</loc>
+         <lastmod>2023-06-11</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://teamtomo.org/membrain-seg/section/another_page/</loc>
-         <lastmod>2023-06-06</lastmod>
+         <loc>https://teamtomo.org/membrain-seg/Usage/Preprocessing/</loc>
+         <lastmod>2023-06-11</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://teamtomo.org/membrain-seg/Usage/Segmentation/</loc>
+         <lastmod>2023-06-11</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://teamtomo.org/membrain-seg/Usage/Training/</loc>
+         <lastmod>2023-06-11</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
