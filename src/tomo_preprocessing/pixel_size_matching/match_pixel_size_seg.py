@@ -64,7 +64,7 @@ def match_segmentation_pixel_size_to_tomo(
         target_dim / original_dim
         for target_dim, original_dim in zip(output_shape, data.shape)
     ]
-    resized_data = ndimage.zoom(data, rescale_factors, order=1)
+    resized_data = ndimage.zoom(data, rescale_factors, order=0, prefilter=False)
     print(resized_data.shape, output_shape)
     # Save the resized tomogram to the specified output path
     store_tomogram(output_path, resized_data)

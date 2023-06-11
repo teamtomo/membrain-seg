@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Tuple, Union
 import mrcfile
 import numpy as np
 import SimpleITK as sitk
+from skimage.util import img_as_float32
 from torch import Tensor, device
 
 
@@ -163,7 +164,7 @@ def load_tomogram(
             "pixel_spacing": pixel_spacing,
         }
         if normalize_data:
-            data = data.astype(float)
+            data = img_as_float32(data)
             data -= np.mean(data)
             data /= np.std(data)
         if return_pixel_size:
@@ -214,6 +215,7 @@ def normalize_tomogram(tomogram: np.ndarray) -> np.ndarray:
     np.ndarray
         Normalized tomogram with zero mean and unit standard deviation.
     """
+    tomogram = img_as_float32(tomogram)
     tomogram -= np.mean(tomogram)
     tomogram /= np.std(tomogram)
     return tomogram

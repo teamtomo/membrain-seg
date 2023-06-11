@@ -32,7 +32,9 @@ dependencies = [
     "scipy",
     "simpleitk",
     "mrcfile",
-    "typer"
+    "typer",
+    "scikit-image",
+    "simpleitk"
 ]
 
 # extras
