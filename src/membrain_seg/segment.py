@@ -30,6 +30,7 @@ def segment(tomogram_path, ckpt_path, out_folder, store_probabilities=False):
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
     new_data = load_data_for_inference(new_data_path, transforms, device)
+    new_data = new_data.to(torch.float32)
 
     # Put the model into evaluation mode
     pl_model.eval()

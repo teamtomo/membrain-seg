@@ -30,6 +30,7 @@ dependencies = [
     "torch",
     "imageio",
     "scipy",
+    "simpleitk",
     "mrcfile",
     "typer"
 ]
