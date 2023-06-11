@@ -3,6 +3,7 @@ import os
 import mrcfile
 import numpy as np
 import SimpleITK as sitk
+from skimage.utils import img_as_float32
 
 
 def load_data_for_inference(data_path, transforms, device):
@@ -75,7 +76,7 @@ def load_tomogram(
             "pixel_spacing": pixel_spacing,
         }
         if normalize_data:
-            data = data.astype(float)
+            data = img_as_float32(data)
             data -= np.mean(data)
             data /= np.std(data)
         if return_pixel_size:

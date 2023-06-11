@@ -31,6 +31,7 @@ from typing import Optional, Union
 import numpy as np
 import numpy.fft as fft
 import pandas as pd
+from skimage.util import img_as_float32
 
 from tomo_preprocessing.matching_utils.filter_utils import (
     radial_average,
@@ -65,7 +66,7 @@ def extract_spectrum(tomo: np.ndarray) -> pd.Series:
 
     """
     # Normalize input tomogram intensities.
-    tomo = tomo.astype(float)
+    tomo = img_as_float32(tomo)
     tomo -= tomo.min()
     tomo /= tomo.max()
 
@@ -134,7 +135,7 @@ def match_spectrum(
     """
     # Make a copy of the target spectrum and normalize the input tomogram
     target_spectrum = target_spectrum.copy()
-    tomo = tomo.astype(float)
+    tomo = img_as_float32(tomo)
     tomo -= tomo.min()
     tomo /= tomo.max()
 
@@ -203,6 +204,7 @@ def match_spectrum(
 
     # Compute the inverse Fourier transform and return the filtered tomogram
     t = fft.ifftn(t)
-    t = np.abs(t).astype("float32")
+    t = np.abs(t)
+    t = img_as_float32(t)
 
     return t
