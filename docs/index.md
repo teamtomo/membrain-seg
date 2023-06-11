@@ -24,7 +24,3 @@ Currently, we provide the following two [preprocessing](https://github.com/teamt
 
 For more information, see the [Preprocessing](Usage/Preprocessing.md) subsection.
 
-
-
-Documentation is built from simple markdown files using 
-*[mkdocs-material](https://squidfunk.github.io/mkdocs-material/)*.
