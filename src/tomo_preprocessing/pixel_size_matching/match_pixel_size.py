@@ -81,8 +81,10 @@ def match_pixel_size(
     # output shape
     if (pixel_size_in / pixel_size_out) < 1.0:
         resized_data = fourier_cropping(data, output_shape, smoothing)
-    else:
+    elif (pixel_size_in / pixel_size_out) > 1.0:
         resized_data = fourier_extend(data, output_shape, smoothing)
+    else:
+        resized_data = data
 
     resized_data = normalize_tomogram(resized_data)
     # Save the resized tomogram to the specified output path
