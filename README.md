@@ -7,3 +7,5 @@
 [![codecov](https://codecov.io/gh/teamtomo/membrain-seg/branch/main/graph/badge.svg)](https://codecov.io/gh/teamtomo/membrain-seg)
 
 membrane segmentation in 3D for cryo-ET
+
+For some preliminary documentation, please check this: [DOCUMENTIATION](https://github.com/teamtomo/membrain-seg/blob/training_docs/docs/index.md)
