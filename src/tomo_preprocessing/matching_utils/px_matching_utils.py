@@ -6,22 +6,30 @@ from scipy.ndimage import distance_transform_edt
 
 
 def smooth_cosine_dropoff(mask: np.ndarray, decay_width: float) -> np.ndarray:
-    """Smooth a given mask.
+    """
+    Apply a smooth cosine drop-off to a given mask.
 
-    Given a binary (1-0) mask, the mask is extended by a smooth drop-off
-    using cosine decay.
+    This function takes a binary mask and a specified decay width. The mask is then
+    extended by a smooth drop-off using a cosine decay, providing a smooth transition
+    on the edges.
 
     Parameters
     ----------
     mask : np.ndarray
-        A binary (1-0) numpy array representing the mask.
+        A binary (1-0) numpy array representing the mask. Values of 1 indicate the mask
+        region, and values of 0 indicate the non-mask region.
     decay_width : float
-        The width of the smooth drop-off region in the mask.
+        The width of the smooth drop-off region in the mask. This value determines the
+        thickness of the border region where the smooth transition occurs.
 
     Returns
     -------
     np.ndarray
-        A numpy array representing the smoothed mask.
+        A numpy array representing the smoothed mask. The shape of the returned array
+        is the same as the input `mask`. Values in the array range
+        from 0 (non-mask regions) to 1 (mask regions),
+        with the drop-off region having values between 0 and 1.
+
     """
     # Create a distance map based on the given mask
     distance_map = distance_transform_edt(1 - mask)
@@ -66,6 +74,7 @@ def cosine_ellipsoid_filter(
     -------
     np.ndarray
         A numpy array representing the ellipsoid filter with smooth cosine edges.
+        The shape of the returned array is the same as the input `image_shape`.
     """
     z_len, y_len, x_len = image_shape
     z, y, x = np.meshgrid(
@@ -95,10 +104,9 @@ def fourier_cropping(
     """
     Fourier cropping in case the new shape is smaller than the original shape.
 
-    The data's FFT is computed, cropped to the new image size, and transformed back
-    to real space.
-    If specified (smoothing), en ellipsoid mask with cosine decay towards the edges
-    is applied to avoid artifacts.
+    The function computes the FFT of the input data, crops it to the new image size,
+    and transforms it back to real space. If smoothing is specified, an ellipsoid mask
+    with cosine decay towards the edges is applied to avoid artifacts.
 
     Parameters
     ----------
@@ -113,7 +121,7 @@ def fourier_cropping(
     Returns
     -------
     np.ndarray
-        A tuple containing the resized data.
+        The resized data as a 3D numpy array.
     """
     # Calculate the FFT of the input data
     data_fft = fftn(data)
@@ -154,10 +162,10 @@ def fourier_extend(
     """
     Fourier padding in case the new shape is larger than the original shape.
 
-    The data's FFT is computed, padded with zeros to the new image shape,
-    and transformed back to real space.
-    If specified (smoothing), en ellipsoid mask with cosine decay towards the edges
-    is applied to avoid artifacts (before padding).
+    The function computes the FFT of the input data, pads it with zeros to the new image
+    size, and transforms it back to real space. If smoothing is specified, an ellipsoid
+    mask with cosine decay towards the edges is applied to avoid artifacts before
+    padding.
 
     Parameters
     ----------
@@ -203,19 +211,24 @@ def determine_output_shape(
     """
     Determine the new output shape given in/out pixel sizes & original shape.
 
+    This function determines the new output shape by scaling the original shape based on
+    the ratio of input to output pixel sizes. All dimensions in the output shape are
+    rounded to the nearest even number.
+
+
     Parameters
     ----------
     pixel_size_in : Union[float, int]
         The pixel size of the input data.
     pixel_size_out : Union[float, int]
-        The target pixel size.
+        Target pixel size for the output data.
     orig_shape : Tuple[int, int, int]
-        The original shape of the data as a tuple (x, y, z).
+        Original shape of the data as a tuple (x, y, z).
 
     Returns
     -------
     Tuple[int, int, int]
-        The new output shape as a tuple (x, y, z).
+        The calculated output shape as a tuple (x, y, z).
     """
     output_shape = np.array(orig_shape) * (pixel_size_in / pixel_size_out)
     output_shape = np.round(output_shape)

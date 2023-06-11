@@ -25,53 +25,46 @@
 # limitations under the License.
 # --------------------------------------------------------------------------------
 
-import argparse
 
-from membrain_seg.dataloading.data_utils import load_tomogram, normalize_tomogram
+from membrain_seg.dataloading.data_utils import normalize_tomogram
 
 from tomo_preprocessing.matching_utils.spec_matching_utils import extract_spectrum
 
 
-def main():
-    """Extract the spectrum from the target tomogram."""
+def extract_spectrum_from_file(input_path: str, output_path: str) -> None:
+    """
+    Extract the radially averaged Fourier spectrum from the target tomogram.
+
+    Parameters
+    ----------
+    input_path : str
+        The file path to the input tomogram to be processed.
+    output_path : str
+        The file path where the extracted spectrum will be stored.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file specified in `input_path` does not exist.
+
+    Notes
+    -----
+    This function reads the input tomogram from the given path, extracts its Fourier
+    amplitude spectrum, and stores the spectrum to the specified output path.
+    The extracted spectrum is saved as a CSV file.
+    """
     # Parse command line arguments.
-    parser = get_cli()
-    args = parser.parse_args()
 
     # Read input tomogram.
-    tomo = args.input
+    tomo = input_path
     tomo = normalize_tomogram(tomo)
 
     # Extract amplitude spectrum.
     spectrum = extract_spectrum(tomo)
 
     # Save the spectrum to a file
-    spectrum.to_csv(args.output, sep="\t", header=["intensity"], index_label="freq")
-
-
-def get_cli():
-    """Function to set up the command line interface."""
-    parser = argparse.ArgumentParser(
-        description="Extract radially averaged amplitude spectrum from cryo-ET data."
-    )
-
-    parser.add_argument(
-        "-i",
-        "--input",
-        required=True,
-        type=load_tomogram,
-        help="Tomogram to extract spectrum from (.mrc/.rec format)",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        help="Output destination for extracted spectrum (.tsv format)",
-    )
-
-    return parser
-
-
-if __name__ == "__main__":
-    main()
+    spectrum.to_csv(output_path, sep="\t", header=["intensity"], index_label="freq")
