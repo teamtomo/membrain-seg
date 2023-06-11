@@ -56,7 +56,6 @@ width in pixels",
     ),
 ):
     """Match the input tomogram's spectrum to the target spectrum."""
-    # Call your function here
     match_amplitude_spectrum_for_files(
         input,
         target,
