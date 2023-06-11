@@ -31,7 +31,9 @@ dependencies = [
     "imageio",
     "scipy",
     "mrcfile",
-    "typer"
+    "typer",
+    "scikit-image",
+    "simpleitk"
 ]
 
 # extras
