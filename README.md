@@ -7,3 +7,7 @@
 [![codecov](https://codecov.io/gh/teamtomo/membrain-seg/branch/main/graph/badge.svg)](https://codecov.io/gh/teamtomo/membrain-seg)
 
 membrane segmentation in 3D for cryo-ET
+
+Membrain-Seg is currently under early development, so we may make breaking changes between releases.
+
+Our best model is changing quickly, so if you would like to give MemBrain-seg a try, please reach out to us (e.g. Lorenz.Lamm@helmholtz-munich.de) and we are happy to provide you with the latest version and advice on how to best use this repository.
