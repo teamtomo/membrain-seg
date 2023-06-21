@@ -32,7 +32,7 @@ Move to the folder "membrain-seg" (from the cloned repository in Step 1) that co
 Here, run
 
 ```shell
-pip install -e .
+pip install .
 ```
 
 This will install MemBrain-seg and all dependencies required for segmenting your tomograms.
