@@ -32,6 +32,7 @@ Move to the folder "membrain-seg" (from the cloned repository in Step 1) that co
 Here, run
 
 ```shell
+cd membrain-seg
 pip install .
 ```
 
