@@ -1,6 +1,5 @@
 # Segmentation
 
-
 Welcome to the central feature of MemBrain-seg: **The segmentation of your tomograms!**
 
 This guide provides detailed instructions to perform segmentation on your tomograms using a pre-trained model.
@@ -47,3 +46,4 @@ Note: MemBrain-seg automatically detects a CUDA-enabled GPU, if available, and w
 ## Post-Processing
 If you have pre-processed your tomogram using pixel size matching, you may want to [rescale](./Preprocessing.md#pixel-size-matching) your 
 segmentation back to the shape of the original tomogram.
+
