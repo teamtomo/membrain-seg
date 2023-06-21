@@ -13,6 +13,12 @@ def match_segmentation_pixel_size_to_tomo(
     """
     Match the pixel size of the input segmentation to the target tomogram.
 
+    Note: This is normally used after matching your tomogram to the training pixel
+    size range. You can use this function to map the resulting segmentation back
+    to the original tomogram size.
+    Generally, it is important that both input and target tomogram cover the same
+    physical extent!
+
     Parameters
     ----------
     seg_path : str
@@ -65,6 +71,5 @@ def match_segmentation_pixel_size_to_tomo(
         for target_dim, original_dim in zip(output_shape, data.shape)
     ]
     resized_data = ndimage.zoom(data, rescale_factors, order=0, prefilter=False)
-    print(resized_data.shape, output_shape)
     # Save the resized tomogram to the specified output path
     store_tomogram(output_path, resized_data)
