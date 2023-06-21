@@ -7,7 +7,7 @@ But if any problems come up, do not hesitate to contact us (lorenz.lamm@helmholt
 
 Make sure to have git installed, then run
 ```shell
-git clone -b training_docs https://github.com/teamtomo/membrain-seg.git
+git clone https://github.com/teamtomo/membrain-seg.git
 ```
 
 ## Step 2: Create a virtual environment
