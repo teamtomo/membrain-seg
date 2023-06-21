@@ -30,7 +30,7 @@ Just write an email to lorenz.lamm@helmholtz-munich.de
 Now, for the prediction, you will only need to type
 
 ```shell
-membrain segment --tomogram_path <path-to-your-tomo> --ckpt_path <path-to-your-tomo>
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model>
 ```
 
 Running this will segment your tomogram, and store the resulting .mrc file into the ./predictions 
@@ -38,7 +38,7 @@ folder. If you would like to change this folder, you can simply specify another 
 the `--out_folder` argument:
 
 ```shell
-membrain segment --tomogram_path <path-to-your-tomo> --ckpt_path <path-to-your-tomo> --out_folder <your-preferred-folder>
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --out-folder <your-preferred-folder>
 ```
 
 Note: MemBrain-seg automatically detects a CUDA-enabled GPU, if available, and will execute the segmentation on it. Using a GPU device is highly recommended to accelerate the segmentation process.
