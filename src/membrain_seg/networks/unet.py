@@ -40,13 +40,15 @@ class SemanticSegmentationUnet(pl.LightningModule):
         The default value is 1.
     channels : Tuple[int, ...]
         The number of channels in each layer of the encoder/decoder.
-        Default value is (16, 32, 64, 128, 256)
-    strides : Tuple[int, ...]
+        default=[32, 64, 128, 256, 512, 1024]
+    strides : Tuple[int, ...], default=(1, 2, 2, 2, 2, 2)
         The strides for the convolutions. Must have len(channels - 1) elements.
-        Default value is (2, 2, 2, 2)
-    learning_rate : float
+    learning_rate : float, default=1e-2
         The learning rate for the Adam optimizer.
-        Default value is 1e-4.
+    min_learning_rate : float, default=1e-6
+        The minimum learning rate.
+    batch_size : int, default=32
+        The batch size for training.
     image_key : str
         The value in the batch data dictionary containing the input image.
         Default value is "image".
@@ -56,6 +58,11 @@ class SemanticSegmentationUnet(pl.LightningModule):
     roi_size : Tuple[int, ...]
         The size of the sliding window for the validation inference.
         Default value is (160, 160, 160).
+    max_epochs : int, default=1000
+        The maximum number of epochs for training.
+    use_deep_supervision : bool, default=False
+        Whether to use deep supervision.
+
     """
 
     def __init__(

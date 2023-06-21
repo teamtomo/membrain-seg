@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 import pytorch_lightning as pl
 from monai.data import DataLoader
@@ -7,7 +8,38 @@ from membrain_seg.dataloading.memseg_dataset import CryoETMemSegDataset
 
 
 class MemBrainSegDataModule(pl.LightningDataModule):
-    """Pytorch Lightning datamodule for membrane segmentation."""
+    """
+    Pytorch Lightning datamodule for membrane segmentation.
+
+    Parameters
+    ----------
+    data_dir : str
+        The directory where the data resides. The directory should have a
+        specific structure.
+    batch_size : int
+        The batch size for the data loaders.
+    num_workers : int
+        The number of workers to use in the data loaders.
+    aug_prob_to_one : bool, default False
+        Whether to apply data augmentation.
+
+    Attributes
+    ----------
+    train_img_dir : str
+        The path to the directory containing training images.
+    train_lab_dir : str
+        The path to the directory containing training labels.
+    val_img_dir : str
+        The path to the directory containing validation images.
+    val_lab_dir : str
+        The path to the directory containing validation labels.
+    train_dataset : CryoETMemSegDataset
+        The training dataset.
+    val_dataset : CryoETMemSegDataset
+        The validation dataset.
+    test_dataset : CryoETMemSegDataset
+        The test dataset.
+    """
 
     def __init__(self, data_dir, batch_size, num_workers, aug_prob_to_one=False):
         """Initialization of data paths and data loaders.
@@ -41,8 +73,18 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.aug_prob_to_one = aug_prob_to_one
 
-    def setup(self, stage=None):
-        """Load datasets."""
+    def setup(self, stage: Optional[str] = None):
+        """
+        Setups the datasets for different stages of the training process.
+
+        If stage is None, the datasets for both the fit and test stages are setup.
+
+        Parameters
+        ----------
+        stage : str, optional
+            The stage of the training process.
+            One of None, "fit" or "test".
+        """
         if stage in (None, "fit"):
             self.train_dataset = CryoETMemSegDataset(
                 img_folder=self.train_img_dir,
@@ -59,8 +101,15 @@ class MemBrainSegDataModule(pl.LightningDataModule):
                 self.data_dir, test=True, transform=self.transform
             )  # TODO: How to do prediction?
 
-    def train_dataloader(self):
-        """Define training dataloader."""
+    def train_dataloader(self) -> DataLoader:
+        """
+        Returns the training dataloader.
+
+        Returns
+        -------
+        DataLoader
+            The training dataloader.
+        """
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
@@ -68,8 +117,15 @@ class MemBrainSegDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
         )
 
-    def val_dataloader(self):
-        """Define validation dataloader."""
+    def val_dataloader(self) -> DataLoader:
+        """
+        Returns the validation dataloader.
+
+        Returns
+        -------
+        DataLoader
+            The validation dataloader.
+        """
         return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
@@ -77,8 +133,15 @@ class MemBrainSegDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
         )
 
-    def test_dataloader(self):
-        """Define test dataloader."""
+    def test_dataloader(self) -> DataLoader:
+        """
+        Returns the test dataloader.
+
+        Returns
+        -------
+        DataLoader
+            The test dataloader.
+        """
         return DataLoader(
             self.test_dataset,
             batch_size=self.batch_size,

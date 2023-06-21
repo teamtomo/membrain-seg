@@ -1,3 +1,5 @@
+from typing import Callable, List, Union
+
 import numpy as np
 import torch
 from monai.transforms import (
@@ -29,6 +31,8 @@ from membrain_seg.dataloading.transforms import (
 )
 
 ### Hard-coded area
+
+# Hard-coding kernel sizes for pooling operations (work also with smaller network sizes)
 pool_op_kernel_sizes = [
     [2, 2, 2],
     [2, 2, 2],
@@ -41,19 +45,42 @@ deep_supervision_scales = [[1, 1, 1]] + [
     list(i) for i in 1 / np.cumprod(np.vstack(net_num_pool_op_kernel_sizes), axis=0)
 ][:-1]
 
+# Define 3D rotation ranges
 data_aug_params = {}
 data_aug_params["rotation_x"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
 data_aug_params["rotation_y"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
 data_aug_params["rotation_z"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
 
+# Which axes should be used for mirroring?
 mirror_axes = (0, 1, 2)
 
 
-def get_mirrored_img(img, mirror_idx):
-    """Get mirrored images.
+def get_mirrored_img(img: torch.Tensor, mirror_idx: int) -> torch.Tensor:
+    """
+    Get mirrored images for test time augmentation.
 
     There are 8 possible cases, enumerated from 0 to 7.
-    This is used for test time augmentation.
+    The function supports mirroring across three axes,
+    and combinations thereof.
+
+    Parameters
+    ----------
+    img : torch.Tensor
+        Input tensor to be mirrored.
+    mirror_idx : int
+        Integer index to select mirror case.
+        Should be within the range [0, 7] inclusive.
+
+    Returns
+    -------
+    torch.Tensor
+        The mirrored image tensor.
+
+    Raises
+    ------
+    AssertionError
+        If the mirror index is not in the range [0, 7].
+
     """
     assert mirror_idx < 8 and mirror_idx >= 0
     if mirror_idx == 0:
@@ -86,8 +113,37 @@ def get_mirrored_img(img, mirror_idx):
         return torch.flip(img, (4, 3, 2))
 
 
-def get_training_transforms(prob_to_one=False, return_as_list=False):
-    """Returns the data augmentation transforms for training phase."""
+def get_training_transforms(
+    prob_to_one: bool = False, return_as_list: bool = False
+) -> Union[List[Callable], Compose]:
+    """
+    Returns the data augmentation transforms for training phase.
+
+    The function sets up an augmentation sequence containing a variety of
+    transformations such as rotations, zooms, 90 degree rotations,
+    Gaussian noise, brightness adjustments, and more.
+    If desired, the sequence can be returned as a list.
+
+    Parameters
+    ----------
+    prob_to_one : bool, optional
+        If True, the probability of applying the transformation is set to 1.0 for
+            all transformations in the sequence.
+        If False, the probability is lower (specified within each transformation).
+        Default is False.
+    return_as_list : bool, optional
+        If True, the sequence of transformations is returned as a list.
+        If False, the sequence is returned as a Compose object. Default is False.
+
+    Returns
+    -------
+    List[Callable] or Compose
+        If return_as_list is True, the function returns a list of
+            transformation functions.
+        If return_as_list is False, the function returns a Compose object
+            containing the sequence of transformations.
+
+    """
     aug_sequence = [
         RandRotated(
             keys=("image", "label"),
@@ -234,8 +290,30 @@ def get_training_transforms(prob_to_one=False, return_as_list=False):
     return Compose(aug_sequence)
 
 
-def get_validation_transforms(return_as_list=False):
-    """Returns the data augmentation transforms for training phase."""
+def get_validation_transforms(
+    return_as_list: bool = False,
+) -> Union[List[Callable], Compose]:
+    """
+    Returns the data augmentation transforms for the validation phase.
+
+    The function sets up a sequence of transformations including downsampling
+    and tensor conversion. If desired, the sequence can be returned as a list.
+
+    Parameters
+    ----------
+    return_as_list : bool, optional
+        If True, the sequence of transformations is returned as a list.
+        If False, the sequence is returned as a Compose object. Default is False.
+
+    Returns
+    -------
+    List[Callable] or Compose
+        If return_as_list is True, the function returns a list of
+            transformation functions.
+        If return_as_list is False, the function returns a Compose object
+            containing the sequence of transformations.
+
+    """
     aug_sequence = [
         DownsampleSegForDeepSupervisionTransform(
             keys=["label"], ds_scales=deep_supervision_scales, order="nearest"
@@ -247,8 +325,20 @@ def get_validation_transforms(return_as_list=False):
     return Compose(aug_sequence)
 
 
-def get_prediction_transforms():
-    """Returns data augmentation transforms for prediction phase."""
+def get_prediction_transforms() -> Compose:
+    """
+    Returns the data augmentation transforms for the prediction phase.
+
+    The function sets up a Compose object containing a transformation for
+    converting data to tensors.
+
+    Returns
+    -------
+    Compose
+        A Compose object containing the sequence of transformations for
+        the prediction phase.
+
+    """
     transforms = Compose(
         [
             ToTensor(),

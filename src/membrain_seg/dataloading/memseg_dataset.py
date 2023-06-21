@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 # from skimage import io
 import imageio as io
@@ -13,9 +14,63 @@ from membrain_seg.dataloading.memseg_augmentation import (
 
 
 class CryoETMemSegDataset(Dataset):
-    """Dataset of Cryo-ET membrane segmentation patches."""
+    """
+    A custom Dataset for Cryo-ET membrane segmentation patches.
 
-    def __init__(self, img_folder, label_folder, train=False, aug_prob_to_one=False):
+    This Dataset loads image-label pairs from a specified directory abd applies
+    appropriate transformations for training or validation on the fly.
+
+    Attributes
+    ----------
+    img_folder : str
+        The path to the directory containing the image files.
+    label_folder : str
+        The path to the directory containing the label files.
+    train : bool, default False
+        A flag indicating whether the dataset is used for training or not.
+    aug_prob_to_one : bool, default False
+        A flag indicating whether the probability of augmentation should be
+        set to one or not.
+
+    Methods
+    -------
+    __getitem__(idx: int) -> Dict[str, np.ndarray]
+        Returns a dictionary containing an image-label pair corresponding to
+        the provided index.
+    __len__() -> int
+        Returns the number of image-label pairs in the dataset.
+    load_data() -> None
+        Loads image-label pairs into memory from the specified directories.
+    initialize_imgs_paths() -> None
+        Initializes the list of paths to image-label pairs.
+    test(test_folder: str, num_files: int = 20) -> None
+        Tests the data loading and augmentation process by generating
+            a set of images and their labels. Test images are then stored
+            for sanity checks.
+    """
+
+    def __init__(
+        self,
+        img_folder: str,
+        label_folder: str,
+        train: bool = False,
+        aug_prob_to_one: bool = False,
+    ) -> None:
+        """
+        Constructs all the necessary attributes for the CryoETMemSegDataset object.
+
+        Parameters
+        ----------
+        img_folder : str
+            The path to the directory containing the image files.
+        label_folder : str
+            The path to the directory containing the label files.
+        train : bool, default False
+            A flag indicating whether the dataset is used for training or validation.
+        aug_prob_to_one : bool, default False
+            A flag indicating whether the probability of augmentation should be set
+            to one or not.
+        """
         self.train = train
         self.img_folder, self.label_folder = img_folder, label_folder
         self.initialize_imgs_paths()
@@ -26,8 +81,22 @@ class CryoETMemSegDataset(Dataset):
             else get_validation_transforms()
         )
 
-    def __getitem__(self, idx):
-        """Returns image & labels of sample with index idx."""
+    def __getitem__(self, idx: int) -> Dict[str, np.ndarray]:
+        """
+        Returns a dictionary containing an image-label pair for the provided index.
+
+        Data augmentations are applied before returning the dictionary.
+
+        Parameters
+        ----------
+        idx : int
+            Index of the sample to be fetched.
+
+        Returns
+        -------
+        Dict[str, np.ndarray]
+            A dictionary containing an image and its corresponding label.
+        """
         idx_dict = {
             "image": np.expand_dims(self.imgs[idx], 0),
             "label": np.expand_dims(self.labels[idx], 0),
@@ -35,16 +104,24 @@ class CryoETMemSegDataset(Dataset):
         idx_dict = self.transforms(idx_dict)
         return idx_dict
 
-    def __len__(self):
-        """Returns the length of the dataset."""
+    def __len__(self) -> int:
+        """
+        Returns the number of image-label pairs in the dataset.
+
+        Returns
+        -------
+        int
+            The number of image-label pairs in the dataset.
+        """
         return len(self.data_paths)
 
-    def load_data(self):
+    def load_data(self) -> None:
         """
-        Loading of samples.
+        Loads image-label pairs into memory from the specified directories.
 
-        Load data given data paths. This should be adjusted to our new
-        dataloading pipeline once it's set up.
+        Notes
+        -----
+        This function assumes the image and label files are in NIFTI format.
         """
         print("Loading images into dataset.")
         self.imgs = []
@@ -61,12 +138,14 @@ class CryoETMemSegDataset(Dataset):
             self.imgs.append(img)
             self.labels.append(label)
 
-    def initialize_imgs_paths(self):
+    def initialize_imgs_paths(self) -> None:
         """
-        Initialization of data paths.
+        Initializes the list of paths to image-label pairs.
 
-        Initialize paths to images and labels given the training directory.
-        This should be adjusted once the new dataloading pipeline is set up.
+        Notes
+        -----
+        This function assumes the image and label files are in parallel directories
+        and have the same file base names.
         """
         self.data_paths = []
         for filename in os.listdir(self.label_folder):
@@ -75,12 +154,20 @@ class CryoETMemSegDataset(Dataset):
             img_filename = os.path.join(self.img_folder, filename)
             self.data_paths.append((img_filename, label_filename))
 
-    def test(self, test_folder, num_files=20):
+    def test(self, test_folder: str, num_files: int = 20) -> None:
         """
-        Testing of dataloading and augmentations.
+        Tests the data loading and augmentation process.
 
-        To test data loading and augmentations, 2D images are
-        stored for inspection.
+        The 2D images and corresponding labels are generated and then
+            saved in the specified directory for inspection.
+
+        Parameters
+        ----------
+        test_folder : str
+            The path to the directory where the generated images and labels
+            will be saved.
+        num_files : int, default 20
+            The number of image-label pairs to be generated and saved.
         """
         os.makedirs(test_folder, exist_ok=True)
 

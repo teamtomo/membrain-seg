@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -17,7 +17,15 @@ from scipy.ndimage import convolve, median_filter
 
 
 class RandApplyTransform(Randomizable, Transform):
-    """Randomly apply given MONAI transform with given probability."""
+    """Randomly apply given MONAI transform with given probability.
+
+    This class is a wrapper around a MONAI transform. It extends the
+    Randomizable and Transform classes provided by MONAI. The purpose of
+    this class is to randomly apply a specific MONAI transform to the data
+    based on a given probability. For example, if the given probability
+    is 0.5, then the wrapped transform will be applied to the data 50%
+    of the time when called.
+    """
 
     def __init__(
         self,
@@ -47,7 +55,14 @@ class RandApplyTransform(Randomizable, Transform):
 
 
 class MedianFilterd(Transform):
-    """Median filter from batchgenerators package reimplemented."""
+    """Median filter from batchgenerators package reimplemented.
+
+    This class extends the Transform class provided by MONAI and implements a median
+    filter operation for image data. A median filter is a digital filtering technique,
+    used to remove noise from an image or signal. The class allows the radius of
+    the median filter to be either a specific integer or a range from which an integer
+    can be randomly selected each time the transform is called.
+    """
 
     def __init__(self, keys, radius=1):
         self.keys = keys
@@ -72,7 +87,15 @@ class MedianFilterd(Transform):
 
 
 class RandomBrightnessTransformd(Transform):
-    """Brightness transform from batchgenerators reimplemented."""
+    """Brightness transform from batchgenerators reimplemented.
+
+    This class extends the Transform class provided by MONAI and is used to
+    apply a random brightness shift to the image data. The extent of the
+    brightness shift follows a Gaussian (normal) distribution defined by the
+    given mean (mu) and standard deviation (sigma). The transform is applied based
+    on a given probability. For example, if the given probability is 0.7, the brightness
+    shift will be applied to the image 70% of the time when the transform is called.
+    """
 
     def __init__(self, keys, mu, sigma, prob=1.0):
         super().__init__()
@@ -91,7 +114,14 @@ class RandomBrightnessTransformd(Transform):
 
 
 class RandomContrastTransformd(Transform):
-    """Randomly scale the data with a contrast factor."""
+    """Randomly scale the data with a contrast factor.
+
+    This class extends the Transform class provided by MONAI. It's designed to randomly
+    scale the contrast of an image. It allows to specify the keys to the images to be
+    transformed, a range for contrast scaling, and whether the original range of the
+    data should be preserved after the transformation.
+    The probability of applying this transformation can also be set.
+    """
 
     def __init__(self, keys, contrast_range, preserve_range=False, prob=1.0):
         super().__init__()
@@ -197,7 +227,10 @@ class BlankCuboidTransform(Randomizable, MapTransform):
     """
     Randomly blank out cuboids from the image.
 
-    The number and sizes of cuboids are randomly drawn.
+    It's designed to randomly blank out one or more cuboid regions in an image.
+    The number and size of the cuboids are random, with the sizes drawn from a specified
+    range. The class also provides options to replace the blanked regions with
+    either the mean value of the image or zeros.
     """
 
     def __init__(
@@ -265,8 +298,26 @@ class BlankCuboidTransform(Randomizable, MapTransform):
         return d
 
 
-def sample_scalar(value, *args):
-    """Sample scalar function from batchgenerators."""
+def sample_scalar(value: Union[Tuple, List, Callable, Any], *args: Any) -> Any:
+    """
+    Implementation from the batchgenerators package.
+
+    Function to sample a scalar from a specified range, or compute it using
+    a provided function.
+
+    Args:
+        value: The value to be sampled. It can be a tuple/list defining a range,
+               a callable function, or any other value. If it's a tuple/list,
+               a random value within the range is returned. If it's a function, it is
+               called with the arguments supplied in *args. If it's any other value,
+               it is returned as is.
+        *args: Additional arguments to be passed to the callable 'value', if it is a
+                function.
+
+    Returns
+    -------
+        A sampled or computed scalar value.
+    """
     if isinstance(value, (tuple, list)):
         return np.random.uniform(value[0], value[1])
     elif callable(value):
@@ -333,7 +384,14 @@ class BrightnessGradientAdditiveTransform(Randomizable, MapTransform):
 
 
 class LocalGammaTransform(Randomizable, MapTransform):
-    """Locally adjusts the Gamma value using Gaussian kernel.(from batchgenerators)."""
+    """Locally adjusts the Gamma value using Gaussian kernel.(from batchgenerators).
+
+    This transform adjusts the Gamma value of the images locally. The Gamma
+    correction is a type of power-law transformation that manipulates the
+    brightness of an image. It's applied locally based on a generated Gaussian
+    kernel. This class is an implementation from the batchgenerators package.
+
+    """
 
     def __init__(self, keys, scale, loc=(-1, 2), gamma=(0.5, 1)):
         super().__init__(keys)
@@ -381,7 +439,14 @@ class LocalGammaTransform(Randomizable, MapTransform):
 
 
 class SharpeningTransformMONAI(MapTransform):
-    """Laplacian Sharpening transform. (from batchgenerators)."""
+    """Laplacian Sharpening transform. (from batchgenerators).
+
+    This transform applies a Laplacian sharpening filter to the image, enhancing
+    details and emphasizing edges. The strength of sharpening can be controlled
+    and can be set to be the same or different for each image channel. This class
+    is an implementation from the batchgenerators package.
+
+    """
 
     filter_2d = np.array([[0, -1, 0], [-1, 4, -1], [0, -1, 0]])
     filter_3d = np.array(
@@ -450,7 +515,13 @@ class SharpeningTransformMONAI(MapTransform):
 
 
 class DownsampleSegForDeepSupervisionTransform(MapTransform):
-    """Downsample labels for deep supervision (from nnUNet)."""
+    """Downsample labels for deep supervision (from nnUNet).
+
+    This transform downsamples the given labels for the purpose of deep supervision
+    during model training. Deep supervision involves making predictions at
+    multiple scales or layers, which can help improve performance. This class
+    is an implementation from the nnUNet package.
+    """
 
     def __init__(
         self,
@@ -479,7 +550,31 @@ def downsample_seg_for_ds_transform(
     order: str = "nearest",
     axes: Union[None, Tuple[int, int, int]] = None,
 ):
-    """Downsampling of segmentations."""
+    """
+    Function for downsampling segmentations based on provided downscaling factors.
+
+    For each downscaling factor in 'ds_scales', the input segmentation ('seg') is
+    resized along the specified 'axes'. If 'axes' is None, then all axes excluding
+    the first one (typically the channel axis) are resized. The interpolation mode
+    for resizing is specified by 'order', which defaults to 'nearest'.
+
+    Parameters
+    ----------
+    seg : np.ndarray
+        Input segmentation to be downsampled.
+    ds_scales : Tuple[float, float, float], optional
+        Downscaling factors for each axis, by default (1, 0.5, 0.25).
+    order : str, optional
+        Interpolation mode to be used while resizing, by default 'nearest'.
+    axes : Union[None, Tuple[int, int, int]], optional
+        Axes along which the input is resized. If None, all axes excluding the
+        first one are resized, by default None.
+
+    Returns
+    -------
+    list
+        A list of downsampled segmentations corresponding to each scale in 'ds_scales'.
+    """
     if axes is None:
         axes = list(range(1, len(seg.shape)))
     output = []
