@@ -6,7 +6,11 @@
 [![CI](https://github.com/teamtomo/membrain-seg/actions/workflows/ci.yml/badge.svg)](https://github.com/teamtomo/membrain-seg/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/teamtomo/membrain-seg/branch/main/graph/badge.svg)](https://codecov.io/gh/teamtomo/membrain-seg)
 
-membrane segmentation in 3D for cryo-ET
+Membrane segmentation in 3D for cryo-ET.
+
+<p align="center" width="100%">
+    <img width="80%" src="https://user-images.githubusercontent.com/34575029/248259282-ee622267-77fa-4c88-ad38-ad0cfd76b810.png">
+</p>
 
 Membrain-Seg is currently under early development, so we may make breaking changes between releases.
 
