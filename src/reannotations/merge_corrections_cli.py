@@ -22,46 +22,70 @@ def merge_corrections(
     ),
 ):
     r"""
-    Merge manual corrections into a single file.\n.
+    Merge manual corrections into a single file.
 
     Process all label files in a given directory, find corresponding correction
-    folders,\n
-    apply corrections and write corrected files to an output directory.\n
+    folders,
+    apply corrections and write corrected files to an output directory.
 
-    Notes\n
-    -----\n
+    Notes
+    -----
     This function expects each label file to have a corresponding folder in
-    corrections_dir.\n
-    If no such folder is found, a warning will be printed.\n
+    corrections_dir.
+    If no such folder is found, a warning will be printed.
 
-    Required data structure\n
-    -----\n
+    Required data structure
+    -----
 
-    root_directory/\n
-    ├── labels_dir/\n
-    │   ├── label_file1\n
-    │   ├── label_file2\n
-    │   ├── label_file3\n
-    │   └── ...\n
-    ├── corrections_dir/\n
-    │   ├── label_file1/\n
-    │   │   ├── Add_file1\n
-    │   │   ├── Remove_file1\n
-    │   │   ├── Ignore_file1\n
-    │   │   └── ...\n
-    │   ├── label_file2/\n
-    │   │   ├── Add_file2\n
-    │   │   ├── Remove_file2\n
-    │   │   ├── Ignore_file2\n
-    │   │   └── ...\n
-    │   ├── label_file3/\n
-    │   │   ├── Add_file3\n
-    │   │   ├── Remove_file3\n
-    │   │   ├── Ignore_file3\n
-    │   │   └── ...\n
-    │   └── ...\n
-    └── out_dir/ (This directory will be filled with the corrected files \n
-    after running the script)\n
+    root_directory/
+
+    ├── labels_dir/
+
+    │   ├── label_file1
+
+    │   ├── label_file2
+
+    │   ├── label_file3
+
+    │   └── ...
+
+    ├── corrections_dir/
+
+    │   ├── label_file1/
+
+    │   │   ├── Add_file1
+
+    │   │   ├── Remove_file1
+
+    │   │   ├── Ignore_file1
+
+    │   │   └── ...
+
+    │   ├── label_file2/
+
+    │   │   ├── Add_file2
+
+    │   │   ├── Remove_file2
+
+    │   │   ├── Ignore_file2
+
+    │   │   └── ...
+
+    │   ├── label_file3/
+
+    │   │   ├── Add_file3
+
+    │   │   ├── Remove_file3
+
+    │   │   ├── Ignore_file3
+
+    │   │   └── ...
+
+    │   └── ...
+
+    └── out_dir/ (This directory will be filled with the corrected files
+
+    after running the script)
 
     """
     _convert_single_nrrd_files(labels_dir, corrections_dir, out_dir)

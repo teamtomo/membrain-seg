@@ -26,13 +26,15 @@ def callback():
     You can choose between the different options listed below.
     To see the help for a specific command, run:
 
-    membrain <command> --help
+    patch_corrections <command> --help
 
     -------
 
     Example:
     -------
-    membrain extract_patch
+    patch_corrections extract_patches --tomogram-path <path-to-your-tomo>
+    --segmentation-path <path-to-your-segmentation> --outfolder <path-to-out-folder>
+    --x 100 --y 200 --z 300
 
     -------
     """

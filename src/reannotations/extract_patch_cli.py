@@ -54,27 +54,30 @@ def extract_patches(
             different annotation rounds.",
     ),
 ):
-    r"""
-    Extract patches from a tomogram using provided coordinates and save them.\n.
+    """
+    Extract patches from a tomogram using provided coordinates and save them.
 
-    You can provide coordinates in two different ways: \n
+    You can provide coordinates in two different ways:
+
     - a path to a .csv file containing a list of coordinates. Here, each row
-    should represent one x,y,z-tuple of coordinates, split by comma:\n
-    e.g.: \n
-    135,445,98\n
-    456, 324, 134\n
-    ...\n
-    - 1 tuple of 3D coordinates via the "x", "y" and "z" components\n
+    should represent one x,y,z-tuple of coordinates, split by comma:
+    e.g.:
 
-    Returns\n
-    -------\n
-    None\n
+    135,445,98
 
-    Raises\n
-    ------\n
-    InvalidCoordinatesError\n
+    456, 324, 134
+
+    ...
+
+    - 1 tuple of 3D coordinates via the "x", "y" and "z" components
+
+
+
+    Raises
+    ------
+    InvalidCoordinatesError
         If a patch cannot be extracted due to the provided coordinates being too close
-        to the border of the tomogram.\n
+        to the border of the tomogram.
 
 
     """
