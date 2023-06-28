@@ -62,6 +62,7 @@ repository = "https://github.com/teamtomo/membrain-seg"
 [project.scripts]
 tomo_preprocessing = "tomo_preprocessing:cli"
 membrain = "membrain_seg.cli:cli"
+patch_corrections = "reannotations:cli"
 
 
 # Entry points

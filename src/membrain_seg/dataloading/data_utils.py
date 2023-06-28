@@ -1,3 +1,4 @@
+import csv
 import os
 from typing import Any, Callable, Dict, Tuple, Union
 
@@ -6,7 +7,6 @@ import numpy as np
 import SimpleITK as sitk
 from skimage.util import img_as_float32
 from torch import Tensor, device
-
 
 
 def make_directory_if_not_exists(path: str):
@@ -21,6 +21,67 @@ def make_directory_if_not_exists(path: str):
     """
     if not os.path.exists(path):
         os.makedirs(path)
+
+
+def get_csv_data(csv_path, delimiter=",", with_header=False, return_header=False):
+    """
+    Load data from a CSV file.
+
+    Parameters
+    ----------
+    csv_path : str
+        Path to the CSV file.
+    delimiter : str, optional
+        Character used to separate fields. Default is ','.
+    with_header : bool, optional
+        If True, the function expects the CSV file to contain a header and will
+        exclude it from the output data.
+        Default is False.
+    return_header : bool, optional
+        If True, the function returns the header along with the data.
+        Default is False.
+
+    Returns
+    -------
+    out_array : numpy.ndarray
+        Numpy array of data from the CSV file. If with_header or return_header is True,
+        the first row (header) will be excluded from the array.
+        If the CSV file is empty, a numpy array of shape (0, 13) will be returned.
+    header : numpy.ndarray, optional
+        Only returned if return_header is True. Numpy array containing the CSV
+        file's header.
+
+    Raises
+    ------
+    Exception
+        If the data can't be converted to float numpy array, a numpy array with
+        original type will be returned.
+
+    """
+    rows = []
+    with open(csv_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=delimiter)
+        for row in csv_reader:
+            rows.append(row)
+    assert len(rows) != 0
+    out_array = np.stack(rows)
+    if return_header:
+        try:
+            out_array = np.array(out_array[1:, :], dtype=np.float), out_array[0, :]
+        finally:
+            out_array = np.array(out_array[1:, :]), out_array[0, :]
+        return out_array
+    if with_header:
+        try:
+            out_array = np.array(out_array[1:, :], dtype=np.float)
+        finally:
+            out_array = np.array(out_array[1:, :])
+        return out_array
+    try:
+        out_array = np.array(out_array, dtype=np.float)
+    except Exception:
+        out_array = np.array(out_array)
+    return out_array
 
 
 def load_data_for_inference(data_path: str, transforms: Callable, device: device):
@@ -106,7 +167,7 @@ def store_segmented_tomograms(
 
 def read_nifti(nifti_file: str) -> np.ndarray:
     """
-    Read nifti files.
+    Read nifti file.
 
     Parameters
     ----------
@@ -121,6 +182,26 @@ def read_nifti(nifti_file: str) -> np.ndarray:
     """
     a = np.array(sitk.GetArrayFromImage(sitk.ReadImage(nifti_file)), dtype=float)
     return a
+
+
+def write_nifti(out_file: str, image: np.ndarray) -> None:
+    """
+    Write nifti file.
+
+    Parameters
+    ----------
+    out_file : str
+        Path to the nifti file. (Where should it be stored?)
+    image: np.ndarray
+        3D tomogram that should be stored in the given file.
+
+    Returns
+    -------
+    None
+
+    """
+    out_image = sitk.GetImageFromArray(image)
+    sitk.WriteImage(out_image, out_file)
 
 
 def load_tomogram(
