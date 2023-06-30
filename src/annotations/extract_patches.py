@@ -125,6 +125,17 @@ def extract_patches(tomo_path, seg_path, coords, out_dir, idx_add=0, token=None)
             out_file_patch_label = os.path.join(
                 out_folder_lab, token + "_patch" + str(patch_nr) + "_labels.nii.gz"
             )
+            exist_add = 0
+            while os.path.isfile(out_file_patch):
+                exist_add += 1
+                out_file_patch = os.path.join(
+                    out_folder_raw,
+                    token + "_patch" + str(patch_nr + exist_add) + "_raw.nii.gz",
+                )
+                out_file_patch_label = os.path.join(
+                    out_folder_lab,
+                    token + "_patch" + str(patch_nr + exist_add) + "_labels.nii.gz",
+                )
             cur_patch = np.transpose(cur_patch, (2, 1, 0))
             cur_patch_labels = np.transpose(cur_patch_labels, (2, 1, 0))
             write_nifti(out_file_patch, cur_patch)
