@@ -45,6 +45,71 @@ def pad_labels(patch, padding):
     return patch
 
 
+def get_out_files_and_patch_number(
+    token, out_folder_raw, out_folder_lab, patch_nr, idx_add
+):
+    """
+    Create filenames and corrected patch numbers.
+
+    Generates unique file names for raw and labeled data patches by incrementing patch
+    number until non-existing file names are found in the specified directories.
+    #Also returns the final patch number used to generate these file names.
+
+    Parameters
+    ----------
+    token : str
+        The unique identifier used as a part of the filename.
+    out_folder_raw : str
+        The directory path where raw data patches are stored.
+    out_folder_lab : str
+        The directory path where labeled data patches are stored.
+    patch_nr : int
+        The initial patch number to be used for generating file names.
+    idx_add : int
+        The number to be added to the initial patch number to generate unique
+        file names.
+
+    Returns
+    -------
+    int
+        The final patch number used to generate unique file names.
+    str
+        The full file path for the raw data patch.
+    str
+        The full file path for the labeled data patch.
+
+    Notes
+    -----
+    The function generates filenames in the format <token>_patch<number>_raw.nii.gz
+    for raw data patches and <token>_patch<number>_labels.nii.gz for labeled data
+    patches.
+    If a file with the same name already exists in the specified directories,
+    the function increments the patch number until it finds a unique filename.
+    The final patch number is obtained by adding the initial patch number and
+    `idx_add` and then incrementing it further if needed.
+
+    """
+    patch_nr += idx_add
+    out_file_patch = os.path.join(
+        out_folder_raw, token + "_patch" + str(patch_nr) + "_raw.nii.gz"
+    )
+    out_file_patch_label = os.path.join(
+        out_folder_lab, token + "_patch" + str(patch_nr) + "_labels.nii.gz"
+    )
+    exist_add = 0
+    while os.path.isfile(out_file_patch):
+        exist_add += 1
+        out_file_patch = os.path.join(
+            out_folder_raw,
+            token + "_patch" + str(patch_nr + exist_add) + "_raw.nii.gz",
+        )
+        out_file_patch_label = os.path.join(
+            out_folder_lab,
+            token + "_patch" + str(patch_nr + exist_add) + "_labels.nii.gz",
+        )
+    return patch_nr + exist_add, out_file_patch, out_file_patch_label
+
+
 def extract_patches(tomo_path, seg_path, coords, out_dir, idx_add=0, token=None):
     """
     Extracts 3D patches from a given tomogram and corresponding segmentation.
@@ -95,6 +160,9 @@ def extract_patches(tomo_path, seg_path, coords, out_dir, idx_add=0, token=None)
     labels = load_tomogram(seg_path)
 
     for patch_nr, cur_coords in enumerate(coords):
+        patch_nr, out_file_patch, out_file_patch_label = get_out_files_and_patch_number(
+            token, out_folder_raw, out_folder_lab, patch_nr, idx_add
+        )
         print("Extracting patch nr", patch_nr, "from tomo", token)
         try:
             min_coords = np.array(cur_coords) - 80
@@ -118,24 +186,7 @@ def extract_patches(tomo_path, seg_path, coords, out_dir, idx_add=0, token=None)
                 min_coords[2] : min_coords[2] + 160,
             ]
             cur_patch_labels = pad_labels(cur_patch_labels, padding)
-            patch_nr += idx_add
-            out_file_patch = os.path.join(
-                out_folder_raw, token + "_patch" + str(patch_nr) + "_raw.nii.gz"
-            )
-            out_file_patch_label = os.path.join(
-                out_folder_lab, token + "_patch" + str(patch_nr) + "_labels.nii.gz"
-            )
-            exist_add = 0
-            while os.path.isfile(out_file_patch):
-                exist_add += 1
-                out_file_patch = os.path.join(
-                    out_folder_raw,
-                    token + "_patch" + str(patch_nr + exist_add) + "_raw.nii.gz",
-                )
-                out_file_patch_label = os.path.join(
-                    out_folder_lab,
-                    token + "_patch" + str(patch_nr + exist_add) + "_labels.nii.gz",
-                )
+
             cur_patch = np.transpose(cur_patch, (2, 1, 0))
             cur_patch_labels = np.transpose(cur_patch_labels, (2, 1, 0))
             write_nifti(out_file_patch, cur_patch)
