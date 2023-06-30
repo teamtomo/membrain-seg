@@ -37,9 +37,9 @@ def callback():
 
     Example:
     -------
-    patch_corrections extract_patches --tomogram-path <path-to-your-tomo>
-    --segmentation-path <path-to-your-segmentation> --outfolder <path-to-out-folder>
-    --x 100 --y 200 --z 300
+    patch_corrections extract_patches
+
+    patch_corrections merge_corrections
 
     -------
     """

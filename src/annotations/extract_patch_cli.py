@@ -72,13 +72,11 @@ def extract_patches(
     - 1 tuple of 3D coordinates via the "x", "y" and "z" components
 
 
-
-    Raises
-    ------
-    InvalidCoordinatesError
-        If a patch cannot be extracted due to the provided coordinates being too close
-        to the border of the tomogram.
-
+    Example
+    -------
+    patch_corrections extract_patches --tomogram-path <path-to-your-tomo>
+    --segmentation-path <path-to-your-segmentation> --out-folder <path-to-out-folder>
+    --x 100 --y 200 --z 300
 
     """
     if coords_file is not None:
