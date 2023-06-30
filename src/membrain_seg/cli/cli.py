@@ -32,9 +32,9 @@ def callback():
 
     Example:
     -------
-    membrain predict --tomogram_path <path-to-your-tomo>
-        --ckpt_path <path-to-model-checkpoint>
-        --out_folder ./segmentations
+    membrain predict --tomogram-path <path-to-your-tomo>
+        --ckpt-path <path-to-model-checkpoint>
+        --out-folder ./segmentations
 
     -------
     """
