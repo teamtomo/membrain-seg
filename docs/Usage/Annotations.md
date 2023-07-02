@@ -119,12 +119,19 @@ Hereby,
 - "out-directory" should be the folder where the merged corrections should be stored
 
 
-<div style="justify-content: space-around;" align=center>
+<!-- <div style="justify-content: space-around;" align=center>
     <img style="vertical-align: middle; width: 45%;" src="https://user-images.githubusercontent.com/34575029/250343504-d8f11f76-7422-4085-854e-246ef9d90d89.gif">
-    <img style="vertical-align: middle; width: 5%;" src="https://user-images.githubusercontent.com/34575029/250343549-4cc1fbaa-a642-4af2-a0b9-c82ac538af6d.png">
+    <img style="vertical-align: middle; width: 5%;" src="https://user-images.githubusercontent.com/34575029/250345378-657063de-29b4-4f00-a11e-b3bc9f09a0d3.png">
     <img style="vertical-align: middle; width: 45%;" src="https://user-images.githubusercontent.com/34575029/250343487-791513e9-0c01-4558-8c73-e58b8a9a0c7b.gif">
 </div>
 
 | | | |
 |-|-|-|
-| ![](https://user-images.githubusercontent.com/34575029/250343487-791513e9-0c01-4558-8c73-e58b8a9a0c7b.gif) | ![](https://user-images.githubusercontent.com/34575029/250344753-55b73dc1-5fce-4fcd-ba88-7956520a67b5.png) | ![](https://user-images.githubusercontent.com/34575029/250343504-d8f11f76-7422-4085-854e-246ef9d90d89.gif) |
+| ![](https://user-images.githubusercontent.com/34575029/250343487-791513e9-0c01-4558-8c73-e58b8a9a0c7b.gif) | ![](https://user-images.githubusercontent.com/34575029/250345378-657063de-29b4-4f00-a11e-b3bc9f09a0d3.png) | ![](https://user-images.githubusercontent.com/34575029/250343504-d8f11f76-7422-4085-854e-246ef9d90d89.gif) |
+ -->
+
+
+| | | |
+|-|-|-|
+| <img width="100%" src="https://user-images.githubusercontent.com/34575029/250343504-d8f11f76-7422-4085-854e-246ef9d90d89.gif"> | <img width="100%" src="https://user-images.githubusercontent.com/34575029/250345378-657063de-29b4-4f00-a11e-b3bc9f09a0d3.png"> | <img width="100%" src="https://user-images.githubusercontent.com/34575029/250343487-791513e9-0c01-4558-8c73-e58b8a9a0c7b.gif"> |
+
