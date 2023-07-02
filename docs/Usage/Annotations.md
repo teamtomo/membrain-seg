@@ -3,7 +3,13 @@
 This is an example guide on how to create training data in order to improve MemBrain-seg's performance on your tomograms. 
 The annotation strategy was developed as part of a [Helmholtz Imaging](https://helmholtz-imaging.de/) Collaboration with [Fabian Isensee](https://helmholtz-imaging.de/person/dr-rer-nat-fabian-isensee/) & [Sebastian Ziegler](https://modalities.helmholtz-imaging.de/expert/46).
 
-**Important note:** While this guide describes how to imporve the performance for your own tomograms, we highly encourage you to also share your generated training patches with us and the community, so that everybody can benefit from a more generalized performance of the model.
+**Important note:** While this guide describes how to improve the performance for your own tomograms, we highly encourage you to also share your generated training patches with us and the community, so that everybody can benefit from a more generalized performance of the model.
+We are currently working on a platform to easily share them. In the meantime, please reach out to us (Lorenz.Lamm@helmholtz-munich.de) to discuss how to best share your patches without giving away too much of your own data.
+
+| | | |
+|-|-|-|
+| <img width="100%" src="https://user-images.githubusercontent.com/34575029/250343504-d8f11f76-7422-4085-854e-246ef9d90d89.gif"> | <img width="100%" src="https://user-images.githubusercontent.com/34575029/250345378-657063de-29b4-4f00-a11e-b3bc9f09a0d3.png"> | <img width="100%" src="https://user-images.githubusercontent.com/34575029/250343487-791513e9-0c01-4558-8c73-e58b8a9a0c7b.gif"> |
+
 
 # General idea
 Nobody would like (or has the time) to segment membranes a whole tomogram manually from scratch. Therefore, our approach is to extract small patches (160^3) from the tomogram an create manual annotations for these.
@@ -24,7 +30,19 @@ You will need software to inspect your tomograms and MemBrain-seg's segmentation
 # Patch extraction
 In order to not have to correct the entire tomogram, we focus on small patches (160^3) where the segmentation performance is particularly bad. We crop these patches out of the tomogram and correct them manually.
 
-In order to extract the patches from the tomogram, you can open them, e.g. in MITK
+In order to extract the patches from the tomogram, you can open the tomograms together with MemBrain's predicted segmentation, e.g. in MITK or IMOD. Now, you find regions where MemBrain's performance is not satisfying, but you can still see whether there should be a membrane or not. Use the center coordinates of these areas to extract patches (patches will be extracted centered around the x-, y-, and z-cooordintes given).
+
+<p align="center" width="100%">
+    <img width="35%" src="https://user-images.githubusercontent.com/34575029/250346977-cc7b9344-98d1-4845-9e60-942af3e75328.png">
+</p>
+
+
+Once you found all patches that you would like to extract (we recommend around 2-5 per tomogram), you can extract them using the following script
+
+```
+patch_corrections extract_patches
+```
+Running this command will open the help of this function and guide you through the required parameters.
 
 # Corrections
 The goal of the corrections is to assign every voxel in your extracted patch with the correct label (i.e. **"membrane"** or **"no membrane"**). However, each tomogram will probably have regions where it is very hard to tell where exactly the membrane is or if there is a membrane at all. In these cases, we want to use the **"ignore"** label. This label will not influence training of the U-Net in any direction, so whenever you are in doubt, it's best to assign the "ignore" label. **All voxels not assigned to the ignore label will contribute to the network training and should therefore be very reliable!**
@@ -119,19 +137,7 @@ Hereby,
 - "out-directory" should be the folder where the merged corrections should be stored
 
 
-<!-- <div style="justify-content: space-around;" align=center>
-    <img style="vertical-align: middle; width: 45%;" src="https://user-images.githubusercontent.com/34575029/250343504-d8f11f76-7422-4085-854e-246ef9d90d89.gif">
-    <img style="vertical-align: middle; width: 5%;" src="https://user-images.githubusercontent.com/34575029/250345378-657063de-29b4-4f00-a11e-b3bc9f09a0d3.png">
-    <img style="vertical-align: middle; width: 45%;" src="https://user-images.githubusercontent.com/34575029/250343487-791513e9-0c01-4558-8c73-e58b8a9a0c7b.gif">
-</div>
-
-| | | |
-|-|-|-|
-| ![](https://user-images.githubusercontent.com/34575029/250343487-791513e9-0c01-4558-8c73-e58b8a9a0c7b.gif) | ![](https://user-images.githubusercontent.com/34575029/250345378-657063de-29b4-4f00-a11e-b3bc9f09a0d3.png) | ![](https://user-images.githubusercontent.com/34575029/250343504-d8f11f76-7422-4085-854e-246ef9d90d89.gif) |
- -->
-
-
-| | | |
-|-|-|-|
-| <img width="100%" src="https://user-images.githubusercontent.com/34575029/250343504-d8f11f76-7422-4085-854e-246ef9d90d89.gif"> | <img width="100%" src="https://user-images.githubusercontent.com/34575029/250345378-657063de-29b4-4f00-a11e-b3bc9f09a0d3.png"> | <img width="100%" src="https://user-images.githubusercontent.com/34575029/250343487-791513e9-0c01-4558-8c73-e58b8a9a0c7b.gif"> |
+# And now?
+Unfortunately, we do not publicly provide our full training dataset yet, as it is still under development. But that should not stop you from having a model that works well on your tomograms.
+Do not hesitate to reach out (Lorenz.Lamm@helmholtz-munich.de) and we will find a solution!
 
