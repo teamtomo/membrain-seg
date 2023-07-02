@@ -38,51 +38,30 @@ def merge_corrections(
     -----
 
     root_directory/
-
     ├── labels_dir/
-
     │   ├── label_file1
-
     │   ├── label_file2
-
     │   ├── label_file3
-
     │   └── ...
-
     ├── corrections_dir/
-
     │   ├── label_file1/
-
-    │   │   ├── Add_file1
-
-    │   │   ├── Remove_file1
-
-    │   │   ├── Ignore_file1
-
+    │   │   ├── Add1.nrrd
+    │   │   ├── Add2.nrrd
+    │   │   ├── Remove1.nrrd
+    │   │   ├── Ignore1.nrrd
+    │   │   ├── Ignore2.nrrd
+    │   │   ├── Ignore3.nrrd
     │   │   └── ...
-
     │   ├── label_file2/
-
-    │   │   ├── Add_file2
-
-    │   │   ├── Remove_file2
-
-    │   │   ├── Ignore_file2
-
+    │   │   ├── Add1.nrrd
+    │   │   ├── Add2.nrrd
+    │   │   ├── Ignore1.nrrd
     │   │   └── ...
-
     │   ├── label_file3/
-
-    │   │   ├── Add_file3
-
-    │   │   ├── Remove_file3
-
-    │   │   ├── Ignore_file3
-
+    │   │   ├── Add1.nrrd
+    │   │   ├── Ignore1.nrrd
     │   │   └── ...
-
     │   └── ...
-
     └── out_dir/ (This directory will be filled with the corrected files
 
     after running the script)
