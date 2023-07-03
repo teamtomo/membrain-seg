@@ -13,7 +13,36 @@ from .dataloading.memseg_augmentation import get_mirrored_img, get_prediction_tr
 
 
 def segment(tomogram_path, ckpt_path, out_folder, store_probabilities=False):
-    """Segment you tomograms using a trained model."""
+    """
+    Segment tomograms using a trained model.
+
+    This function takes a path to a tomogram file, a path to a trained
+    model checkpoint file, and a path to an output folder. It loads the
+    trained model, and performs sliding window inference with 8-fold test-time
+    augmentation on the new data, and then stores the resulting segmentations
+    in the output folder.
+
+    Parameters
+    ----------
+    tomogram_path : str
+        Path to the tomogram file to be segmented.
+    ckpt_path : str
+        Path to the trained model checkpoint file.
+    out_folder : str
+        Path to the folder where the output segmentations should be stored.
+    store_probabilities : bool, optional
+        If True, store the predicted probabilities along with the segmentations
+        (default is False).
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    FileNotFoundError
+        If `tomogram_path` or `ckpt_path` does not point to a file.
+    """
     # Load the trained PyTorch Lightning model
     model_checkpoint = ckpt_path
     ckpt_token = os.path.basename(model_checkpoint).split("-val_loss")[

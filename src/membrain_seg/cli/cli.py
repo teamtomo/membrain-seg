@@ -13,7 +13,12 @@ class OrderCommands(TyperGroup):
         return list(self.commands)  # get commands using self.commands
 
 
-cli = typer.Typer(cls=OrderCommands, add_completion=False, no_args_is_help=True)
+cli = typer.Typer(
+    cls=OrderCommands,
+    add_completion=False,
+    no_args_is_help=True,
+    rich_markup_mode="rich",
+)
 OPTION_PROMPT_KWARGS = {"prompt": True, "prompt_required": True}
 PKWARGS = OPTION_PROMPT_KWARGS
 
@@ -32,9 +37,9 @@ def callback():
 
     Example:
     -------
-    membrain predict --tomogram_path <path-to-your-tomo>
-        --ckpt_path <path-to-model-checkpoint>
-        --out_folder ./segmentations
+    membrain predict --tomogram-path <path-to-your-tomo>
+        --ckpt-path <path-to-model-checkpoint>
+        --out-folder ./segmentations
 
     -------
     """

@@ -22,18 +22,10 @@ def segment(
 ):
     """Segment tomograms using a trained model.
 
-    Parameters
-    ----------
-    tomogram_path : str
-        Path to the tomogram that is to be segmented.
-    ckpt_path : str
-        Path to the pre-trained model checkpoint to use for segmentation.
-    out_folder : str, optional
-        Path to the folder where segmentation results should be stored.
-        By default, results are stored in './predictions'.
-    store_probabilities : bool, optional
-        If set to True, probability maps will be output in addition to segmentations.
-        By default, this is set to False.
+    Example
+    -------
+    membrain segment --tomogram-path <path-to-your-tomo>
+    --ckpt-path <path-to-your-model>
     """
     # Your segmenting logic here
     _segment(

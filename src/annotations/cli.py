@@ -20,23 +20,26 @@ cli = typer.Typer(
     rich_markup_mode="rich",
 )
 OPTION_PROMPT_KWARGS = {"prompt": True, "prompt_required": True}
+PKWARGS = OPTION_PROMPT_KWARGS
 
 
 @cli.callback()
 def callback():
     """
-    MemBrain-seg's preprocessing module.
+    [green]MemBrain-seg's[/green] patch correction module.
 
     You can choose between the different options listed below.
     To see the help for a specific command, run:
-        preprocessing <command> --help
+
+    patch_corrections <command> --help
+
+    -------
 
     Example:
     -------
-    To extract the spectrum, type:
+    patch_corrections extract_patches
 
-    "preprocessing match_pixel_size --input_tomogram <tomogram_file>
-    --output_path <matched_tomogram_file>
-    --pixel_size_out 10.0 --pixel_size_in 15.0"
+    patch_corrections merge_corrections
 
+    -------
     """

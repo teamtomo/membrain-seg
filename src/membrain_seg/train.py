@@ -23,7 +23,38 @@ def train(
     project_name: str = "membrain-seg_v0",
     sub_name: str = "1",
 ):
-    """Start training the model."""
+    """
+    Train the model on the specified data.
+
+    The function sets up a data module and a model, configures logging,
+    model checkpointing and learning rate monitoring,
+    and starts the training process.
+
+    Parameters
+    ----------
+    data_dir : str, optional
+        Path to the directory containing training data.
+    log_dir : str, optional
+        Path to the directory where logs should be stored.
+    batch_size : int, optional
+        Number of samples per batch of input data.
+    num_workers : int, optional
+        Number of subprocesses to use for data loading.
+    max_epochs : int, optional
+        Maximum number of epochs to train for.
+    aug_prob_to_one : bool, optional
+        If True, all augmentation probabilities are set to 1.
+    use_deep_supervision : bool, optional
+        If True, enables deep supervision in the U-Net model.
+    project_name : str, optional
+        Name of the project for logging purposes.
+    sub_name : str, optional
+        Sub-name of the project for logging purposes.
+
+    Returns
+    -------
+    None
+    """
     # Set up the data module
     data_module = MemBrainSegDataModule(
         data_dir=data_dir,
