@@ -21,7 +21,7 @@
         <link rel="next" href="../Training/">
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.16">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
       
@@ -295,6 +295,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../Annotations/" class="md-nav__link">
+        How to create training annotations from your own dataset?
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../Preprocessing/" class="md-nav__link">
         Preprocessing
       </a>
@@ -492,11 +506,19 @@
 It may make sense to use a preprocessed tomogram.</li>
 <li>A <strong>pre-trained MemBrain segmentation model</strong></li>
 </ol>
-<p>For point 2, as we are still in the development phase, we do not have a public model right now.
-If you would like to give MemBrain-seg a try, we are happy to provide our latest model.
-Just write an email to lorenz.lamm@helmholtz-munich.de</p>
+<p>A pre-trained MemBrain segmentation model can be downloaded <a href="https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing">here</a>. 
+Please note that our best model changes often, as we are still in the development phase. So you can check in from time to time and see whether the model improved.
+If you have problems with the model, please write an email to lorenz.lamm@helmholtz-munich.de</p>
 <h2 id="prediction">Prediction</h2>
-<p>Now, for the prediction, you will only need to type</p>
+<p>Typing
+<div class="highlight"><pre><span></span><code>membrain segment
+</code></pre></div>
+will display the segmentation command line interface and show available options.</p>
+<p align="center" width="100%">
+    <img width="50%" src="https://user-images.githubusercontent.com/34575029/250504257-611ea864-48c5-4424-9bc8-7b30bcfbb39b.png">
+</p>
+
+<p>For example, for the prediction, you only need to type</p>
 <div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;
 </code></pre></div>
 <p>Running this will segment your tomogram, and store the resulting .mrc file into the ./predictions 
@@ -551,10 +573,10 @@ segmentation back to the shape of the original tomogram.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "search.highlight", "search.suggest", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "search.highlight", "search.suggest", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.a51614de.min.js"></script>
+      <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
     
   </body>

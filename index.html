@@ -19,7 +19,7 @@
         <link rel="next" href="installation/">
       
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.16">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
       
@@ -301,6 +301,20 @@
   
   
     <li class="md-nav__item">
+      <a href="Usage/Annotations/" class="md-nav__link">
+        How to create training annotations from your own dataset?
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="Usage/Preprocessing/" class="md-nav__link">
         Preprocessing
       </a>
@@ -381,24 +395,35 @@
 
 <h1 id="membrain-seg">Membrain-Seg</h1>
 <p><a href="https://github.com/teamtomo/membrain-seg/">Membrain-Seg</a> is a Python project developed by <a href="https://github.com/teamtomo">teamtomo</a> for membrane segmentation in 3D for cryo-electron tomography (cryo-ET). This tool aims to provide researchers with an efficient and reliable method for segmenting membranes in 3D microscopic images. Membrain-Seg is currently under early development, so we may make breaking changes between releases.</p>
+<p align="center" width="100%">
+    <img width="100%" src="https://user-images.githubusercontent.com/34575029/248259282-ee622267-77fa-4c88-ad38-ad0cfd76b810.png">
+</p>
+
 <h1 id="overview">Overview</h1>
-<p>MemBrain-seg is a practical tool for membrane segmentation in cryo-electron tomograms. It's built on the U-Net architecture and makes use of a pre-trained model for efficient performance.</p>
+<p>MemBrain-seg is a practical tool for membrane segmentation in cryo-electron tomograms. It's built on the U-Net architecture and makes use of a pre-trained model for efficient performance.
+The U-Net architecture and training parameters are largely inspired by nnUNet<sup>1</sup>.</p>
 <p>If you wish, you can also train a new model using your own data, or combine it with our available public dataset. (soon to come!)</p>
 <p>To enhance segmentation, MemBrain-seg includes preprocessing functions. These help to adjust your tomograms so they're similar to the data our network was trained on, making the process smoother and more efficient.</p>
 <p>Explore MemBrain-seg, use it for your needs, and let us know how it works for you!</p>
+<div class="highlight"><pre><span></span><code>[1] Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., &amp; Maier-Hein, K. H. (2020). nnU-Net: a self-configuring method 
+for deep learning-based biomedical image segmentation. Nature Methods, 1-9.
+</code></pre></div>
 <h1 id="installation">Installation</h1>
 <p>For detailed installation instructions, please look <a href="installation/">here</a>.</p>
 <h1 id="features">Features</h1>
 <h2 id="segmentation">Segmentation</h2>
 <p>Segmenting the membranes in your tomograms is the main feature of this repository. 
 Please find more detailed instructions <a href="Usage/Segmentation/">here</a>.</p>
-<h2 id="model-training">Model training</h2>
-<p>... explaination tbd. ...</p>
 <h2 id="preprocessing">Preprocessing</h2>
 <p>Currently, we provide the following two <a href="https://github.com/teamtomo/membrain-seg/tree/main/src/tomo_preprocessing">preprocessing</a> options:
 - pixel size matching: Rescale your tomogram to match the training pixel sizes
 - Fourier amplitude matching: Scale Fourier components to match the "style" of different tomograms</p>
 <p>For more information, see the <a href="Usage/Preprocessing/">Preprocessing</a> subsection.</p>
+<h2 id="model-training">Model training</h2>
+<p>It is also possible to use this package to train your own model. Instructions can be found <a href="Usage/Training/">here</a>.</p>
+<h2 id="patch-annotations">Patch annotations</h2>
+<p>In case you would like to train a model that works better for your tomograms, it may be beneficial to add some more patches from your tomograms to the training dataset. 
+Recommendations on how to to this can be found <a href="Usage/Annotations/">here</a>.</p>
 
 
 
@@ -442,10 +467,10 @@ Please find more detailed instructions <a href="Usage/Segmentation/">here</a>.</
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.instant", "search.highlight", "search.suggest", "content.tabs.link"], "search": "assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.instant", "search.highlight", "search.suggest", "content.tabs.link"], "search": "assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.a51614de.min.js"></script>
+      <script src="assets/javascripts/bundle.220ee61c.min.js"></script>
       
     
   </body>

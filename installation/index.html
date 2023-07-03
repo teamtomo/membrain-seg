@@ -18,10 +18,10 @@
         <link rel="prev" href="..">
       
       
-        <link rel="next" href="../Usage/Preprocessing/">
+        <link rel="next" href="../Usage/Annotations/">
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.16">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
       
@@ -355,6 +355,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../Usage/Annotations/" class="md-nav__link">
+        How to create training annotations from your own dataset?
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../Usage/Preprocessing/" class="md-nav__link">
         Preprocessing
       </a>
@@ -491,14 +505,17 @@ but any alternative like Conda, Mamba, virtualenv, venv, ... should be fine.</p>
 <p>Move to the folder "membrain-seg" (from the cloned repository in Step 1) that contains the "src" folder.
 Here, run</p>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>membrain-seg
-pip<span class="w"> </span>install<span class="w"> </span>.
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </code></pre></div>
 <p>This will install MemBrain-seg and all dependencies required for segmenting your tomograms.</p>
 <h2 id="step-4-validate-installation">Step 4: Validate installation</h2>
 <p>As a first check whether the installation was successful, you can run
 <div class="highlight"><pre><span></span><code>membrain
 </code></pre></div>
-This should display the different options you can choose from MemBrain, like "segment" and "train".</p>
+This should display the different options you can choose from MemBrain, like "segment" and "train", similar to the screenshot below:</p>
+<p align="center" width="100%">
+    <img width="50%" src="https://user-images.githubusercontent.com/34575029/250504233-d7e49aef-e783-45fb-b04e-8736b1af7d6e.png">
+</p>
 
 
 
@@ -542,10 +559,10 @@ This should display the different options you can choose from MemBrain, like "se
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "search.highlight", "search.suggest", "content.tabs.link"], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "search.highlight", "search.suggest", "content.tabs.link"], "search": "../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.a51614de.min.js"></script>
+      <script src="../assets/javascripts/bundle.220ee61c.min.js"></script>
       
     
   </body>
