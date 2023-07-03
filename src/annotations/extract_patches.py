@@ -53,7 +53,7 @@ def get_out_files_and_patch_number(
 
     Generates unique file names for raw and labeled data patches by incrementing patch
     number until non-existing file names are found in the specified directories.
-    #Also returns the final patch number used to generate these file names.
+    Also returns the final patch number used to generate these file names.
 
     Parameters
     ----------
