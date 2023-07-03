@@ -43,5 +43,10 @@ As a first check whether the installation was successful, you can run
 ```shell
 membrain
 ```
-This should display the different options you can choose from MemBrain, like "segment" and "train".
+This should display the different options you can choose from MemBrain, like "segment" and "train", similar to the screenshot below:
+
+
+<p align="center" width="100%">
+    <img width="50%" src="https://user-images.githubusercontent.com/34575029/250490641-a36278fb-c188-4446-9212-67f21669f002.png">
+</p>
 
