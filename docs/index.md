@@ -7,7 +7,7 @@
 
 # Overview
 MemBrain-seg is a practical tool for membrane segmentation in cryo-electron tomograms. It's built on the U-Net architecture and makes use of a pre-trained model for efficient performance.
-The U-Net architecture and training parameters are largely inspired by nnUNet<sup>1</sup>
+The U-Net architecture and training parameters are largely inspired by nnUNet<sup>1</sup>.
 
 If you wish, you can also train a new model using your own data, or combine it with our available public dataset. (soon to come!)
 
@@ -28,10 +28,6 @@ For detailed installation instructions, please look [here](./installation.md).
 Segmenting the membranes in your tomograms is the main feature of this repository. 
 Please find more detailed instructions [here](./Usage/Segmentation.md).
 
-## Model training
-It is also possible to use this package to train your own model. Instructions can be found [here](./Usage/Training.md).
-
-
 ## Preprocessing
 Currently, we provide the following two [preprocessing](https://github.com/teamtomo/membrain-seg/tree/main/src/tomo_preprocessing) options:
 - pixel size matching: Rescale your tomogram to match the training pixel sizes
@@ -39,3 +35,9 @@ Currently, we provide the following two [preprocessing](https://github.com/teamt
 
 For more information, see the [Preprocessing](Usage/Preprocessing.md) subsection.
 
+## Model training
+It is also possible to use this package to train your own model. Instructions can be found [here](./Usage/Training.md).
+
+## Patch annotations
+In case you would like to train a model that works better for your tomograms, it may be beneficial to add some more patches from your tomograms to the training dataset. 
+Recommendations on how to to this can be found [here](Usage/Annotations.md).
