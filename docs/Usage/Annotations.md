@@ -1,7 +1,7 @@
 # How to create training annotations from your own dataset?
 
 This is an example guide on how to create training data in order to improve MemBrain-seg's performance on your tomograms. 
-The annotation strategy was developed as part of a [Helmholtz Imaging](https://helmholtz-imaging.de/) Collaboration with [Fabian Isensee](https://helmholtz-imaging.de/person/dr-rer-nat-fabian-isensee/) & [Sebastian Ziegler](https://modalities.helmholtz-imaging.de/expert/46).
+The annotation strategy was developed as part of a [Helmholtz Imaging](https://helmholtz-imaging.de/) collaboration with [Fabian Isensee](https://helmholtz-imaging.de/person/dr-rer-nat-fabian-isensee/) & [Sebastian Ziegler](https://modalities.helmholtz-imaging.de/expert/46).
 
 
 In parallel to this guide, please also check Simon Zufferey's [YouTube tutorial](https://www.youtube.com/playlist?list=PLV3O3yHyCjkXAi9MWgComzh6JuKcHUgNU) accompanying the instructions on this size. 
