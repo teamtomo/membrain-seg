@@ -146,7 +146,7 @@ def train_advanced(
 @cli.command(name="data_structure_help")
 def data_dir_help():
     """
-    Display information about the required data directory structure.
+    Display information about the training data directory structure.
 
     Note:
     ----
