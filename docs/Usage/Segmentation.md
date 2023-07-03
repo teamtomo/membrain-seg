@@ -22,12 +22,18 @@ For the prediction, you will basically need two files:
 It may make sense to use a preprocessed tomogram.
 2. A **pre-trained MemBrain segmentation model**
 
-For point 2, as we are still in the development phase, we do not have a public model right now.
-If you would like to give MemBrain-seg a try, we are happy to provide our latest model.
-Just write an email to lorenz.lamm@helmholtz-munich.de
+A pre-trained MemBrain segmentation model can be downloaded [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). 
+Please note that our best model changes often, as we are still in the development phase. So you can check in from time to time and see whether the model improved.
+If you have problems with the model, please write an email to lorenz.lamm@helmholtz-munich.de
 
 ## Prediction
-Now, for the prediction, you will only need to type
+Typing
+```
+membrain segment
+```
+will display the segmentation command line interface and show available options.
+
+For example, for the prediction, you only need to type
 
 ```shell
 membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model>

@@ -18,6 +18,8 @@ Our best model is changing quickly, so if you would like to give MemBrain-seg a 
 
 Preliminary [documentation](https://github.com/teamtomo/membrain-seg/blob/main/docs/index.md) is available, but far from perfect. Please let us know if you encounter any issues, and we are more than happy to help (and get feedback what does not work yet).
 
+Our current best model is available for download [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). Please let us know how it works for you.
+
 The U-Net architecture and training parameters are largely inspired by nnUNet<sup>1</sup>.
 ```
 [1] Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2020). nnU-Net: a self-configuring method 
