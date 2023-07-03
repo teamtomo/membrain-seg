@@ -47,6 +47,6 @@ This should display the different options you can choose from MemBrain, like "se
 
 
 <p align="center" width="100%">
-    <img width="50%" src="https://user-images.githubusercontent.com/34575029/250490641-a36278fb-c188-4446-9212-67f21669f002.png">
+    <img width="50%" src="https://user-images.githubusercontent.com/34575029/250504233-d7e49aef-e783-45fb-b04e-8736b1af7d6e.png">
 </p>
 

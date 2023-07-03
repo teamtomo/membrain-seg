@@ -33,6 +33,12 @@ membrain segment
 ```
 will display the segmentation command line interface and show available options.
 
+
+<p align="center" width="100%">
+    <img width="50%" src="https://user-images.githubusercontent.com/34575029/250504257-611ea864-48c5-4424-9bc8-7b30bcfbb39b.png">
+</p>
+
+
 For example, for the prediction, you only need to type
 
 ```shell
