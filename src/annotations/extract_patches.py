@@ -14,7 +14,7 @@ class InvalidCoordinatesError(Exception):
     pass
 
 
-def pad_labels(patch, padding):
+def pad_labels(patch, padding, pad_value=2.0):
     """
     Pads labels of a 3D array, typically for the boundaries of a 3D patch.
 
@@ -25,6 +25,8 @@ def pad_labels(patch, padding):
     padding : tuple
         The tuple containing padding dimensions for the 3D array.
         It should contain three elements: (pad_depth, pad_height, pad_width).
+    pad_value: float
+        Borders of the patch are padded with this value ("ignore" label)
 
     Returns
     -------
@@ -36,12 +38,12 @@ def pad_labels(patch, padding):
     This function pads the borders of the 3D array with the value of 2.0,
     typically used to ignore labels at the boundaries during a subsequent analysis.
     """
-    patch[: padding[0], :, :] = 2.0
-    patch[-padding[0] :, :, :] = 2.0
-    patch[:, : padding[1], :] = 2.0
-    patch[:, -padding[1] :, :] = 2.0
-    patch[:, :, : padding[2]] = 2.0
-    patch[:, :, -padding[2] :] = 2.0
+    patch[: padding[0], :, :] = pad_value
+    patch[-padding[0] :, :, :] = pad_value
+    patch[:, : padding[1], :] = pad_value
+    patch[:, -padding[1] :, :] = pad_value
+    patch[:, :, : padding[2]] = pad_value
+    patch[:, :, -padding[2] :] = pad_value
     return patch
 
 
@@ -110,7 +112,9 @@ def get_out_files_and_patch_number(
     return patch_nr + exist_add, out_file_patch, out_file_patch_label
 
 
-def extract_patches(tomo_path, seg_path, coords, out_dir, idx_add=0, token=None):
+def extract_patches(
+    tomo_path, seg_path, coords, out_dir, idx_add=0, token=None, pad_value=2.0
+):
     """
     Extracts 3D patches from a given tomogram and corresponding segmentation.
 
@@ -131,6 +135,8 @@ def extract_patches(tomo_path, seg_path, coords, out_dir, idx_add=0, token=None)
     token : str, optional
         Token to uniquely identify the tomogram, default is None. If None,
         the base name of the tomogram file path is used.
+    pad_value: float, optional
+        Borders of extracted patch are padded with this value ("ignore" label)
 
     Returns
     -------
@@ -185,7 +191,9 @@ def extract_patches(tomo_path, seg_path, coords, out_dir, idx_add=0, token=None)
                 min_coords[1] : min_coords[1] + 160,
                 min_coords[2] : min_coords[2] + 160,
             ]
-            cur_patch_labels = pad_labels(cur_patch_labels, padding)
+            cur_patch_labels = pad_labels(
+                cur_patch_labels, padding, pad_value=pad_value
+            )
 
             cur_patch = np.transpose(cur_patch, (2, 1, 0))
             cur_patch_labels = np.transpose(cur_patch_labels, (2, 1, 0))
