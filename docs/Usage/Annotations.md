@@ -3,6 +3,9 @@
 This is an example guide on how to create training data in order to improve MemBrain-seg's performance on your tomograms. 
 The annotation strategy was developed as part of a [Helmholtz Imaging](https://helmholtz-imaging.de/) Collaboration with [Fabian Isensee](https://helmholtz-imaging.de/person/dr-rer-nat-fabian-isensee/) & [Sebastian Ziegler](https://modalities.helmholtz-imaging.de/expert/46).
 
+
+In parallel to this guide, please also check Simon Zufferey's [YouTube tutorial](https://www.youtube.com/playlist?list=PLV3O3yHyCjkXAi9MWgComzh6JuKcHUgNU) accompanying the instructions on this size. 
+
 **Important note:** While this guide describes how to improve the performance for your own tomograms, we highly encourage you to also share your generated training patches with us and the community, so that everybody can benefit from a more generalized performance of the model.
 We are currently working on a platform to easily share them. In the meantime, please reach out to us (Lorenz.Lamm@helmholtz-munich.de) to discuss how to best share your patches without giving away too much of your own data.
 
@@ -27,6 +30,8 @@ The steps described in this tutorial are:
 # Software
 You will need software to inspect your tomograms and MemBrain-seg's segmentations, as well as to perform the corrections. For both of these tasks, we use [MITK Workbench](https://docs.mitk.org/nightly/MITKWorkbenchManualPage.html), but any software with these functionalities will do, e.g. Amira or Napari.
 
+In our YouTube playlist, you can also find [a video on basic usage of MITK for patch correction](https://youtu.be/dhghgfO7Aoc).
+
 # Patch extraction
 In order to not have to correct the entire tomogram, we focus on small patches (160^3) where the segmentation performance is particularly bad. We crop these patches out of the tomogram and correct them manually.
 
@@ -43,6 +48,8 @@ Once you found all patches that you would like to extract (we recommend around 2
 patch_corrections extract_patches
 ```
 Running this command will open the help of this function and guide you through the required parameters.
+
+Simon also describes this process of patch selection in his [first episode on YouTube](https://youtu.be/ilBYKQVGssQ).
 
 # Corrections
 The goal of the corrections is to assign every voxel in your extracted patch with the correct label (i.e. **"membrane"** or **"no membrane"**). However, each tomogram will probably have regions where it is very hard to tell where exactly the membrane is or if there is a membrane at all. In these cases, we want to use the **"ignore"** label. This label will not influence training of the U-Net in any direction, so whenever you are in doubt, it's best to assign the "ignore" label. **All voxels not assigned to the ignore label will contribute to the network training and should therefore be very reliable!**
@@ -102,6 +109,8 @@ For this, you create a segmentation layer in MITK and brush over all regions tha
     <img width="50%" src="https://user-images.githubusercontent.com/34575029/250078243-d49d27d1-0890-4837-a0a5-86aabba87d00.png">
 </p>
 
+Setting the "Remove" label is also explained in [Simon's YouTube video](https://youtu.be/diGTf4oSMMQ) about the remove label.
+
 ## Add label
 For the "add" annotations, you look for areas in your patch where MemBrain-seg did not segment a membrane, even though the membrane is clearly visible.  
 In these regions, you can now accurately delineate where the membrane is, i.e. you assign all voxels belonging to a membrane to the "add" annotation.
@@ -111,6 +120,8 @@ Similarly to the "remove" label, you should save the resulting segmentation as "
 <p align="center" width="100%">
     <img width="50%" src="https://user-images.githubusercontent.com/34575029/250078228-6c6868fc-52d9-4885-89b4-b1958fc70a3f.png">
 </p>
+
+You can find visualizations of the "Add label" in this [YouTube video](https://youtu.be/F1ltG1DyZnA).
 
 ## Ignore label
 The "ignore" annotation is used whenever you are not sure where exactly the membrane is or whether there is a membrane at all. In these cases, you can coarsely annotate these difficult regions. Thereby, you don't need to be very accurate and can coarsely capture the area.
@@ -122,8 +133,10 @@ In the example below, one can see that the membrane should be closing somewhere,
     <img width="50%" src="https://user-images.githubusercontent.com/34575029/250078236-8f645295-0114-4dee-842f-14442c9961f2.png">
 </p>
 
+More details and examples of the "Ignore label" can be found in [this clip](https://youtu.be/3TEi8cubRyk).
+
 # Merging of corrections
-Once you are done with all your corrections, you should check again that your saved corrections follow the [folder structure described above](#folder-structure).
+After [saving all your files with appropriate naming](https://youtu.be/6R-MqXUc8tA), you should check again that your saved corrections follow the [folder structure described above](#folder-structure).
 
 Then, you can merge your corrections into training patches that can be used for re-training:
 
