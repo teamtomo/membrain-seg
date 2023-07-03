@@ -23,7 +23,7 @@ The U-Net architecture and training parameters are largely inspired by nnUNet<su
 
 Our current best model is available for download [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). Please let us know how it works for you.
 
-If you wish, you can also train a new model using your own data, or combine it with our available public dataset. (soon to come!)
+If you wish, you can also train a new model using your own data, or combine it with our (soon to come!) publicly-available dataset. 
 
 To enhance segmentation, MemBrain-seg includes preprocessing functions. These help to adjust your tomograms so they're similar to the data our network was trained on, making the process smoother and more efficient.
 
