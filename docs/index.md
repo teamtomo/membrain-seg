@@ -1,6 +1,10 @@
 # Membrain-Seg
 [Membrain-Seg](https://github.com/teamtomo/membrain-seg/) is a Python project developed by [teamtomo](https://github.com/teamtomo) for membrane segmentation in 3D for cryo-electron tomography (cryo-ET). This tool aims to provide researchers with an efficient and reliable method for segmenting membranes in 3D microscopic images. Membrain-Seg is currently under early development, so we may make breaking changes between releases.
 
+<p align="center" width="100%">
+    <img width="100%" src="https://user-images.githubusercontent.com/34575029/248259282-ee622267-77fa-4c88-ad38-ad0cfd76b810.png">
+</p>
+
 # Overview
 MemBrain-seg is a practical tool for membrane segmentation in cryo-electron tomograms. It's built on the U-Net architecture and makes use of a pre-trained model for efficient performance.
 
@@ -20,7 +24,7 @@ Segmenting the membranes in your tomograms is the main feature of this repositor
 Please find more detailed instructions [here](./Usage/Segmentation.md).
 
 ## Model training
-... explaination tbd. ...
+It is also possible to use this package to train your own model. Instructions can be found [here](./Usage/Training.md).
 
 
 ## Preprocessing
