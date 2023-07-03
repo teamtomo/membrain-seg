@@ -67,4 +67,6 @@ def merge_corrections(
     after running the script)
 
     """
-    _convert_single_nrrd_files(labels_dir, corrections_dir, out_dir)
+    _convert_single_nrrd_files(
+        labels_dir=labels_dir, corrections_dir=corrections_dir, out_dir=out_dir
+    )

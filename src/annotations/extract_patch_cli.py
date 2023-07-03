@@ -79,10 +79,18 @@ def extract_patches(
     --x 100 --y 200 --z 300
 
     """
+    pad_value = 2.0  # Currently still hard-coded because other values not
+    # compatible with training routine yet.
     if coords_file is not None:
-        coords = get_csv_data(coords_file)
+        coords = get_csv_data(csv_path=coords_file)
     else:
         coords = [np.array((x, y, z))]
     _extract_patches(
-        tomogram_path, segmentation_path, coords, out_folder, idx_add, token
+        tomo_path=tomogram_path,
+        seg_path=segmentation_path,
+        coords=coords,
+        out_dir=out_folder,
+        idx_add=idx_add,
+        token=token,
+        pad_value=pad_value,
     )
