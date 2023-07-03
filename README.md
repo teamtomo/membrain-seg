@@ -17,3 +17,9 @@ Membrain-Seg is currently under early development, so we may make breaking chang
 Our best model is changing quickly, so if you would like to give MemBrain-seg a try, please reach out to us (e.g. Lorenz.Lamm@helmholtz-munich.de) and we are happy to provide you with the latest version and advice on how to best use this repository.
 
 Preliminary [documentation](https://github.com/teamtomo/membrain-seg/blob/main/docs/index.md) is available, but far from perfect. Please let us know if you encounter any issues, and we are more than happy to help (and get feedback what does not work yet).
+
+The U-Net architecture and training parameters are largely inspired by nnUNet<sup>1</sup>.
+```
+[1] Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2020). nnU-Net: a self-configuring method 
+for deep learning-based biomedical image segmentation. Nature Methods, 1-9.
+```

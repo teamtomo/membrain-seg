@@ -7,13 +7,18 @@
 
 # Overview
 MemBrain-seg is a practical tool for membrane segmentation in cryo-electron tomograms. It's built on the U-Net architecture and makes use of a pre-trained model for efficient performance.
-
+The U-Net architecture and training parameters are largely inspired by nnUNet<sup>1</sup>
 
 If you wish, you can also train a new model using your own data, or combine it with our available public dataset. (soon to come!)
 
 To enhance segmentation, MemBrain-seg includes preprocessing functions. These help to adjust your tomograms so they're similar to the data our network was trained on, making the process smoother and more efficient.
 
 Explore MemBrain-seg, use it for your needs, and let us know how it works for you!
+
+```
+[1] Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2020). nnU-Net: a self-configuring method 
+for deep learning-based biomedical image segmentation. Nature Methods, 1-9.
+```
 
 # Installation
 For detailed installation instructions, please look [here](./installation.md).
