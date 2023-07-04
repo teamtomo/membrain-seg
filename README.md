@@ -29,14 +29,13 @@ To enhance segmentation, MemBrain-seg includes preprocessing functions. These he
 
 Explore MemBrain-seg, use it for your needs, and let us know how it works for you!
 
+
+Preliminary [documentation](https://github.com/teamtomo/membrain-seg/blob/main/docs/index.md) is available, but far from perfect. Please let us know if you encounter any issues, and we are more than happy to help (and get feedback what does not work yet).
+
 ```
 [1] Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2020). nnU-Net: a self-configuring method 
 for deep learning-based biomedical image segmentation. Nature Methods, 1-9.
 ```
-
-
-Preliminary [documentation](https://github.com/teamtomo/membrain-seg/blob/main/docs/index.md) is available, but far from perfect. Please let us know if you encounter any issues, and we are more than happy to help (and get feedback what does not work yet).
-
 
 # Installation
 For detailed installation instructions, please look [here](./docs/installation.md).
