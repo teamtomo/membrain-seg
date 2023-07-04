@@ -19,6 +19,11 @@ def segment(
     store_probabilities: bool = Option(  # noqa: B008
         False, help="Should probability maps be output in addition to segmentations?"
     ),
+    sliding_window_size: int = Option(  # noqa: B008
+        160,
+        help="Sliding window size used for inference. Smaller values than 160 \
+            consume less GPU, but also lead to worse segmentation results!",
+    ),
 ):
     """Segment tomograms using a trained model.
 
@@ -33,4 +38,5 @@ def segment(
         ckpt_path=ckpt_path,
         out_folder=out_folder,
         store_probabilities=store_probabilities,
+        sw_roi_size=sliding_window_size,
     )
