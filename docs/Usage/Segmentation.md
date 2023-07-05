@@ -53,7 +53,14 @@ the `--out_folder` argument:
 membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --out-folder <your-preferred-folder>
 ```
 
-Note: MemBrain-seg automatically detects a CUDA-enabled GPU, if available, and will execute the segmentation on it. Using a GPU device is highly recommended to accelerate the segmentation process.
+### Note: 
+MemBrain-seg automatically detects a CUDA-enabled GPU, if available, and will execute the segmentation on it. Using a GPU device is highly recommended to accelerate the segmentation process.
+
+### Note#2: 
+Running MemBrain-seg on a GPU requires at least roughly 8GB of GPU space.
+
+### Emergency tip:
+In case you don't have enough GPU space, you can also try adjusting the `--sliding-window-size` parameter. By default, it is set to 160. Smaller values will require less GPU space, but also lead to worse segmentation results!
 
 ## Post-Processing
 If you have pre-processed your tomogram using pixel size matching, you may want to [rescale](./Preprocessing.md#pixel-size-matching) your 
