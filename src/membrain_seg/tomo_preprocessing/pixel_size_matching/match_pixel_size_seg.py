@@ -1,10 +1,11 @@
 import os
 
-from membrain_seg.dataloading.data_utils import (
+from scipy import ndimage
+
+from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     store_tomogram,
 )
-from scipy import ndimage
 
 
 def match_segmentation_pixel_size_to_tomo(

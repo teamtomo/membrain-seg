@@ -1,7 +1,8 @@
 import os
 
 import numpy as np
-from membrain_seg.dataloading.data_utils import (
+
+from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     make_directory_if_not_exists,
     write_nifti,

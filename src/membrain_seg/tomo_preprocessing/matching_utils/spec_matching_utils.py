@@ -33,7 +33,7 @@ import numpy.fft as fft
 import pandas as pd
 from skimage.util import img_as_float32
 
-from tomo_preprocessing.matching_utils.filter_utils import (
+from membrain_seg.tomo_preprocessing.matching_utils.filter_utils import (
     radial_average,
     rotational_kernel,
 )

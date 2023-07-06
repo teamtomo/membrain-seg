@@ -5,8 +5,10 @@ from pytorch_lightning import Callback
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
-from membrain_seg.dataloading.memseg_pl_datamodule import MemBrainSegDataModule
-from membrain_seg.networks.unet import SemanticSegmentationUnet
+from membrain_seg.segmentation.dataloading.memseg_pl_datamodule import (
+    MemBrainSegDataModule,
+)
+from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
 
 warnings.filterwarnings("ignore", category=UserWarning, module="torch._tensor")
 warnings.filterwarnings("ignore", category=UserWarning, module="monai.data")
