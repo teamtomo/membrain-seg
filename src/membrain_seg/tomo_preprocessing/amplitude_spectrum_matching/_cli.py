@@ -1,6 +1,6 @@
 from typer import Option
 
-from membrain_seg.dataloading.data_utils import load_tomogram
+from membrain_seg.segmentation.dataloading.data_utils import load_tomogram
 
 from ..cli import OPTION_PROMPT_KWARGS as PKWARGS
 from ..cli import cli
