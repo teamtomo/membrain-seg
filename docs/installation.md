@@ -33,7 +33,7 @@ Here, run
 
 ```shell
 cd membrain-seg
-pip install -e .
+pip install .
 ```
 
 This will install MemBrain-seg and all dependencies required for segmenting your tomograms.
@@ -50,3 +50,6 @@ This should display the different options you can choose from MemBrain, like "se
     <img width="50%" src="https://user-images.githubusercontent.com/34575029/250504233-d7e49aef-e783-45fb-b04e-8736b1af7d6e.png">
 </p>
 
+## Step 5: Download pre-trained segmentation model (optional)
+You can download a pre-trained segmentation model [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). 
+Once downloaded, you can use it in MemBrain-seg's [Segmentation](./Usage/Segmentation.md) functionality to segment your tomograms.
