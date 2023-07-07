@@ -1,6 +1,7 @@
 import numpy as np
-from membrain_seg.dataloading.data_utils import get_csv_data
 from typer import Option
+
+from membrain_seg.segmentation.dataloading.data_utils import get_csv_data
 
 from .cli import OPTION_PROMPT_KWARGS as PKWARGS
 from .cli import cli

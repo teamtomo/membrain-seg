@@ -28,13 +28,15 @@
 from typing import Union
 
 import pandas as pd
-from membrain_seg.dataloading.data_utils import (
+
+from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     normalize_tomogram,
     store_tomogram,
 )
-
-from tomo_preprocessing.matching_utils.spec_matching_utils import match_spectrum
+from membrain_seg.tomo_preprocessing.matching_utils.spec_matching_utils import (
+    match_spectrum,
+)
 
 
 def match_amplitude_spectrum_for_files(

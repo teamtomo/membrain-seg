@@ -26,9 +26,10 @@
 # --------------------------------------------------------------------------------
 
 
-from membrain_seg.dataloading.data_utils import normalize_tomogram
-
-from tomo_preprocessing.matching_utils.spec_matching_utils import extract_spectrum
+from membrain_seg.segmentation.dataloading.data_utils import normalize_tomogram
+from membrain_seg.tomo_preprocessing.matching_utils.spec_matching_utils import (
+    extract_spectrum,
+)
 
 
 def extract_spectrum_from_file(input_path: str, output_path: str) -> None:

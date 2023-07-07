@@ -1,12 +1,11 @@
 import os
 
-from membrain_seg.dataloading.data_utils import (
+from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     normalize_tomogram,
     store_tomogram,
 )
-
-from tomo_preprocessing.matching_utils.px_matching_utils import (
+from membrain_seg.tomo_preprocessing.matching_utils.px_matching_utils import (
     determine_output_shape,
     fourier_cropping,
     fourier_extend,

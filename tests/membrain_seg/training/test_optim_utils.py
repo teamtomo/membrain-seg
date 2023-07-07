@@ -11,7 +11,7 @@ def test_loss_fn_correctness():
     """
 
     import torch
-    from membrain_seg.training.optim_utils import (
+    from membrain_seg.segmentation.training.optim_utils import (
         DeepSuperVisionLoss,
         IgnoreLabelDiceCELoss,
     )

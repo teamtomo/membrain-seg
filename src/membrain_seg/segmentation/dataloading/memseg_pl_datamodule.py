@@ -4,7 +4,7 @@ from typing import Optional
 import pytorch_lightning as pl
 from monai.data import DataLoader
 
-from membrain_seg.dataloading.memseg_dataset import CryoETMemSegDataset
+from membrain_seg.segmentation.dataloading.memseg_dataset import CryoETMemSegDataset
 
 
 class MemBrainSegDataModule(pl.LightningDataModule):

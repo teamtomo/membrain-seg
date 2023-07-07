@@ -3,7 +3,7 @@ import os
 import torch
 from monai.inferers import SlidingWindowInferer
 
-from membrain_seg.networks.unet import SemanticSegmentationUnet
+from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
 
 from .dataloading.data_utils import (
     load_data_for_inference,
