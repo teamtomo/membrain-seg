@@ -15,7 +15,7 @@ from monai.transforms import (
     ToTensord,
 )
 
-from membrain_seg.dataloading.transforms import (
+from membrain_seg.segmentation.dataloading.transforms import (
     AxesShuffle,
     BlankCuboidTransform,
     BrightnessGradientAdditiveTransform,

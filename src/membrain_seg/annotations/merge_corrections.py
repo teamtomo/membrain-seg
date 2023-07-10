@@ -2,7 +2,8 @@ import os
 
 import numpy as np
 import SimpleITK as sitk
-from membrain_seg.dataloading.data_utils import write_nifti
+
+from membrain_seg.segmentation.dataloading.data_utils import write_nifti
 
 from .extract_patches import pad_labels
 

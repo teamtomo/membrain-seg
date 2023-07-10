@@ -62,9 +62,9 @@ repository = "https://github.com/teamtomo/membrain-seg"
 # [project.scripts]
 # spam-cli = "spam:main_cli"
 [project.scripts]
-tomo_preprocessing = "tomo_preprocessing:cli"
-membrain = "membrain_seg.cli:cli"
-patch_corrections = "annotations:cli"
+tomo_preprocessing = "membrain_seg.tomo_preprocessing:cli"
+membrain = "membrain_seg.segmentation.cli:cli"
+patch_corrections = "membrain_seg.annotations:cli"
 
 
 # Entry points
