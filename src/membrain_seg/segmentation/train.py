@@ -91,8 +91,7 @@ def train(
         save_top_k=-1,  # Save all checkpoints
         every_n_epochs=100,
         dirpath="checkpoints/",
-        filename=checkpointing_name
-        + "-{epoch}-{val_loss:.2f}",  # Customize the filename of saved checkpoints
+        filename=checkpointing_name + "-{epoch}-{val_loss:.2f}",
         verbose=True,  # Print a message when a checkpoint is saved
     )
 
@@ -106,6 +105,7 @@ def train(
     print_lr_cb = PrintLearningRate()
     # Set up the trainer
     trainer = pl.Trainer(
+        precision="16-mixed",
         logger=[csv_logger, wandb_logger],
         callbacks=[
             checkpoint_callback_val_loss,

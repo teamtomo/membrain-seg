@@ -91,16 +91,18 @@ def segment(
     print("Performing 8-fold test-time augmentation.")
     for m in range(8):
         with torch.no_grad():
-            predictions += (
-                get_mirrored_img(
-                    inferer(get_mirrored_img(new_data.clone(), m).to(device), pl_model)[
-                        0
-                    ],
-                    m,
+            with torch.cuda.amp.autocast():
+                predictions += (
+                    get_mirrored_img(
+                        inferer(
+                            get_mirrored_img(new_data.clone(), m).to(device), pl_model
+                        )[0],
+                        m,
+                    )
+                    .detach()
+                    .cpu()
                 )
-                .detach()
-                .cpu()
-            )
+
     predictions /= 8.0
 
     # Extract segmentations and store them in an output file.
