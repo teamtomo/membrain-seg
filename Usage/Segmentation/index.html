@@ -560,9 +560,12 @@
 It may make sense to use a preprocessed tomogram.</li>
 <li>A <strong>pre-trained MemBrain segmentation model</strong></li>
 </ol>
-<p>A pre-trained MemBrain segmentation model can be downloaded <a href="https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing">here</a>. 
-Please note that our best model changes often, as we are still in the development phase. So you can check in from time to time and see whether the model improved.
+<p>We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. You can find a pre-trained segmentation model for denoised tomograms <a href="https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing">here</a>. </p>
+<p>In case you don't have denoised tomograms available, you can also use <a href="https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing">this model</a>. It performs much better on non-denoised data, and maintains a good performance on denoised tomograms.</p>
+<p>Please note that our best model changes often, as we are still in the development phase. So you can check in from time to time and see whether the model improved.
 If you have problems with the model, please write an email to lorenz.lamm@helmholtz-munich.de</p>
+<div class="highlight"><pre><span></span><code>[1] T. -O. Buchholz, M. Jordan, G. Pigino and F. Jug, &quot;Cryo-CARE: Content-Aware Image Restoration for Cryo-Transmission Electron Microscopy Data,&quot; 2019 IEEE 16th International Symposium on Biomedical Imaging (ISBI 2019), Venice, Italy, 2019, pp. 502-506, doi: 10.1109/ISBI.2019.8759519.
+</code></pre></div>
 <h2 id="prediction">Prediction</h2>
 <p>Typing
 <div class="highlight"><pre><span></span><code>membrain segment
