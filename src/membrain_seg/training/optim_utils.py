@@ -2,7 +2,10 @@ import torch
 from monai.losses import DiceLoss, MaskedLoss
 from monai.networks.nets import DynUNet
 from monai.utils import LossReduction
-from torch.nn.functional import binary_cross_entropy, sigmoid
+from torch.nn.functional import (
+    binary_cross_entropy_with_logits,
+    sigmoid,
+)
 from torch.nn.modules.loss import _Loss
 
 
@@ -79,6 +82,7 @@ class IgnoreLabelDiceCELoss(_Loss):
             The calculated loss.
         """
         # Create a mask to ignore the specified label in the target
+        orig_data = data.clone()
         data = sigmoid(data)
         mask = target != self.ignore_label
 
@@ -86,7 +90,10 @@ class IgnoreLabelDiceCELoss(_Loss):
         target_comp = target.clone()
         target_comp[target == self.ignore_label] = 0
         target_tensor = torch.tensor(target_comp, dtype=data.dtype, device=data.device)
-        bce_loss = binary_cross_entropy(data, target_tensor, reduction="none")
+
+        bce_loss = binary_cross_entropy_with_logits(
+            orig_data, target_tensor, reduction="none"
+        )
         bce_loss[~mask] = 0.0
         bce_loss = torch.sum(bce_loss) / torch.sum(mask)
         dice_loss = self.dice_loss(data, target, mask)
@@ -101,10 +108,10 @@ class DeepSuperVisionLoss(_Loss):
     Deep Supervision loss using downsampled GT and low-res outputs.
 
     Implementation based on nnU-Net's implementation with downsampled images.
-    Reference: Zeng, Guodong, et al. "3D U-net with multi-level deep supervision: 
-    fully automatic segmentation of proximal femur in 3D MR images." Machine Learning 
-    in Medical Imaging: 8th International Workshop, MLMI 2017, Held in Conjunction with 
-    MICCAI 2017, Quebec City, QC, Canada, September 10, 2017, Proceedings 8. Springer 
+    Reference: Zeng, Guodong, et al. "3D U-net with multi-level deep supervision:
+    fully automatic segmentation of proximal femur in 3D MR images." Machine Learning
+    in Medical Imaging: 8th International Workshop, MLMI 2017, Held in Conjunction with
+    MICCAI 2017, Quebec City, QC, Canada, September 10, 2017, Proceedings 8. Springer
     International Publishing, 2017.
 
     Parameters
