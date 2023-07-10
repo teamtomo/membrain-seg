@@ -51,5 +51,13 @@ This should display the different options you can choose from MemBrain, like "se
 </p>
 
 ## Step 5: Download pre-trained segmentation model (optional)
-You can download a pre-trained segmentation model [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). 
+We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. You can find a pre-trained segmentation model for denoised tomograms [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). 
+
+In case you don't have denoised tomograms available, you can also use [this model](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing). It performs much better on non-denoised data, and maintains a good performance on denoised tomograms.
+
 Once downloaded, you can use it in MemBrain-seg's [Segmentation](./Usage/Segmentation.md) functionality to segment your tomograms.
+
+
+```
+[1] T. -O. Buchholz, M. Jordan, G. Pigino and F. Jug, "Cryo-CARE: Content-Aware Image Restoration for Cryo-Transmission Electron Microscopy Data," 2019 IEEE 16th International Symposium on Biomedical Imaging (ISBI 2019), Venice, Italy, 2019, pp. 502-506, doi: 10.1109/ISBI.2019.8759519.
+```
