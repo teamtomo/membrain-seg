@@ -39,6 +39,8 @@ def pad_labels(patch, padding, pad_value=2.0):
     This function pads the borders of the 3D array with the value of 2.0,
     typically used to ignore labels at the boundaries during a subsequent analysis.
     """
+    if isinstance(padding, int):
+        padding = [padding, padding, padding]
     patch[: padding[0], :, :] = pad_value
     patch[-padding[0] :, :, :] = pad_value
     patch[:, : padding[1], :] = pad_value
