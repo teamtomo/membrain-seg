@@ -58,7 +58,7 @@ def segment(
 
     # Initialize the model and load trained weights from checkpoint
     pl_model = SemanticSegmentationUnet()
-    pl_model = pl_model.load_from_checkpoint(model_checkpoint)
+    pl_model = pl_model.load_from_checkpoint(model_checkpoint, map_location=device)
     pl_model.to(device)
 
     # Preprocess the new data
