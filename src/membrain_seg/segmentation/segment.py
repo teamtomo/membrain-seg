@@ -64,7 +64,7 @@ def segment(
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
-    new_data = load_data_for_inference(
+    new_data, mrc_object = load_data_for_inference(
         new_data_path, transforms, device=torch.device("cpu")
     )
     new_data = new_data.to(torch.float32)
@@ -110,4 +110,5 @@ def segment(
         orig_data_path=new_data_path,
         ckpt_token=ckpt_token,
         store_probabilities=store_probabilities,
+        mrc_object=mrc_object,
     )
