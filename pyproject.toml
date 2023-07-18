@@ -34,7 +34,8 @@ dependencies = [
     "typer[all]",
     "scikit-image",
     "simpleitk",
-    "pandas"
+    "pandas",
+    "future"
 ]
 
 
