@@ -2,12 +2,11 @@ import csv
 import os
 from typing import Any, Callable, Tuple, Union
 
+import mrcfile
 import numpy as np
 import SimpleITK as sitk
 from skimage.util import img_as_float32
 from torch import Tensor, device
-
-from .tomo_io import ImageIO
 
 
 def make_directory_if_not_exists(path: str):
@@ -110,15 +109,13 @@ def load_data_for_inference(data_path: str, transforms: Callable, device: device
         dimension added, and is moved to the appropriate device.
 
     """
-    tomogram, mrc = load_tomogram(
-        data_path, normalize_data=True, return_mrc_object=True
-    )
+    tomogram, header = load_tomogram(data_path, normalize_data=True, return_header=True)
     tomogram = np.expand_dims(tomogram, 0)
 
     new_data = transforms(tomogram)
     new_data = new_data.unsqueeze(0)  # Add batch dimension
     new_data = new_data.to(device)
-    return new_data, mrc
+    return new_data, header
 
 
 def store_segmented_tomograms(
@@ -127,7 +124,7 @@ def store_segmented_tomograms(
     orig_data_path: str,
     ckpt_token: str,
     store_probabilities: bool = False,
-    mrc_object: ImageIO = None,
+    mrc_header: np.recarray = None,
 ) -> None:
     """
     Helper function for storing output segmentations.
@@ -148,8 +145,8 @@ def store_segmented_tomograms(
         Checkpoint token.
     store_probabilities : bool, optional
         If True, probabilities are stored before thresholding.
-    mrc_object: ImageIO, optional
-        If given, the mrc_object will be used to retain header information
+    mrc_header: np.recarray, optional
+        If given, the mrc header will be used to retain header information
         from another tomogram. This way, pixel sizes and other header
         information is not lost.
     """
@@ -163,13 +160,13 @@ def store_segmented_tomograms(
         out_file = os.path.join(
             out_folder, os.path.basename(orig_data_path)[:-4] + "_scores.mrc"
         )
-        store_tomogram(out_file, predictions_np, mrc=mrc_object)
+        store_tomogram(out_file, predictions_np, header=mrc_header)
     predictions_np_thres = predictions.squeeze(0).squeeze(0).cpu().numpy() > 0.0
     out_file_thres = os.path.join(
         out_folder,
         os.path.basename(orig_data_path)[:-4] + "_" + ckpt_token + "_segmented.mrc",
     )
-    store_tomogram(out_file_thres, predictions_np_thres, mrc=mrc_object)
+    store_tomogram(out_file_thres, predictions_np_thres, header=mrc_header)
     print("MemBrain has finished segmenting your tomogram.")
 
 
@@ -214,7 +211,7 @@ def write_nifti(out_file: str, image: np.ndarray) -> None:
 
 def load_tomogram(
     filename: str,
-    return_mrc_object: bool = False,
+    return_header: bool = False,
     normalize_data: bool = False,
 ) -> Union[np.ndarray, Tuple[np.ndarray, Any]]:
     """
@@ -226,8 +223,8 @@ def load_tomogram(
     ----------
     filename : str
         File name of the tomogram to load.
-    return_mrc_object : bool, optional
-        If True, returns mrc object that contains more header information.
+    return_header : bool, optional
+        If True, returns mrc header with all tomogram meta information.
     normalize_data : bool, optional
         If True, normalize data.
 
@@ -237,19 +234,21 @@ def load_tomogram(
         Numpy array of the loaded data.
 
     """
-    mrc = ImageIO(filename)
-    mrc.read()
-    data = mrc.data
+    with mrcfile.open(filename, "r") as tomogram:
+        data = tomogram.data
+        header = tomogram.header
     if normalize_data:
         data = img_as_float32(data)
         data -= np.mean(data)
         data /= np.std(data)
-    if return_mrc_object:
-        return data, mrc
+    if return_header:
+        return data, header
     return data
 
 
-def store_tomogram(filename: str, tomogram: np.ndarray, mrc: ImageIO = None) -> None:
+def store_tomogram(
+    filename: str, tomogram: np.ndarray, header: np.recarray = None
+) -> None:
     """
     Store tomogram in specified path.
 
@@ -259,15 +258,18 @@ def store_tomogram(filename: str, tomogram: np.ndarray, mrc: ImageIO = None) -> 
         Name of the file to store the tomogram.
     tomogram : np.ndarray
         The tomogram data.
-    mrc : ImageIO, optional
-        Mrc object containing header information.
+    header : np.recarray, optional
+        Mrc file header containing tomogram meta information.
 
     """
-    if mrc is None:
-        mrc = ImageIO()
-    if tomogram.dtype == bool:
-        tomogram = tomogram.astype("ubyte")
-    mrc.write(filename, tomogram)
+    with mrcfile.new(filename, overwrite=True) as out_mrc:
+        if tomogram.dtype == bool:
+            tomogram = tomogram.astype("ubyte")
+        out_mrc.set_data(tomogram)
+        if header is not None:
+            attributes = header.dtype.names
+            for attr in attributes:
+                setattr(out_mrc.header, attr, getattr(header, attr))
 
 
 def normalize_tomogram(tomogram: np.ndarray) -> np.ndarray:

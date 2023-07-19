@@ -64,7 +64,7 @@ def segment(
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
-    new_data, mrc_object = load_data_for_inference(
+    new_data, mrc_header = load_data_for_inference(
         new_data_path, transforms, device=torch.device("cpu")
     )
     new_data = new_data.to(torch.float32)
@@ -89,7 +89,7 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     print("Performing 8-fold test-time augmentation.")
-    for m in range(8):
+    for m in range(1):
         with torch.no_grad():
             predictions += (
                 get_mirrored_img(
@@ -110,5 +110,5 @@ def segment(
         orig_data_path=new_data_path,
         ckpt_token=ckpt_token,
         store_probabilities=store_probabilities,
-        mrc_object=mrc_object,
+        mrc_header=mrc_header,
     )
