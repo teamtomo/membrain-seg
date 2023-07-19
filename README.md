@@ -22,6 +22,7 @@ The U-Net architecture and training parameters are largely inspired by nnUNet<su
 
 
 Our current best model is available for download [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). Please let us know how it works for you.
+The above model works best on denoised tomograms. As an alternative, [this model](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing) performs better on non-denoised tomograms.
 
 If you wish, you can also train a new model using your own data, or combine it with our (soon to come!) publicly-available dataset. 
 
