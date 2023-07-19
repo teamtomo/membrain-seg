@@ -48,13 +48,11 @@ def match_segmentation_pixel_size_to_tomo(
     """
     # Load the input tomogram and its pixel size
     file_path = seg_path
-    data = load_tomogram(file_path, return_pixel_size=False, normalize_data=False)
+    data = load_tomogram(file_path, normalize_data=False)
 
     # Get output shape from original tomogram
     match_tomo_path = orig_tomo_path
-    orig_tomo = load_tomogram(
-        match_tomo_path, return_pixel_size=False, normalize_data=False
-    )
+    orig_tomo = load_tomogram(match_tomo_path, normalize_data=False)
     output_shape = orig_tomo.shape
 
     print(

@@ -212,6 +212,7 @@ def write_nifti(out_file: str, image: np.ndarray) -> None:
 def load_tomogram(
     filename: str,
     return_header: bool = False,
+    return_pixel_size: bool = False,
     normalize_data: bool = False,
 ) -> Union[np.ndarray, Tuple[np.ndarray, Any]]:
     """
@@ -225,6 +226,8 @@ def load_tomogram(
         File name of the tomogram to load.
     return_header : bool, optional
         If True, returns mrc header with all tomogram meta information.
+    return_pixel_size: bool, optional
+        If True, the tomogram's pixel size is returned in addition
     normalize_data : bool, optional
         If True, normalize data.
 
@@ -241,8 +244,13 @@ def load_tomogram(
         data = img_as_float32(data)
         data -= np.mean(data)
         data /= np.std(data)
+
     if return_header:
+        if return_pixel_size:
+            return data, header, tomogram.voxel_size
         return data, header
+    if return_pixel_size:
+        return data, tomogram.voxel_size
     return data
 
 
