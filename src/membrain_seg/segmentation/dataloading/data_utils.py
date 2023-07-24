@@ -8,6 +8,8 @@ import SimpleITK as sitk
 from skimage.util import img_as_float32
 from torch import Tensor, device
 
+from membrain_seg.segmentation.connected_components import connected_components
+
 
 def make_directory_if_not_exists(path: str):
     """
@@ -124,6 +126,8 @@ def store_segmented_tomograms(
     orig_data_path: str,
     ckpt_token: str,
     store_probabilities: bool = False,
+    store_connected_components: bool = False,
+    connected_component_thres: int = None,
     mrc_header: np.recarray = None,
 ) -> None:
     """
@@ -145,6 +149,11 @@ def store_segmented_tomograms(
         Checkpoint token.
     store_probabilities : bool, optional
         If True, probabilities are stored before thresholding.
+    store_connected_components : bool, optional
+        If True, connected components of the segmentations are computed.
+    connected_component_thres : int, optional
+        If specified, all connected components smaller than this threshold
+        are removed from the segmentation.
     mrc_header: np.recarray, optional
         If given, the mrc header will be used to retain header information
         from another tomogram. This way, pixel sizes and other header
@@ -166,7 +175,12 @@ def store_segmented_tomograms(
         out_folder,
         os.path.basename(orig_data_path)[:-4] + "_" + ckpt_token + "_segmented.mrc",
     )
+    if store_connected_components:
+        predictions_np_thres = connected_components(
+            predictions_np_thres, size_thres=connected_component_thres
+        )
     store_tomogram(out_file_thres, predictions_np_thres, header=mrc_header)
+
     print("MemBrain has finished segmenting your tomogram.")
 
 
@@ -237,8 +251,9 @@ def load_tomogram(
         Numpy array of the loaded data.
 
     """
-    with mrcfile.open(filename, "r") as tomogram:
-        data = tomogram.data
+    with mrcfile.open(filename, permissive=True) as tomogram:
+        data = tomogram.data.copy()
+        data = np.transpose(data, (2, 1, 0))
         header = tomogram.header
     if normalize_data:
         data = img_as_float32(data)
@@ -252,6 +267,73 @@ def load_tomogram(
     if return_pixel_size:
         return data, tomogram.voxel_size
     return data
+
+
+_dtype_to_mode = {
+    np.dtype("float16"): 12,
+    np.dtype("float32"): 2,
+    np.dtype("int8"): 0,
+    np.dtype("int16"): 1,
+    np.dtype("uint8"): 6,
+    np.dtype("uint16"): 6,
+    np.dtype("complex64"): 4,
+}
+
+
+def convert_dtype(tomogram: np.ndarray) -> np.ndarray:
+    """
+    Convert tomogram data to a less memory-intensive dtype if possible.
+
+    Parameters
+    ----------
+    tomogram : np.ndarray
+        Input tomogram data.
+
+    Returns
+    -------
+    np.ndarray
+        Tomogram data in a possibly more memory-efficient dtype.
+
+    Raises
+    ------
+    ValueError
+        If the dtype of the tomogram is not in _dtype_to_mode and can't be converted
+        to a more memory-efficient dtype.
+    """
+    dtype = tomogram.dtype
+    # Check if data can be represented as int or uint
+    if np.allclose(tomogram, tomogram.astype(int)):
+        if (
+            tomogram.min() >= np.iinfo("int8").min
+            and tomogram.max() <= np.iinfo("int8").max
+        ):
+            return tomogram.astype("int8")
+        elif (
+            tomogram.min() >= np.iinfo("int16").min
+            and tomogram.max() <= np.iinfo("int16").max
+        ):
+            return tomogram.astype("int16")
+        elif np.all(tomogram >= 0):
+            if tomogram.max() <= np.iinfo("uint8").max:
+                return tomogram.astype("uint8")
+            elif tomogram.max() <= np.iinfo("uint16").max:
+                return tomogram.astype("uint16")
+    # Check if data can be represented as float
+    if (
+        tomogram.min() >= np.finfo("float16").min
+        and tomogram.max() <= np.finfo("float16").max
+    ):
+        return tomogram.astype("float16")
+    elif (
+        tomogram.min() >= np.finfo("float32").min
+        and tomogram.max() <= np.finfo("float32").max
+    ):
+        return tomogram.astype("float32")
+    # If none of the above, and dtype is in _dtype_to_mode, keep original dtype
+    if dtype in _dtype_to_mode:
+        return tomogram
+    # Otherwise, raise an error
+    raise ValueError(f"Cannot convert tomogram of dtype {dtype}")
 
 
 def store_tomogram(
@@ -271,13 +353,17 @@ def store_tomogram(
 
     """
     with mrcfile.new(filename, overwrite=True) as out_mrc:
-        if tomogram.dtype == bool:
-            tomogram = tomogram.astype("ubyte")
+        tomogram = convert_dtype(tomogram)
+        tomogram = np.transpose(tomogram, (2, 1, 0))
+        dtype_mode = _dtype_to_mode[tomogram.dtype]
         out_mrc.set_data(tomogram)
         if header is not None:
             attributes = header.dtype.names
             for attr in attributes:
+                if attr in ["mode", "dmean", "dmin", "dmax", "rms"]:
+                    continue
                 setattr(out_mrc.header, attr, getattr(header, attr))
+            out_mrc.header.mode = dtype_mode
 
 
 def normalize_tomogram(tomogram: np.ndarray) -> np.ndarray:
