@@ -1,6 +1,7 @@
 import csv
 import os
-from typing import Any, Callable, Tuple, Union
+from dataclasses import dataclass
+from typing import Any, Callable, Optional, Union
 
 import mrcfile
 import numpy as np
@@ -111,13 +112,13 @@ def load_data_for_inference(data_path: str, transforms: Callable, device: device
         dimension added, and is moved to the appropriate device.
 
     """
-    tomogram, header = load_tomogram(data_path, normalize_data=True, return_header=True)
-    tomogram = np.expand_dims(tomogram, 0)
+    tomogram = load_tomogram(data_path, normalize_data=True)
+    new_data = np.expand_dims(tomogram.data, 0)
 
-    new_data = transforms(tomogram)
+    new_data = transforms(new_data)
     new_data = new_data.unsqueeze(0)  # Add batch dimension
     new_data = new_data.to(device)
-    return new_data, header
+    return new_data, tomogram.header
 
 
 def store_segmented_tomograms(
@@ -169,7 +170,8 @@ def store_segmented_tomograms(
         out_file = os.path.join(
             out_folder, os.path.basename(orig_data_path)[:-4] + "_scores.mrc"
         )
-        store_tomogram(out_file, predictions_np, header=mrc_header)
+        out_tomo = Tomogram(data=predictions_np, header=mrc_header)
+        store_tomogram(out_file, out_tomo)
     predictions_np_thres = predictions.squeeze(0).squeeze(0).cpu().numpy() > 0.0
     out_file_thres = os.path.join(
         out_folder,
@@ -179,8 +181,8 @@ def store_segmented_tomograms(
         predictions_np_thres = connected_components(
             predictions_np_thres, size_thres=connected_component_thres
         )
-    store_tomogram(out_file_thres, predictions_np_thres, header=mrc_header)
-
+    out_tomo = Tomogram(data=predictions_np_thres, header=mrc_header)
+    store_tomogram(out_file_thres, out_tomo)
     print("MemBrain has finished segmenting your tomogram.")
 
 
@@ -223,12 +225,30 @@ def write_nifti(out_file: str, image: np.ndarray) -> None:
     sitk.WriteImage(out_image, out_file)
 
 
+@dataclass
+class Tomogram:
+    """
+    A class used to represent a Tomogram.
+
+    Attributes
+    ----------
+    data : np.ndarray
+        The 3D array data representing the tomogram.
+    header : Any
+        The header information from the tomogram file.
+    voxel_size : Any, optional
+        The voxel size of the tomogram.
+    """
+
+    data: np.ndarray
+    header: Any
+    voxel_size: Optional[Any] = None
+
+
 def load_tomogram(
     filename: str,
-    return_header: bool = False,
-    return_pixel_size: bool = False,
     normalize_data: bool = False,
-) -> Union[np.ndarray, Tuple[np.ndarray, Any]]:
+) -> Tomogram:
     """
     Loads tomogram and transposes s.t. we have data in the form x,y,z.
 
@@ -238,35 +258,26 @@ def load_tomogram(
     ----------
     filename : str
         File name of the tomogram to load.
-    return_header : bool, optional
-        If True, returns mrc header with all tomogram meta information.
-    return_pixel_size: bool, optional
-        If True, the tomogram's pixel size is returned in addition
     normalize_data : bool, optional
         If True, normalize data.
 
     Returns
     -------
-    data : np.ndarray
-        Numpy array of the loaded data.
+    tomogram : Tomogram
+        A Tomogram dataclass containing the loaded data, header
+        and voxel size.
 
     """
     with mrcfile.open(filename, permissive=True) as tomogram:
         data = tomogram.data.copy()
         data = np.transpose(data, (2, 1, 0))
         header = tomogram.header
+        voxel_size = tomogram.voxel_size
     if normalize_data:
         data = img_as_float32(data)
         data -= np.mean(data)
         data /= np.std(data)
-
-    if return_header:
-        if return_pixel_size:
-            return data, header, tomogram.voxel_size
-        return data, header
-    if return_pixel_size:
-        return data, tomogram.voxel_size
-    return data
+    return Tomogram(data=data, header=header, voxel_size=voxel_size)
 
 
 _dtype_to_mode = {
@@ -337,7 +348,7 @@ def convert_dtype(tomogram: np.ndarray) -> np.ndarray:
 
 
 def store_tomogram(
-    filename: str, tomogram: np.ndarray, header: np.recarray = None
+    filename: str, tomogram: Union[Tomogram, np.ndarray], voxel_size=None
 ) -> None:
     """
     Store tomogram in specified path.
@@ -346,24 +357,45 @@ def store_tomogram(
     ----------
     filename : str
         Name of the file to store the tomogram.
-    tomogram : np.ndarray
-        The tomogram data.
-    header : np.recarray, optional
-        Mrc file header containing tomogram meta information.
-
+    tomogram : Tomogram or np.ndarray
+        The tomogram data if given as np.ndarray. If given as a Tomogram,
+        both data and header are used for storing.
+    voxel_size: float, optional
+        If specified, this voxel size will be stored into the tomogram header.
     """
     with mrcfile.new(filename, overwrite=True) as out_mrc:
-        tomogram = convert_dtype(tomogram)
-        tomogram = np.transpose(tomogram, (2, 1, 0))
-        dtype_mode = _dtype_to_mode[tomogram.dtype]
-        out_mrc.set_data(tomogram)
+        if isinstance(tomogram, Tomogram):
+            data = tomogram.data
+            header = tomogram.header
+        else:
+            data = tomogram
+            header = None
+        data = convert_dtype(data)
+        data = np.transpose(data, (2, 1, 0))
+        dtype_mode = _dtype_to_mode[data.dtype]
+        out_mrc.set_data(data)
         if header is not None:
             attributes = header.dtype.names
             for attr in attributes:
-                if attr in ["mode", "dmean", "dmin", "dmax", "rms"]:
+                # skip density and shape attribues
+                if attr in [
+                    "mode",
+                    "dmean",
+                    "dmin",
+                    "dmax",
+                    "rms",
+                    "nx",
+                    "ny",
+                    "nz",
+                    "mx",
+                    "my",
+                    "mz",
+                ]:
                     continue
                 setattr(out_mrc.header, attr, getattr(header, attr))
             out_mrc.header.mode = dtype_mode
+        if voxel_size is not None:
+            out_mrc.voxel_size = voxel_size
 
 
 def normalize_tomogram(tomogram: np.ndarray) -> np.ndarray:
