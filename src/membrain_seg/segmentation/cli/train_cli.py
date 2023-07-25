@@ -8,6 +8,7 @@ from .cli import cli
 @cli.command(name="train", no_args_is_help=True)
 def train(
     data_dir: str = Option(  # noqa: B008
+        ...,
         help='Data directory path, following the required structure. To learn more \
             about the required data structure, type "membrain data_structure_help"',
         **PKWARGS,
@@ -54,6 +55,7 @@ def train(
 @cli.command(name="train_advanced", no_args_is_help=True)
 def train_advanced(
     data_dir: str = Option(  # noqa: B008
+        ...,
         help='Data directory path, following the required structure. \
             To learn more about the required\
             data structure, type "membrain data_structure_help"',

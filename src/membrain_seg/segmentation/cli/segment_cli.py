@@ -8,10 +8,12 @@ from .cli import cli
 @cli.command(name="segment", no_args_is_help=True)
 def segment(
     tomogram_path: str = Option(  # noqa: B008
-        help="Path to the tomogram to be segmented", **PKWARGS
+        ..., help="Path to the tomogram to be segmented", **PKWARGS
     ),
     ckpt_path: str = Option(  # noqa: B008
-        help="Path to the pre-trained model checkpoint that should be used.", **PKWARGS
+        ...,
+        help="Path to the pre-trained model checkpoint that should be used.",
+        **PKWARGS,
     ),
     out_folder: str = Option(  # noqa: B008
         "./predictions", help="Path to the folder where segmentations should be stored."
