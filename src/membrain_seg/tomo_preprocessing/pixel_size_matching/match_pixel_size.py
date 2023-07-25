@@ -57,10 +57,8 @@ def match_pixel_size(
     """
     # Load the input tomogram and its pixel size
     file_path = input_tomogram
-    data, input_pixel_sizes = load_tomogram(
-        file_path, return_pixel_size=True, normalize_data=True
-    )
-    pixel_size_in = pixel_size_in or input_pixel_sizes.x
+    tomo = load_tomogram(file_path, normalize_data=True)
+    pixel_size_in = pixel_size_in or tomo.voxel_size.x
     smoothing = not disable_smooth
 
     print(
@@ -74,17 +72,20 @@ def match_pixel_size(
     )
 
     # Calculate the output shape after pixel size matching
-    output_shape = determine_output_shape(pixel_size_in, pixel_size_out, data.shape)
+    output_shape = determine_output_shape(
+        pixel_size_in, pixel_size_out, tomo.data.shape
+    )
 
     # Perform Fourier-based resizing (cropping or extending) using the determined
     # output shape
     if (pixel_size_in / pixel_size_out) < 1.0:
-        resized_data = fourier_cropping(data, output_shape, smoothing)
+        resized_data = fourier_cropping(tomo.data, output_shape, smoothing)
     elif (pixel_size_in / pixel_size_out) > 1.0:
-        resized_data = fourier_extend(data, output_shape, smoothing)
+        resized_data = fourier_extend(tomo.data, output_shape, smoothing)
     else:
-        resized_data = data
+        resized_data = tomo.data
 
     resized_data = normalize_tomogram(resized_data)
+    tomo.data = resized_data
     # Save the resized tomogram to the specified output path
-    store_tomogram(output_path, resized_data)
+    store_tomogram(output_path, tomo, voxel_size=pixel_size_out)

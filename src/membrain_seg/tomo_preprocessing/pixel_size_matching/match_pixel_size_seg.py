@@ -48,18 +48,18 @@ def match_segmentation_pixel_size_to_tomo(
     """
     # Load the input tomogram and its pixel size
     file_path = seg_path
-    data = load_tomogram(file_path, normalize_data=False)
+    tomo = load_tomogram(file_path, normalize_data=False)
 
     # Get output shape from original tomogram
     match_tomo_path = orig_tomo_path
     orig_tomo = load_tomogram(match_tomo_path, normalize_data=False)
-    output_shape = orig_tomo.shape
+    output_shape = orig_tomo.data.shape
 
     print(
         "Matching input tomogram",
         os.path.basename(file_path),
         "from shape",
-        data.shape,
+        tomo.data.shape,
         "to shape",
         output_shape,
         ".",
@@ -67,9 +67,8 @@ def match_segmentation_pixel_size_to_tomo(
 
     rescale_factors = [
         target_dim / original_dim
-        for target_dim, original_dim in zip(output_shape, data.shape)
+        for target_dim, original_dim in zip(output_shape, tomo.data.shape)
     ]
-    resized_data = ndimage.zoom(data, rescale_factors, order=0, prefilter=False)
-
-    # Save the resized tomogram to the specified output path
-    store_tomogram(output_path, resized_data)
+    resized_data = ndimage.zoom(tomo.data, rescale_factors, order=0, prefilter=False)
+    orig_tomo.data = resized_data  # Keep the header of the original data
+    store_tomogram(output_path, orig_tomo)

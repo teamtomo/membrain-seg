@@ -85,12 +85,13 @@ def components(
     membrain components --tomogram-path <path-to-your-tomo>
     --connected-component-thres 5
     """
-    data, header = load_tomogram(segmentation_path, return_header=True)
+    segmentation = load_tomogram(segmentation_path)
     conn_comps = _connected_components(
-        binary_seg=data, size_thres=connected_component_thres
+        binary_seg=segmentation.data, size_thres=connected_component_thres
     )
+    segmentation.data = conn_comps
     out_file = os.path.join(
         out_folder,
         os.path.splitext(os.path.basename(segmentation_path))[0] + "_components.mrc",
     )
-    store_tomogram(filename=out_file, tomogram=conn_comps, header=header)
+    store_tomogram(filename=out_file, tomogram=segmentation)

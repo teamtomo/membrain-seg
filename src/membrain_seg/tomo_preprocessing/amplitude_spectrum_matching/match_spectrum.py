@@ -101,7 +101,7 @@ def match_amplitude_spectrum_for_files(
 
     # Match the amplitude spectrum of the input tomogram to the target spectrum
     filtered_tomo = match_spectrum(
-        tomo,
+        tomo.data,
         target_spectrum,
         cutoff,
         smoothen,
@@ -109,5 +109,6 @@ def match_amplitude_spectrum_for_files(
         shrink_excessive_value,
     )
     filtered_tomo = normalize_tomogram(filtered_tomo)
+    tomo.data = filtered_tomo
     # Save the filtered tomogram to a file
-    store_tomogram(output_path, filtered_tomo)
+    store_tomogram(output_path, tomo)
