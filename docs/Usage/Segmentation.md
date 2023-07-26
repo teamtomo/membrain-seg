@@ -63,6 +63,7 @@ It is now also possible to assign different labels to different membrane instanc
 membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --store-connected-components --connected-component-thres 50
 ```
 
+You can also compute the connected components [after you have segmented your tomogram](#connected-components).
 
 
 ### more membrain segment arguments:
@@ -80,7 +81,7 @@ membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-m
 
 **--sliding-window-size** INTEGER Sliding window size used for inference. Smaller values than 160 consume less GPU, but also lead to worse segmentation results! [default: 160] 
 
-**--help**                                                                      Show this message and exit.     
+**--help** Show this message and exit.     
 
 
 ### Note: 
@@ -91,6 +92,15 @@ Running MemBrain-seg on a GPU requires at least roughly 8GB of GPU space.
 
 ### Emergency tip:
 In case you don't have enough GPU space, you can also try adjusting the `--sliding-window-size` parameter. By default, it is set to 160. Smaller values will require less GPU space, but also lead to worse segmentation results!
+
+## Connected components
+If you have segmented your tomograms already, but would still like to extract the connected components of the segmentation, you don't need to re-do the segmentation, but can simply use the following command:
+```shell
+membrain components --segmentation-path <path-to-your-segmentation> --connected-component-thres 50 --out-folder <folder-to-store-components>
+```
+
+
+
 
 ## Post-Processing
 If you have pre-processed your tomogram using pixel size matching, you may want to [rescale](./Preprocessing.md#pixel-size-matching) your 
