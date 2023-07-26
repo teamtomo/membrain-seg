@@ -38,7 +38,11 @@ def connected_components(binary_seg: np.ndarray, size_thres: int = None):
 
     # remove small clusters
     if size_thres is not None:
-        print("Removing components smaller than", size_thres, "voxels.")
+        print(
+            "Removing components smaller than",
+            size_thres,
+            "voxels. (This can take a while)",
+        )
         sizes = ndimage.sum(binary_seg, labeled_array, range(1, num_features + 1))
         too_small = np.nonzero(sizes < size_thres)[0] + 1  # features labeled from 1
         for feat_nr in too_small[::-1]:  # iterate in reverse order
