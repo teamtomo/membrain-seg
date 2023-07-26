@@ -60,7 +60,7 @@ membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-m
 
 It is now also possible to assign different labels to different membrane instances via computing connected components and also remove small connected components:
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --store-connected-components --connected-component-thres 50
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --store-connected-components
 ```
 
 You can also compute the connected components [after you have segmented your tomogram](#connected-components).
@@ -99,6 +99,8 @@ If you have segmented your tomograms already, but would still like to extract th
 membrain components --segmentation-path <path-to-your-segmentation> --connected-component-thres 50 --out-folder <folder-to-store-components>
 ```
 
+### Note: 
+Computing the connected components, and particularly also removing the small components can be quite compute intensive and take a while.
 
 
 
