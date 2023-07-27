@@ -239,6 +239,7 @@ def load_tomogram(
     """
     with mrcfile.open(filename, permissive=True) as tomogram:
         data = tomogram.data.copy()
+        data = np.transpose(data, (2, 1, 0))
         header = tomogram.header
     if normalize_data:
         data = img_as_float32(data)
@@ -273,6 +274,7 @@ def store_tomogram(
     with mrcfile.new(filename, overwrite=True) as out_mrc:
         if tomogram.dtype == bool:
             tomogram = tomogram.astype("ubyte")
+        tomogram = np.transpose(tomogram, (2, 1, 0))
         out_mrc.set_data(tomogram)
         if header is not None:
             attributes = header.dtype.names
