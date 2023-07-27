@@ -237,8 +237,8 @@ def load_tomogram(
         Numpy array of the loaded data.
 
     """
-    with mrcfile.open(filename, "r") as tomogram:
-        data = tomogram.data
+    with mrcfile.open(filename, permissive=True) as tomogram:
+        data = tomogram.data.copy()
         header = tomogram.header
     if normalize_data:
         data = img_as_float32(data)
