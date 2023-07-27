@@ -241,6 +241,7 @@ def load_tomogram(
         data = tomogram.data.copy()
         data = np.transpose(data, (2, 1, 0))
         header = tomogram.header
+        voxel_size = tomogram.voxel_size
     if normalize_data:
         data = img_as_float32(data)
         data -= np.mean(data)
@@ -248,10 +249,10 @@ def load_tomogram(
 
     if return_header:
         if return_pixel_size:
-            return data, header, tomogram.voxel_size
+            return data, header, voxel_size
         return data, header
     if return_pixel_size:
-        return data, tomogram.voxel_size
+        return data, voxel_size
     return data
 
 
