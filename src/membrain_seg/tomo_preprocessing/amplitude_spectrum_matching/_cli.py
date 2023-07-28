@@ -19,7 +19,7 @@ def extract(
 ):
     """Extracts the radially averaged amplitude spectrum from the input tomogram."""
     # Call your function here
-    input_tomo = load_tomogram(input_path)
+    input_tomo = load_tomogram(input_path).data
     _extract_spectrum(input_tomo, output_path)
 
 

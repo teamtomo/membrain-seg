@@ -165,8 +165,8 @@ def extract_patches(
     make_directory_if_not_exists(out_folder_raw)
     make_directory_if_not_exists(out_folder_lab)
 
-    tomo = load_tomogram(tomo_path)
-    labels = load_tomogram(seg_path)
+    tomo = load_tomogram(tomo_path).data
+    labels = load_tomogram(seg_path).data
 
     for patch_nr, cur_coords in enumerate(coords):
         patch_nr, out_file_patch, out_file_patch_label = get_out_files_and_patch_number(

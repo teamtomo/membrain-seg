@@ -40,11 +40,9 @@ membrain segment
 ```
 will display the segmentation command line interface and show available options.
 
-
 <p align="center" width="100%">
     <img width="50%" src="https://user-images.githubusercontent.com/34575029/250504257-611ea864-48c5-4424-9bc8-7b30bcfbb39b.png">
 </p>
-
 
 For example, for the prediction, you only need to type
 
@@ -60,6 +58,32 @@ the `--out_folder` argument:
 membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --out-folder <your-preferred-folder>
 ```
 
+It is now also possible to assign different labels to different membrane instances via computing connected components and also remove small connected components:
+```shell
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --store-connected-components
+```
+
+You can also compute the connected components [after you have segmented your tomogram](#connected-components).
+
+
+### more membrain segment arguments:
+**--tomogram-path**: TEXT Path to the tomogram to be segmented [default: None] 
+
+**--ckpt-path** TEXT Path to the pre-trained model checkpoint that should be used. [default: None] 
+
+**--out-folder** TEXT Path to the folder where segmentations should be stored. [default: ./predictions]
+
+**--store-probabilities / --no-store-probabilities**: Should probability maps be output in addition to segmentations? [default: no-store-probabilities]
+
+**--store-connected-components / no-store-connected-components**: Should connected components of the segmentation be computed? [default: no-store-connected-components]  
+
+**--connected-component-thres**: Threshold for connected components. Components smaller than this will be removed from the segmentation. [default: None]
+
+**--sliding-window-size** INTEGER Sliding window size used for inference. Smaller values than 160 consume less GPU, but also lead to worse segmentation results! [default: 160] 
+
+**--help** Show this message and exit.     
+
+
 ### Note: 
 MemBrain-seg automatically detects a CUDA-enabled GPU, if available, and will execute the segmentation on it. Using a GPU device is highly recommended to accelerate the segmentation process.
 
@@ -68,6 +92,17 @@ Running MemBrain-seg on a GPU requires at least roughly 8GB of GPU space.
 
 ### Emergency tip:
 In case you don't have enough GPU space, you can also try adjusting the `--sliding-window-size` parameter. By default, it is set to 160. Smaller values will require less GPU space, but also lead to worse segmentation results!
+
+## Connected components
+If you have segmented your tomograms already, but would still like to extract the connected components of the segmentation, you don't need to re-do the segmentation, but can simply use the following command:
+```shell
+membrain components --segmentation-path <path-to-your-segmentation> --connected-component-thres 50 --out-folder <folder-to-store-components>
+```
+
+### Note: 
+Computing the connected components, and particularly also removing the small components can be quite compute intensive and take a while.
+
+
 
 ## Post-Processing
 If you have pre-processed your tomogram using pixel size matching, you may want to [rescale](./Preprocessing.md#pixel-size-matching) your 

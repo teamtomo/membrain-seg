@@ -13,7 +13,13 @@ from .dataloading.memseg_augmentation import get_mirrored_img, get_prediction_tr
 
 
 def segment(
-    tomogram_path, ckpt_path, out_folder, store_probabilities=False, sw_roi_size=160
+    tomogram_path,
+    ckpt_path,
+    out_folder,
+    store_probabilities=False,
+    sw_roi_size=160,
+    store_connected_components=False,
+    connected_component_thres=None,
 ):
     """
     Segment tomograms using a trained model.
@@ -39,6 +45,12 @@ def segment(
         Sliding window size used for inference. Smaller values than 160 consume less
         GPU, but also lead to worse segmentation results!
         Must be a multiple of 32.
+    store_connected_components: bool, optional
+        If True, connected components are computed and stored instead of the raw
+        segmentation.
+    connected_component_thres: int, optional
+        If specified, all connected components smaller than this threshold
+        are removed from the segmentation.
 
     Returns
     -------
@@ -102,7 +114,6 @@ def segment(
                     .detach()
                     .cpu()
                 )
-
     predictions /= 8.0
 
     # Extract segmentations and store them in an output file.
@@ -112,5 +123,7 @@ def segment(
         orig_data_path=new_data_path,
         ckpt_token=ckpt_token,
         store_probabilities=store_probabilities,
+        store_connected_components=store_connected_components,
+        connected_component_thres=connected_component_thres,
         mrc_header=mrc_header,
     )
