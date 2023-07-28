@@ -21,7 +21,7 @@
         <link rel="next" href="../Training/">
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.0, mkdocs-material-9.1.20">
+      <meta name="generator" content="mkdocs-1.5.1, mkdocs-material-9.1.21">
     
     
       
@@ -379,6 +379,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#more-membrain-segment-arguments" class="md-nav__link">
+    more membrain segment arguments:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#note" class="md-nav__link">
     Note:
   </a>
@@ -395,6 +402,26 @@
           <li class="md-nav__item">
   <a href="#emergency-tip" class="md-nav__link">
     Emergency tip:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connected-components" class="md-nav__link">
+    Connected components
+  </a>
+  
+    <nav class="md-nav" aria-label="Connected components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note_1" class="md-nav__link">
+    Note:
   </a>
   
 </li>
@@ -489,6 +516,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#more-membrain-segment-arguments" class="md-nav__link">
+    more membrain segment arguments:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#note" class="md-nav__link">
     Note:
   </a>
@@ -505,6 +539,26 @@
           <li class="md-nav__item">
   <a href="#emergency-tip" class="md-nav__link">
     Emergency tip:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connected-components" class="md-nav__link">
+    Connected components
+  </a>
+  
+    <nav class="md-nav" aria-label="Connected components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note_1" class="md-nav__link">
+    Note:
   </a>
   
 </li>
@@ -583,12 +637,31 @@ folder. If you would like to change this folder, you can simply specify another 
 the <code>--out_folder</code> argument:</p>
 <div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;<span class="w"> </span>--out-folder<span class="w"> </span>&lt;your-preferred-folder&gt;
 </code></pre></div>
+<p>It is now also possible to assign different labels to different membrane instances via computing connected components and also remove small connected components:
+<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;<span class="w"> </span>--store-connected-components
+</code></pre></div></p>
+<p>You can also compute the connected components <a href="#connected-components">after you have segmented your tomogram</a>.</p>
+<h3 id="more-membrain-segment-arguments">more membrain segment arguments:</h3>
+<p><strong>--tomogram-path</strong>: TEXT Path to the tomogram to be segmented [default: None] </p>
+<p><strong>--ckpt-path</strong> TEXT Path to the pre-trained model checkpoint that should be used. [default: None] </p>
+<p><strong>--out-folder</strong> TEXT Path to the folder where segmentations should be stored. [default: ./predictions]</p>
+<p><strong>--store-probabilities / --no-store-probabilities</strong>: Should probability maps be output in addition to segmentations? [default: no-store-probabilities]</p>
+<p><strong>--store-connected-components / no-store-connected-components</strong>: Should connected components of the segmentation be computed? [default: no-store-connected-components]  </p>
+<p><strong>--connected-component-thres</strong>: Threshold for connected components. Components smaller than this will be removed from the segmentation. [default: None]</p>
+<p><strong>--sliding-window-size</strong> INTEGER Sliding window size used for inference. Smaller values than 160 consume less GPU, but also lead to worse segmentation results! [default: 160] </p>
+<p><strong>--help</strong> Show this message and exit.     </p>
 <h3 id="note">Note:</h3>
 <p>MemBrain-seg automatically detects a CUDA-enabled GPU, if available, and will execute the segmentation on it. Using a GPU device is highly recommended to accelerate the segmentation process.</p>
 <h3 id="note2">Note#2:</h3>
 <p>Running MemBrain-seg on a GPU requires at least roughly 8GB of GPU space.</p>
 <h3 id="emergency-tip">Emergency tip:</h3>
 <p>In case you don't have enough GPU space, you can also try adjusting the <code>--sliding-window-size</code> parameter. By default, it is set to 160. Smaller values will require less GPU space, but also lead to worse segmentation results!</p>
+<h2 id="connected-components">Connected components</h2>
+<p>If you have segmented your tomograms already, but would still like to extract the connected components of the segmentation, you don't need to re-do the segmentation, but can simply use the following command:
+<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>components<span class="w"> </span>--segmentation-path<span class="w"> </span>&lt;path-to-your-segmentation&gt;<span class="w"> </span>--connected-component-thres<span class="w"> </span><span class="m">50</span><span class="w"> </span>--out-folder<span class="w"> </span>&lt;folder-to-store-components&gt;
+</code></pre></div></p>
+<h3 id="note_1">Note:</h3>
+<p>Computing the connected components, and particularly also removing the small components can be quite compute intensive and take a while.</p>
 <h2 id="post-processing">Post-Processing</h2>
 <p>If you have pre-processed your tomogram using pixel size matching, you may want to <a href="../Preprocessing/#pixel-size-matching">rescale</a> your 
 segmentation back to the shape of the original tomogram.</p>
