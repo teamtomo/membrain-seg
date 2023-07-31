@@ -20,6 +20,7 @@ def segment(
     sw_roi_size=160,
     store_connected_components=False,
     connected_component_thres=None,
+    test_time_augmentation=True
 ):
     """
     Segment tomograms using a trained model.
@@ -51,10 +52,14 @@ def segment(
     connected_component_thres: int, optional
         If specified, all connected components smaller than this threshold
         are removed from the segmentation.
+    test_time_augmentation: bool, optional
+        If True, test-time augmentation is performed, i.e. data is rotated
+        into eight different orientations and predictions are averaged.
 
     Returns
     -------
-    None
+    segmentation_file: str
+        Path to the segmented tomogram.
 
     Raises
     ------
@@ -101,7 +106,7 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     print("Performing 8-fold test-time augmentation.")
-    for m in range(8):
+    for m in range((8 if test_time_augmentation else 1)):
         with torch.no_grad():
             with torch.cuda.amp.autocast():
                 predictions += (
@@ -114,10 +119,11 @@ def segment(
                     .detach()
                     .cpu()
                 )
-    predictions /= 8.0
+    if test_time_augmentation:
+        predictions /= 8.0
 
     # Extract segmentations and store them in an output file.
-    store_segmented_tomograms(
+    segmentation_file = store_segmented_tomograms(
         predictions,
         out_folder=out_folder,
         orig_data_path=new_data_path,
@@ -127,3 +133,4 @@ def segment(
         connected_component_thres=connected_component_thres,
         mrc_header=mrc_header,
     )
+    return segmentation_file

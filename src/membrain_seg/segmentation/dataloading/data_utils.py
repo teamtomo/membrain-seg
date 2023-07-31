@@ -184,6 +184,7 @@ def store_segmented_tomograms(
     out_tomo = Tomogram(data=predictions_np_thres, header=mrc_header)
     store_tomogram(out_file_thres, out_tomo)
     print("MemBrain has finished segmenting your tomogram.")
+    return out_file_thres
 
 
 def read_nifti(nifti_file: str) -> np.ndarray:

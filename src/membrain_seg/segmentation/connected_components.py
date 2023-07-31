@@ -37,7 +37,7 @@ def connected_components(binary_seg: np.ndarray, size_thres: int = None):
     labeled_array, num_features = ndimage.label(binary_seg, structure=structure)
 
     # remove small clusters
-    if size_thres is not None:
+    if size_thres is not None and size_thres > 1:
         print(
             "Removing components smaller than",
             size_thres,
