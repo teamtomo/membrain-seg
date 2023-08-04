@@ -30,6 +30,8 @@ from membrain_seg.segmentation.dataloading.transforms import (
     SimulateLowResolutionTransform,
 )
 
+from membrain_seg.segmentation.dataloading.fourier_augmentations import MissingWedgeMaskAndFourierAmplitudeMatchingCombined
+
 ### Hard-coded area
 
 # Hard-coding kernel sizes for pooling operations (work also with smaller network sizes)
@@ -114,7 +116,8 @@ def get_mirrored_img(img: torch.Tensor, mirror_idx: int) -> torch.Tensor:
 
 
 def get_training_transforms(
-    prob_to_one: bool = False, return_as_list: bool = False
+    prob_to_one: bool = False, return_as_list: bool = False, missing_wedge_aug: bool = False,
+    fourier_amplitude_aug: bool = False
 ) -> Union[List[Callable], Compose]:
     """
     Returns the data augmentation transforms for training phase.
@@ -145,27 +148,17 @@ def get_training_transforms(
 
     """
     aug_sequence = [
-        RandRotated(
-            keys=("image", "label"),
-            range_x=data_aug_params["rotation_x"],
-            range_y=data_aug_params["rotation_y"],
-            range_z=data_aug_params["rotation_x"],
-            prob=(1.0 if prob_to_one else 0.75),
-            mode=("bilinear", "nearest"),
-        ),
-        RandZoomd(
-            keys=("image", "label"),
-            prob=(1.0 if prob_to_one else 0.3),
-            min_zoom=0.7,
-            max_zoom=1.43,
-            mode=("trilinear", "nearest-exact"),
-            padding_mode=("constant", "constant"),
-        ),  # TODO: Independent scale for each axis?
         RandRotate90d(
             keys=("image", "label"),
             prob=(1.0 if prob_to_one else 0.70),
-            max_k=3,
+            max_k=4,
             spatial_axes=(0, 1),
+        ),
+        MissingWedgeMaskAndFourierAmplitudeMatchingCombined(
+            keys=["image"], amplitude_aug=fourier_amplitude_aug,
+            missing_wedge_aug=missing_wedge_aug,
+            missing_wedge_prob=(1.0 if prob_to_one else 0.5),
+            amplitude_prob=(1.0 if prob_to_one else 0.5)
         ),
         RandRotate90d(
             keys=("image", "label"),
@@ -179,7 +172,26 @@ def get_training_transforms(
             max_k=3,
             spatial_axes=(1, 2),
         ),
+
+        RandRotated(
+            keys=("image", "label"),
+            range_x=data_aug_params["rotation_x"],
+            range_y=data_aug_params["rotation_y"],
+            range_z=data_aug_params["rotation_x"],
+            prob=(1.0 if prob_to_one else 0.75),
+            mode=("bilinear", "nearest"),
+        ),
+
         AxesShuffle,
+
+        RandZoomd(
+            keys=("image", "label"),
+            prob=(1.0 if prob_to_one else 0.3),
+            min_zoom=0.7,
+            max_zoom=1.43,
+            mode=("trilinear", "nearest-exact"),
+            padding_mode=("constant", "constant"),
+        ),  
         OneOf(
             [
                 RandApplyTransform(
@@ -200,7 +212,7 @@ def get_training_transforms(
         ),
         RandGaussianNoised(
             keys=["image"], prob=(1.0 if prob_to_one else 0.4), mean=0.0, std=0.7
-        ),  # Chaned std from 0.1 to 0.5 --> check visually
+        ),  # Chaned std from 0.1 to 0.7 --> check visually
         RandomBrightnessTransformd(
             keys=["image"], mu=0.0, sigma=0.5, prob=(1.0 if prob_to_one else 0.30)
         ),

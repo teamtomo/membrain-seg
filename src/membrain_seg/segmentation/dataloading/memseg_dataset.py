@@ -11,7 +11,7 @@ from membrain_seg.segmentation.dataloading.memseg_augmentation import (
     get_training_transforms,
     get_validation_transforms,
 )
-
+from PIL import Image
 
 class CryoETMemSegDataset(Dataset):
     """
@@ -55,6 +55,8 @@ class CryoETMemSegDataset(Dataset):
         label_folder: str,
         train: bool = False,
         aug_prob_to_one: bool = False,
+        fourier_amplitude_aug: bool = False,
+        missing_wedge_aug: bool = False
     ) -> None:
         """
         Constructs all the necessary attributes for the CryoETMemSegDataset object.
@@ -76,7 +78,7 @@ class CryoETMemSegDataset(Dataset):
         self.initialize_imgs_paths()
         self.load_data()
         self.transforms = (
-            get_training_transforms(prob_to_one=aug_prob_to_one)
+            get_training_transforms(prob_to_one=aug_prob_to_one, fourier_amplitude_aug=fourier_amplitude_aug, missing_wedge_aug=missing_wedge_aug)
             if self.train
             else get_validation_transforms()
         )
@@ -170,23 +172,43 @@ class CryoETMemSegDataset(Dataset):
             The number of image-label pairs to be generated and saved.
         """
         os.makedirs(test_folder, exist_ok=True)
-
+        from membrain_seg.segmentation.dataloading.data_utils import store_tomogram
         for i in range(num_files):
             test_sample = self.__getitem__(i % self.__len__())
-            for num_img in range(0, test_sample["image"].shape[-1], 30):
-                io.imsave(
-                    os.path.join(test_folder, f"test_img{i}_group{num_img}.png"),
-                    test_sample["image"][0, :, :, num_img],
-                )
+            print(i)
+            store_tomogram(
+                os.path.join(test_folder, f"test_img{i}.mrc"),
+                test_sample["image"][0, :, :, :],
+            )
+            store_tomogram(
+                os.path.join(test_folder, f"test_img{i}_lab.mrc"),
+                test_sample["label"][0][0, :, :, :],
+            )
 
-            for num_mask in range(0, test_sample["label"][0].shape[-1], 30):
-                io.imsave(
-                    os.path.join(test_folder, f"test_mask{i}_group{num_mask}.png"),
-                    test_sample["label"][0][0, :, :, num_mask],
-                )
+            # store_tomogram(
+            #     os.path.join(test_folder, f"test_img{i}_orig.mrc"),
+            #     test_sample["image_orig"][0, :, :, :],
+            # )
+            # for num_img in range(0, test_sample["image"].shape[-1], 30):
+                # print(np.array(test_sample["image"][0, :, :, num_img]))
+                # exit()
+                # img = Image.fromarray(np.array(test_sample["image"][0, :, :, num_img]), mode="RGB")
+                # img.save(os.path.join(test_folder, f"test_img{i}_group{num_img}.png"))
+                # io.imsave(
+                #     os.path.join(test_folder, f"test_img{i}_group{num_img}.png"),
+                #     test_sample["image"][0, :, :, num_img],
+                # )
 
-            for num_mask in range(0, test_sample["label"][1].shape[0], 15):
-                io.imsave(
-                    os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
-                    test_sample["label"][1][0, :, :, num_mask],
-                )
+            # for num_mask in range(0, test_sample["label"][0].shape[-1], 30):
+            #     img = Image.fromarray(np.array(test_sample["label"][0][0, :, :, num_mask]), mode="RGB")
+            #     img.save(os.path.join(test_folder, f"test_mask{i}_group{num_mask}.png"))
+                # io.imsave(
+                #     os.path.join(test_folder, f"test_mask{i}_group{num_mask}.png"),
+                #     test_sample["label"][0][0, :, :, num_mask],
+                # )
+
+            # for num_mask in range(0, test_sample["label"][1].shape[0], 15):
+            #     io.imsave(
+            #         os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
+            #         test_sample["label"][1][0, :, :, num_mask],
+            #     )

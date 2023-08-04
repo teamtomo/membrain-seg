@@ -24,6 +24,10 @@ def train(
     use_deep_supervision: bool = False,
     project_name: str = "membrain-seg_v0",
     sub_name: str = "1",
+    use_BCE_dice: bool = True,
+    use_surf_dice: bool = False,
+    missing_wedge_aug: bool = False,
+    fourier_amplitude_aug: bool = False
 ):
     """
     Train the model on the specified data.
@@ -63,18 +67,26 @@ def train(
         batch_size=batch_size,
         num_workers=num_workers,
         aug_prob_to_one=aug_prob_to_one,
+        fourier_amplitude_aug=fourier_amplitude_aug,
+        missing_wedge_aug=missing_wedge_aug
     )
+
+    # data_module.setup(stage="fit")
+    # data_module.train_dataset.test(test_folder="/scicore/home/engel0006/GROUP/pool-engel/Lorenz/SurfaceDICE/membrain-seg/test_augs", num_files=20)
+    # exit()
 
     # Set up the model
     model = SemanticSegmentationUnet(
-        max_epochs=max_epochs, use_deep_supervision=use_deep_supervision
+        max_epochs=max_epochs, use_deep_supervision=use_deep_supervision,
+        use_BCE_dice=use_BCE_dice,
+        use_surf_dice=use_surf_dice
     )
 
     project_name = project_name
     checkpointing_name = project_name + "_" + sub_name
     # Set up logging
     wandb_logger = pl_loggers.WandbLogger(
-        project=project_name, log_model=False, save_code=True
+        project=project_name, log_model=False, save_code=True, name=sub_name
     )
     csv_logger = pl_loggers.CSVLogger(log_dir)
 
@@ -87,13 +99,21 @@ def train(
         save_top_k=3,
     )
 
-    checkpoint_callback_regular = ModelCheckpoint(
-        save_top_k=-1,  # Save all checkpoints
-        every_n_epochs=100,
-        dirpath="checkpoints/",
-        filename=checkpointing_name
-        + "-{epoch}-{val_loss:.2f}",  # Customize the filename of saved checkpoints
-        verbose=True,  # Print a message when a checkpoint is saved
+    # checkpoint_callback_regular = ModelCheckpoint(
+    #     save_top_k=-1,  # Save all checkpoints
+    #     every_n_epochs=100,
+    #     dirpath="checkpoints/",
+    #     filename=checkpointing_name
+    #     + "-{epoch}-{val_loss:.2f}",  # Customize the filename of saved checkpoints
+    #     verbose=True,  # Print a message when a checkpoint is saved
+    # )
+    checkpoint_callback_last = ModelCheckpoint(
+        save_top_k=1,  # Save only the best model
+        monitor='epoch',  # Monitor 'epoch' to save the last epoch model
+        mode='max',  # Set mode to 'max' to save the model with maximum 'epoch'
+        dirpath='checkpoints/', 
+        filename=checkpointing_name + '-{epoch}-{val_loss:.2f}', 
+        verbose=True
     )
 
     lr_monitor = LearningRateMonitor(logging_interval="epoch", log_momentum=True)
@@ -106,10 +126,11 @@ def train(
     print_lr_cb = PrintLearningRate()
     # Set up the trainer
     trainer = pl.Trainer(
+        precision="16-mixed",
         logger=[csv_logger, wandb_logger],
         callbacks=[
             checkpoint_callback_val_loss,
-            checkpoint_callback_regular,
+            checkpoint_callback_last,
             lr_monitor,
             print_lr_cb,
         ],

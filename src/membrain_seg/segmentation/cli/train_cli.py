@@ -94,6 +94,23 @@ def train_advanced(
         help="Subproject name. For multiple runs in the same project,\
             please specify sub_names.",
     ),
+    use_surf_dice: bool = Option(  # noqa: B008
+        False,
+        help="Should Surface Dice loss be used?",
+    ),
+    use_BCE_dice: bool = Option(  # noqa: B008
+        True,
+        help="Should a combination of Dice and binary cross entropy loss be used?",
+    ),
+    fourier_amplitude_aug: bool = Option(  # noqa: B008
+        False,
+        help="Should use Fourier amplitude matching as data augmentation?",
+    ),
+    missing_wedge_aug: bool = Option(  # noqa: B008
+        False,
+        help="Should additional, artificial missing wedges be used for data augmentation?",
+    ),
+    
 ):
     """
     Initiates the MemBrain training routine with more advanced options.
@@ -140,6 +157,10 @@ def train_advanced(
         use_deep_supervision=use_deep_supervision,
         project_name=project_name,
         sub_name=sub_name,
+        use_BCE_dice=use_BCE_dice,
+        use_surf_dice=use_surf_dice,
+        missing_wedge_aug=missing_wedge_aug,
+        fourier_amplitude_aug=fourier_amplitude_aug
     )
 
 

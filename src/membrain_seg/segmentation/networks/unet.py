@@ -9,6 +9,9 @@ from monai.transforms import AsDiscrete, Compose, EnsureType, Lambda
 
 from ..training.metric_utils import masked_accuracy, threshold_function
 
+from ..training.surface_dice_metric import SurfaceDiceMetric
+from ..training.surface_dice_loss import masked_surface_dice
+
 # from monai.networks.nets import UNet as MonaiUnet
 # The normal Monai DynUNet upsamples low-resolution layers to compare directly to GT
 # My implementation leaves them in low resolution and compares to down-sampled GT
@@ -18,7 +21,9 @@ from ..training.optim_utils import (
     DeepSuperVisionLoss,
     DynUNetDirectDeepSupervision,  # I like to use deep supervision
     IgnoreLabelDiceCELoss,
+    CombinedLoss
 )
+from ..training.surface_dice_loss import IgnoreLabelSurfaceDiceLoss
 
 
 class SemanticSegmentationUnet(pl.LightningModule):
@@ -80,6 +85,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
         roi_size: Tuple[int, ...] = (160, 160, 160),
         max_epochs: int = 1000,
         use_deep_supervision: bool = False,
+        use_BCE_dice=True,
+        use_surf_dice=False
     ):
         super().__init__()
 
@@ -109,9 +116,26 @@ class SemanticSegmentationUnet(pl.LightningModule):
             deep_supervision=True,
             deep_supr_num=2,
         )
-        ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
+        losses = []
+        weights = []
+        if use_BCE_dice:
+            ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
+            losses.append(ignore_dice_loss)
+            weights.append(7.)
+        if use_surf_dice:
+            ignore_surf_dice_loss  = IgnoreLabelSurfaceDiceLoss(ignore_label=2, soft_skel_iterations=3)
+            losses.append(ignore_surf_dice_loss)
+            weights.append(3.)
+
+        weight_sum = 0.
+        for entry in weights:
+            weight_sum += entry
+        scaled_weights = [entry / weight_sum for entry in weights]
+
+        loss_function  = CombinedLoss(losses=losses, weights=scaled_weights)
         self.loss_function = DeepSuperVisionLoss(
-            ignore_dice_loss,
+            # ignore_dice_loss,
+            loss_function,
             weights=[1.0, 0.5, 0.25, 0.125, 0.0675]
             if use_deep_supervision
             else [1.0, 0.0, 0.0, 0.0, 0.0],
@@ -144,6 +168,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.validation_step_outputs = []
         self.running_train_acc = 0.0
         self.running_val_acc = 0.0
+        self.running_train_surf_dice = 0.0
+        self.running_val_surf_dice = 0.0
 
     def forward(self, x) -> torch.Tensor:
         """Implementation of the forward pass.
@@ -187,8 +213,11 @@ class SemanticSegmentationUnet(pl.LightningModule):
         stats_dict = {"train_loss": loss, "train_number": output[0].shape[0]}
         self.training_step_outputs.append(stats_dict)
         self.running_train_acc += (
-            masked_accuracy(output[0], labels[0], ignore_label=2.0, threshold_value=0.0)
+            masked_accuracy(output[0].detach(), labels[0].detach(), ignore_label=2.0, threshold_value=0.0)
             * output[0].shape[0]
+        )
+        self.running_train_surf_dice += (
+            masked_surface_dice(data=output[0].detach(), target=labels[0].detach(), ignore_label=2., soft_skel_iterations=3, smooth=1.) * output[0].shape[0]
         )
 
         return {"loss": loss}
@@ -207,13 +236,17 @@ class SemanticSegmentationUnet(pl.LightningModule):
         mean_train_loss = torch.tensor(train_loss / num_items)
 
         mean_train_acc = self.running_train_acc / num_items
+        mean_train_surf_dice = self.running_train_surf_dice / num_items
         self.running_train_acc = 0.0
-        self.log("train_loss", mean_train_loss)  # , batch_size=num_items)
-        self.log("train_acc", mean_train_acc)  # , batch_size=num_items)
+        self.running_train_surf_dice = 0.0
+        self.log("train_loss", mean_train_loss)
+        self.log("train_acc", mean_train_acc)  
+        self.log("train_surf_dice", mean_train_surf_dice)  
 
         self.training_step_outputs = []
         print("EPOCH Training loss", mean_train_loss.item())
         print("EPOCH Training acc", mean_train_acc.item())
+        print("EPOCH Training surface dice", mean_train_surf_dice.item())
         # Accuracy not the most informative metric, but a good sanity check
         return {"train_loss": mean_train_loss}
 
@@ -250,9 +283,14 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.validation_step_outputs.append(stats_dict)
         self.running_val_acc += (
             masked_accuracy(
-                outputs[0], labels[0], ignore_label=2.0, threshold_value=0.0
+                outputs[0].detach(), labels[0].detach(), ignore_label=2.0, threshold_value=0.0
             )
             * outputs[0].shape[0]
+        )
+        self.running_val_surf_dice += (
+            masked_surface_dice(
+            data=outputs[0].detach(), target=labels[0].detach(), ignore_label=2., soft_skel_iterations=3, smooth=1.
+            ) * outputs[0].shape[0]
         )
         return stats_dict
 
@@ -270,13 +308,17 @@ class SemanticSegmentationUnet(pl.LightningModule):
         mean_val_loss = torch.tensor(val_loss / num_items)
 
         mean_val_acc = self.running_val_acc / num_items
+        mean_val_surf_dice = self.running_val_surf_dice / num_items
         self.running_val_acc = 0.0
-        self.log("val_loss", mean_val_loss),  # batch_size=num_items)
-        self.log("val_dice", mean_val_dice)  # , batch_size=num_items)
+        self.running_val_surf_dice = 0.0
+        self.log("val_loss", mean_val_loss),  
+        self.log("val_dice", mean_val_dice)  
+        self.log("val_surf_dice", mean_val_surf_dice)  
         self.log("val_accuracy", mean_val_acc)
 
         self.validation_step_outputs = []
         print("EPOCH Validation loss", mean_val_loss.item())
         print("EPOCH Validation dice", mean_val_dice)
+        print("EPOCH Validation surface dice", mean_val_surf_dice)
         print("EPOCH Validation acc", mean_val_acc.item())
         return {"val_loss": mean_val_loss, "val_metric": mean_val_dice}

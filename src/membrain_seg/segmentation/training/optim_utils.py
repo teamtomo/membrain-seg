@@ -2,7 +2,10 @@ import torch
 from monai.losses import DiceLoss, MaskedLoss
 from monai.networks.nets import DynUNet
 from monai.utils import LossReduction
-from torch.nn.functional import binary_cross_entropy, sigmoid
+from torch.nn.functional import (
+    binary_cross_entropy_with_logits,
+    sigmoid,
+)
 from torch.nn.modules.loss import _Loss
 
 
@@ -79,6 +82,7 @@ class IgnoreLabelDiceCELoss(_Loss):
             The calculated loss.
         """
         # Create a mask to ignore the specified label in the target
+        orig_data = data.clone()
         data = sigmoid(data)
         mask = target != self.ignore_label
 
@@ -86,7 +90,9 @@ class IgnoreLabelDiceCELoss(_Loss):
         target_comp = target.clone()
         target_comp[target == self.ignore_label] = 0
         target_tensor = torch.tensor(target_comp, dtype=data.dtype, device=data.device)
-        bce_loss = binary_cross_entropy(data, target_tensor, reduction="none")
+        bce_loss = binary_cross_entropy_with_logits(
+            orig_data, target_tensor, reduction="none"
+        )
         bce_loss[~mask] = 0.0
         bce_loss = torch.sum(bce_loss) / torch.sum(mask)
         dice_loss = self.dice_loss(data, target, mask)
@@ -94,6 +100,55 @@ class IgnoreLabelDiceCELoss(_Loss):
         # Combine the Dice and Cross Entropy losses
         combined_loss = self.lambda_dice * dice_loss + self.lambda_ce * bce_loss
         return combined_loss
+    
+
+class CombinedLoss(_Loss):
+    """
+    Combine multiple loss functions into a single one.
+
+    Parameters
+    ----------
+    losses : list
+        A list of loss function instances.
+    weights : list
+        List of weights corresponding to each loss function (must 
+        be of same length as losses)
+    kwargs : dict
+        Additional keyword arguments.
+    """
+
+    def __init__(
+        self,
+        losses: list,
+        weights: list,
+        **kwargs,
+    ) -> None:
+        super().__init__()
+        self.losses = losses
+        self.weights = weights
+
+    def forward(self, data: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the combined loss.
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            Tensor of model outputs.
+        target : torch.Tensor
+            Tensor of target labels.
+
+        Returns
+        -------
+        torch.Tensor
+            The calculated combined loss.
+        """
+        loss = 0.
+        a = 0
+        for cur_loss, cur_weight in zip(self.losses, self.weights):
+            a += 1
+            loss += cur_weight * cur_loss(data, target)
+        return loss
 
 
 class DeepSuperVisionLoss(_Loss):
