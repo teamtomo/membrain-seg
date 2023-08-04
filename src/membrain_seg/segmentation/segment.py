@@ -13,7 +13,14 @@ from .dataloading.memseg_augmentation import get_mirrored_img, get_prediction_tr
 
 
 def segment(
-    tomogram_path, ckpt_path, out_folder, store_probabilities=False, sw_roi_size=160
+    tomogram_path,
+    ckpt_path,
+    out_folder,
+    store_probabilities=False,
+    sw_roi_size=160,
+    store_connected_components=False,
+    connected_component_thres=None,
+    test_time_augmentation=True
 ):
     """
     Segment tomograms using a trained model.
@@ -39,10 +46,20 @@ def segment(
         Sliding window size used for inference. Smaller values than 160 consume less
         GPU, but also lead to worse segmentation results!
         Must be a multiple of 32.
+    store_connected_components: bool, optional
+        If True, connected components are computed and stored instead of the raw
+        segmentation.
+    connected_component_thres: int, optional
+        If specified, all connected components smaller than this threshold
+        are removed from the segmentation.
+    test_time_augmentation: bool, optional
+        If True, test-time augmentation is performed, i.e. data is rotated
+        into eight different orientations and predictions are averaged.
 
     Returns
     -------
-    None
+    segmentation_file: str
+        Path to the segmented tomogram.
 
     Raises
     ------
@@ -58,13 +75,13 @@ def segment(
 
     # Initialize the model and load trained weights from checkpoint
     pl_model = SemanticSegmentationUnet()
-    pl_model = pl_model.load_from_checkpoint(model_checkpoint)
+    pl_model = pl_model.load_from_checkpoint(model_checkpoint, map_location=device)
     pl_model.to(device)
 
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
-    new_data = load_data_for_inference(
+    new_data, mrc_header = load_data_for_inference(
         new_data_path, transforms, device=torch.device("cpu")
     )
     new_data = new_data.to(torch.float32)
@@ -89,25 +106,31 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     print("Performing 8-fold test-time augmentation.")
-    for m in range(8):
+    for m in range((8 if test_time_augmentation else 1)):
         with torch.no_grad():
-            predictions += (
-                get_mirrored_img(
-                    inferer(get_mirrored_img(new_data.clone(), m).to(device), pl_model)[
-                        0
-                    ],
-                    m,
+            with torch.cuda.amp.autocast():
+                predictions += (
+                    get_mirrored_img(
+                        inferer(
+                            get_mirrored_img(new_data.clone(), m).to(device), pl_model
+                        )[0],
+                        m,
+                    )
+                    .detach()
+                    .cpu()
                 )
-                .detach()
-                .cpu()
-            )
-    predictions /= 8.0
+    if test_time_augmentation:
+        predictions /= 8.0
 
     # Extract segmentations and store them in an output file.
-    store_segmented_tomograms(
+    segmentation_file = store_segmented_tomograms(
         predictions,
         out_folder=out_folder,
         orig_data_path=new_data_path,
         ckpt_token=ckpt_token,
         store_probabilities=store_probabilities,
+        store_connected_components=store_connected_components,
+        connected_component_thres=connected_component_thres,
+        mrc_header=mrc_header,
     )
+    return segmentation_file

@@ -11,14 +11,15 @@ from .extract_patches import extract_patches as _extract_patches
 @cli.command(name="extract_patches", no_args_is_help=True)
 def extract_patches(
     tomogram_path: str = Option(  # noqa: B008
-        help="Path to the tomogram to extract patches from.", **PKWARGS
+        ..., help="Path to the tomogram to extract patches from.", **PKWARGS
     ),
     segmentation_path: str = Option(  # noqa: B008
-        help="Path to the corresponding segmentation file.", **PKWARGS
+        ..., help="Path to the corresponding segmentation file.", **PKWARGS
     ),
     out_folder: str = Option(  # noqa: B008
+        ...,
         help="Path to the folder where extracted patches should be stored. \
-            (subdirectories will be created)"
+            (subdirectories will be created)",
     ),
     coords_file: str = Option(  # noqa: B008
         None,

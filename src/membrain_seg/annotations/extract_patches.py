@@ -39,6 +39,8 @@ def pad_labels(patch, padding, pad_value=2.0):
     This function pads the borders of the 3D array with the value of 2.0,
     typically used to ignore labels at the boundaries during a subsequent analysis.
     """
+    if isinstance(padding, int):
+        padding = [padding, padding, padding]
     patch[: padding[0], :, :] = pad_value
     patch[-padding[0] :, :, :] = pad_value
     patch[:, : padding[1], :] = pad_value
@@ -163,8 +165,8 @@ def extract_patches(
     make_directory_if_not_exists(out_folder_raw)
     make_directory_if_not_exists(out_folder_lab)
 
-    tomo = load_tomogram(tomo_path)
-    labels = load_tomogram(seg_path)
+    tomo = load_tomogram(tomo_path).data
+    labels = load_tomogram(seg_path).data
 
     for patch_nr, cur_coords in enumerate(coords):
         patch_nr, out_file_patch, out_file_patch_label = get_out_files_and_patch_number(

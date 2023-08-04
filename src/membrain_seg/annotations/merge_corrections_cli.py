@@ -8,15 +8,17 @@ from .merge_corrections import convert_single_nrrd_files as _convert_single_nrrd
 @cli.command(name="merge_corrections", no_args_is_help=True)
 def merge_corrections(
     labels_dir: str = Option(  # noqa: B008
-        help="Path to the directory containing label files.", **PKWARGS
+        ..., help="Path to the directory containing label files.", **PKWARGS
     ),
     corrections_dir: str = Option(  # noqa: B008
+        ...,
         help="Path to the directory containing correction folders. Each correction \
         folder should have the \
         same name as the corresponding label file (without the file extension).",
         **PKWARGS,
     ),
     out_dir: str = Option(  # noqa: B008
+        ...,
         help="Path to the directory where corrected label files will be saved.",
         **PKWARGS,
     ),

@@ -30,11 +30,11 @@ dependencies = [
     "torch",
     "imageio",
     "scipy",
-    "mrcfile",
     "typer[all]",
     "scikit-image",
     "simpleitk",
-    "pandas"
+    "pandas",
+    "mrcfile"
 ]
 
 

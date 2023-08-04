@@ -99,14 +99,6 @@ def train(
         save_top_k=3,
     )
 
-    # checkpoint_callback_regular = ModelCheckpoint(
-    #     save_top_k=-1,  # Save all checkpoints
-    #     every_n_epochs=100,
-    #     dirpath="checkpoints/",
-    #     filename=checkpointing_name
-    #     + "-{epoch}-{val_loss:.2f}",  # Customize the filename of saved checkpoints
-    #     verbose=True,  # Print a message when a checkpoint is saved
-    # )
     checkpoint_callback_last = ModelCheckpoint(
         save_top_k=1,  # Save only the best model
         monitor='epoch',  # Monitor 'epoch' to save the last epoch model
