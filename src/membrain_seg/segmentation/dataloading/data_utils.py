@@ -334,8 +334,8 @@ def convert_dtype(tomogram: np.ndarray) -> np.ndarray:
     if (
         tomogram.min() >= np.finfo("float16").min
         and tomogram.max() <= np.finfo("float16").max
-    ):
-        return tomogram.astype("float16")
+    ) and np.allclose(tomogram, tomogram.astype("float16")):
+        return tomogram.astype("float32")
     elif (
         tomogram.min() >= np.finfo("float32").min
         and tomogram.max() <= np.finfo("float32").max
@@ -375,23 +375,11 @@ def store_tomogram(
         data = np.transpose(data, (2, 1, 0))
         dtype_mode = _dtype_to_mode[data.dtype]
         out_mrc.set_data(data)
+
         if header is not None:
             attributes = header.dtype.names
             for attr in attributes:
-                # skip density and shape attribues
-                if attr in [
-                    "mode",
-                    "dmean",
-                    "dmin",
-                    "dmax",
-                    "rms",
-                    "nx",
-                    "ny",
-                    "nz",
-                    "mx",
-                    "my",
-                    "mz",
-                ]:
+                if attr not in ["nlabl", "label"]:
                     continue
                 setattr(out_mrc.header, attr, getattr(header, attr))
             out_mrc.header.mode = dtype_mode

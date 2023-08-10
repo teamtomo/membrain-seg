@@ -84,7 +84,7 @@ def extract_patches(
     pad_value = 2.0  # Currently still hard-coded because other values not
     # compatible with training routine yet.
     if coords_file is not None:
-        coords = get_csv_data(csv_path=coords_file)
+        coords = np.array(get_csv_data(csv_path=coords_file), dtype=int)
     else:
         coords = [np.array((x, y, z))]
     _extract_patches(

@@ -20,7 +20,7 @@ def segment(
     sw_roi_size=160,
     store_connected_components=False,
     connected_component_thres=None,
-    test_time_augmentation=True
+    test_time_augmentation=True,
 ):
     """
     Segment tomograms using a trained model.
@@ -106,7 +106,7 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     print("Performing 8-fold test-time augmentation.")
-    for m in range((8 if test_time_augmentation else 1)):
+    for m in range(8 if test_time_augmentation else 1):
         with torch.no_grad():
             with torch.cuda.amp.autocast():
                 predictions += (

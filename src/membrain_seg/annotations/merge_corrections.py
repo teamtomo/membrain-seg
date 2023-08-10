@@ -105,8 +105,13 @@ def convert_single_nrrd_files(labels_dir, corrections_dir, out_dir):
     for label_file in os.listdir(labels_dir):
         if not os.path.isfile(os.path.join(labels_dir, label_file)):
             continue
+        print("")
         print("Finding correction files for", label_file)
-        token = os.path.splitext(label_file)[0]
+        # token = os.path.splitext(label_file)[0]
+        if label_file.endswith(".nii.gz"):
+            token = label_file[:-7]
+        elif label_file.endswith(".nrrd"):
+            token = label_file[:-5]
         found_flag = 0
         for filename in os.listdir(corrections_dir):
             if not os.path.isdir(os.path.join(corrections_dir, filename)):
@@ -120,5 +125,5 @@ def convert_single_nrrd_files(labels_dir, corrections_dir, out_dir):
                 print("Storing corrections in", out_file)
                 write_nifti(out_file, merged_corrections)
                 found_flag = 1
-            if found_flag == 0:
-                print("No corrections folder found for patch", token)
+        if found_flag == 0:
+            print("No corrections folder found for patch", token)
