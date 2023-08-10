@@ -371,10 +371,6 @@ def store_tomogram(
         else:
             data = tomogram
             header = None
-        data = convert_dtype(data)
-        data = np.transpose(data, (2, 1, 0))
-        dtype_mode = _dtype_to_mode[data.dtype]
-        out_mrc.set_data(data)
 
         if header is not None:
             attributes = header.dtype.names
@@ -382,7 +378,10 @@ def store_tomogram(
                 if attr not in ["nlabl", "label"]:
                     continue
                 setattr(out_mrc.header, attr, getattr(header, attr))
-            out_mrc.header.mode = dtype_mode
+
+        data = convert_dtype(data)
+        data = np.transpose(data, (2, 1, 0))
+        out_mrc.set_data(data)
         if voxel_size is not None:
             out_mrc.voxel_size = voxel_size
 
