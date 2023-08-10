@@ -34,8 +34,7 @@ Explore MemBrain-seg, use it for your needs, and let us know how it works for yo
 Preliminary [documentation](https://github.com/teamtomo/membrain-seg/blob/main/docs/index.md) is available, but far from perfect. Please let us know if you encounter any issues, and we are more than happy to help (and get feedback what does not work yet).
 
 ```
-[1] Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2020). nnU-Net: a self-configuring method 
-for deep learning-based biomedical image segmentation. Nature Methods, 1-9.
+[1] Isensee, F., Jaeger, P.F., Kohl, S.A.A., Petersen, J., Maier-Hein, K.H., 2021. nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nature Methods 18, 203211. https://doi.org/10.1038/s41592-020-01008-z
 ```
 
 # Installation
@@ -48,8 +47,9 @@ Please find more detailed instructions [here](./docs/Usage/Segmentation.md).
 
 ## Preprocessing
 Currently, we provide the following two [preprocessing](https://github.com/teamtomo/membrain-seg/tree/main/src/tomo_preprocessing) options:
-- pixel size matching: Rescale your tomogram to match the training pixel sizes
+- Pixel size matching: Rescale your tomogram to match the training pixel sizes
 - Fourier amplitude matching: Scale Fourier components to match the "style" of different tomograms
+- Deconvolution: denosies the tomogram by applying the deconvolution filter from Warp
 
 For more information, see the [Preprocessing](./docs/Usage/Preprocessing.md) subsection.
 
