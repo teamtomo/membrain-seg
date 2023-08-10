@@ -8,3 +8,4 @@ applying the neural network.
 from .amplitude_spectrum_matching._cli import extract, match_spectrum  # noqa: F401
 from .cli import cli  # noqa: F401
 from .pixel_size_matching._cli import match_pixel_size, match_seg_to_tomo  # noqa: F401
+from .deconvolution._cli import deconvolve  # noqa: F401
