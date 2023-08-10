@@ -1,7 +1,7 @@
 # Derived from: Python utilities for Focus
 # Author: Ricardo Righetto
 # E-mail: ricardo.righetto@unibas.ch
-# http://www.focus-em.org
+# https://github.com/C-CINA/focustools/
 
 import numpy as np
 # import numexpr as ne
@@ -10,6 +10,10 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 pi = np.pi  # global PI
 
+# TO-DO:
+# Port heavy calculations to Torch or something more efficient than pure NumPy?
+# Original implementation used numexpr (see commented code) but that would add one more dependency to MemBrain.
+# For now, we stick to pure Numpy.
 
 def RadialIndices(imsize=[100, 100], rounding=True, normalize=False, rfft=False, xyz=[0, 0, 0], nozero=True):
     # Returns radius and angles for each pixel (or voxel) in a 2D image or 3D volume of shape = imsize
