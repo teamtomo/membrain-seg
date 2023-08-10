@@ -20,7 +20,7 @@ def segment(
     sw_roi_size=160,
     store_connected_components=False,
     connected_component_thres=None,
-    test_time_augmentation=True
+    test_time_augmentation=True,
 ):
     """
     Segment tomograms using a trained model.
@@ -81,7 +81,7 @@ def segment(
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
-    new_data, mrc_header = load_data_for_inference(
+    new_data, mrc_header, voxel_size = load_data_for_inference(
         new_data_path, transforms, device=torch.device("cpu")
     )
     new_data = new_data.to(torch.float32)
@@ -106,7 +106,7 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     print("Performing 8-fold test-time augmentation.")
-    for m in range((8 if test_time_augmentation else 1)):
+    for m in range(8 if test_time_augmentation else 1):
         with torch.no_grad():
             with torch.cuda.amp.autocast():
                 predictions += (
@@ -132,5 +132,6 @@ def segment(
         store_connected_components=store_connected_components,
         connected_component_thres=connected_component_thres,
         mrc_header=mrc_header,
+        voxel_size=voxel_size,
     )
     return segmentation_file
