@@ -81,7 +81,7 @@ def segment(
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
-    new_data, mrc_header = load_data_for_inference(
+    new_data, mrc_header, voxel_size = load_data_for_inference(
         new_data_path, transforms, device=torch.device("cpu")
     )
     new_data = new_data.to(torch.float32)
@@ -132,5 +132,6 @@ def segment(
         store_connected_components=store_connected_components,
         connected_component_thres=connected_component_thres,
         mrc_header=mrc_header,
+        voxel_size=voxel_size,
     )
     return segmentation_file

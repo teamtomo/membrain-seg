@@ -118,7 +118,7 @@ def load_data_for_inference(data_path: str, transforms: Callable, device: device
     new_data = transforms(new_data)
     new_data = new_data.unsqueeze(0)  # Add batch dimension
     new_data = new_data.to(device)
-    return new_data, tomogram.header
+    return new_data, tomogram.header, tomogram.voxel_size
 
 
 def store_segmented_tomograms(
@@ -130,6 +130,7 @@ def store_segmented_tomograms(
     store_connected_components: bool = False,
     connected_component_thres: int = None,
     mrc_header: np.recarray = None,
+    voxel_size: float = None,
 ) -> None:
     """
     Helper function for storing output segmentations.
@@ -159,6 +160,9 @@ def store_segmented_tomograms(
         If given, the mrc header will be used to retain header information
         from another tomogram. This way, pixel sizes and other header
         information is not lost.
+    voxel_size: float, optional
+        If given, this will be the voxel size stored in the header of the
+        output segmentation.
     """
     # Create out directory if it doesn't exist yet
     make_directory_if_not_exists(out_folder)
@@ -170,7 +174,9 @@ def store_segmented_tomograms(
         out_file = os.path.join(
             out_folder, os.path.basename(orig_data_path)[:-4] + "_scores.mrc"
         )
-        out_tomo = Tomogram(data=predictions_np, header=mrc_header)
+        out_tomo = Tomogram(
+            data=predictions_np, header=mrc_header, voxel_size=voxel_size
+        )
         store_tomogram(out_file, out_tomo)
     predictions_np_thres = predictions.squeeze(0).squeeze(0).cpu().numpy() > 0.0
     out_file_thres = os.path.join(
@@ -181,7 +187,9 @@ def store_segmented_tomograms(
         predictions_np_thres = connected_components(
             predictions_np_thres, size_thres=connected_component_thres
         )
-    out_tomo = Tomogram(data=predictions_np_thres, header=mrc_header)
+    out_tomo = Tomogram(
+        data=predictions_np_thres, header=mrc_header, voxel_size=voxel_size
+    )
     store_tomogram(out_file_thres, out_tomo)
     print("MemBrain has finished segmenting your tomogram.")
     return out_file_thres
@@ -368,6 +376,8 @@ def store_tomogram(
         if isinstance(tomogram, Tomogram):
             data = tomogram.data
             header = tomogram.header
+            if voxel_size is None:
+                voxel_size = tomogram.voxel_size
         else:
             data = tomogram
             header = None
