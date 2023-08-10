@@ -335,7 +335,7 @@ def convert_dtype(tomogram: np.ndarray) -> np.ndarray:
         tomogram.min() >= np.finfo("float16").min
         and tomogram.max() <= np.finfo("float16").max
     ) and np.allclose(tomogram, tomogram.astype("float16")):
-        return tomogram.astype("float32")
+        return tomogram.astype("float16")
     elif (
         tomogram.min() >= np.finfo("float32").min
         and tomogram.max() <= np.finfo("float32").max
