@@ -22,7 +22,7 @@ def deconvolve(
         help="Defocus 1 (or Defocus U in some notations) in Angstroms. Principal defocus axis. Underfocus is positive.",
     ),
     df2: float = Option(  # noqa: B008
-        40000,
+        None,
         help="Defocus 2 (or Defocus V in some notations) in Angstroms. Defocus axis orthogonal to the U axis. Only mandatory for astigmatic data.",
     ),
     ast: float = Option(  # noqa: B008

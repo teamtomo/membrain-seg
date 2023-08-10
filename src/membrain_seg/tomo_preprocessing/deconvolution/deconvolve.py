@@ -67,7 +67,6 @@ def deconvolve(
     This function reads the input tomogram and applies the deconvolution filter on it following the Warp implementation (see reference above), then stores the processed tomogram to the specified output path. The deconvolution process is
     controlled by several parameters including the tomogram defocus, acceleration voltage, spherical aberration, strength and falloff. The implementation here is based on that of the focustools package: https://github.com/C-CINA/focustools/
     """
-
     tomo = load_tomogram( mrcin )
 
     if apix == None:
@@ -78,6 +77,22 @@ def deconvolve(
 
         DF2 = DF1
 
+    print("\nDeconvolving input tomogram\n",
+        mrcin,
+        "\noutput will be written as\n",
+        mrcout,
+        "\nusing:",
+        "\npixel_size: {:.3f}".format(apix),
+        "\ndf1: {:.1f}".format(DF1),
+        "\ndf2: {:.1f}".format(DF2),
+        "\nast: {:.1f}".format(AST),
+        "\nkV: {:.1f}".format(kV),
+        "\nCs: {:.1f}".format(Cs),
+        "\nstrength: {:.3f}".format(strength),
+        "\nfalloff: {:.3f}".format(falloff),
+        "\nskip_lowpass: {}".format(skip_lowpass),
+    )
+
     ssnr = AdhocSSNR(imsize=tomo.data.shape, apix=apix, DF=0.5 * (DF1 + DF2),
                                  WGH=ampcon, Cs=Cs, kV=kV, S=strength, F=falloff, hp_frac=0.01, lp=not skip_lowpass)
 
@@ -87,3 +102,5 @@ def deconvolve(
                             apix=apix, phase_flip=False, ctf_multiply=False, wiener_filter=True, C=wiener_constant, return_ctf=False)
 
     store_tomogram(mrcout, deconvtomo[0], voxel_size=apix)
+
+    print("\nDone!")
