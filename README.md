@@ -21,8 +21,12 @@ MemBrain-seg is a practical tool for membrane segmentation in cryo-electron tomo
 The U-Net architecture and training parameters are largely inspired by nnUNet<sup>1</sup>.
 
 
-Our current best model is available for download [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). Please let us know how it works for you.
-The above model works best on denoised tomograms. As an alternative, [this model](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing) performs better on non-denoised tomograms.
+Our current best model is available for download [here](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing). Please let us know how it works for you.
+If the given model does not work properly, you may want to try one of our previous versions:
+
+Other (older) model versions:
+- [v9 -- best model until 10th Aug 2023](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing)
+- [v9b -- model for non-denoised data until 10th Aug 2023](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing)
 
 If you wish, you can also train a new model using your own data, or combine it with our (soon to come!) publicly-available dataset. 
 
