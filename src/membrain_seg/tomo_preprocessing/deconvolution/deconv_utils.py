@@ -67,7 +67,7 @@ def RadialIndices(
     -----
     This function is compliant with NumPy fft.fftfreq() and fft.rfftfreq().
     """
-    imsize = np.array(imsize, dtype="int32")
+    imsize = np.array(imsize)
 
     # if np.isscalar(imsize):
     #     imsize = [imsize, imsize]
@@ -92,16 +92,16 @@ def RadialIndices(
         if not rfft:
             xmesh = np.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0]
-            ].astype("int32")
+            ]
 
         else:
-            xmesh = np.mgrid[0 - xyz[0] : imsize[0] // 2 + 1 - xyz[0]].astype("int32")
+            xmesh = np.mgrid[0 - xyz[0] : imsize[0] // 2 + 1 - xyz[0]]
             # xmesh = np.fft.ifftshift(xmesh)
 
         # rmesh = ne.evaluate("sqrt(xmesh * xmesh)")
-        rmesh = np.sqrt(xmesh * xmesh, dtype="float32")
+        rmesh = np.sqrt(xmesh * xmesh)
 
-        amesh = np.zeros(xmesh.shape, dtype="float32")
+        amesh = np.zeros(xmesh.shape)
 
         n = 1  # Normalization factor
 
@@ -113,22 +113,22 @@ def RadialIndices(
             [xmesh, ymesh] = np.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0],
                 -imsize[1] // 2 + m[1] - xyz[1] : (imsize[1] - 1) // 2 + 1 - xyz[1],
-            ].astype("int32")
+            ]
 
         else:
             [xmesh, ymesh] = np.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0],
                 0 - xyz[1] : imsize[1] // 2 + 1 - xyz[1],
-            ].astype("int32")
+            ]
             xmesh = np.fft.ifftshift(xmesh)
 
         # rmesh = ne.evaluate("sqrt(xmesh * xmesh + ymesh * ymesh)")
 
         # amesh = ne.evaluate("arctan2(ymesh, xmesh)")
 
-        rmesh = np.sqrt(xmesh * xmesh + ymesh * ymesh, dtype="float32")
+        rmesh = np.sqrt(xmesh * xmesh + ymesh * ymesh)
 
-        amesh = np.arctan2(ymesh, xmesh, dtype="float32")
+        amesh = np.arctan2(ymesh, xmesh)
 
         n = 2  # Normalization factor
 
@@ -141,23 +141,23 @@ def RadialIndices(
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0],
                 -imsize[1] // 2 + m[1] - xyz[1] : (imsize[1] - 1) // 2 + 1 - xyz[1],
                 -imsize[2] // 2 + m[2] - xyz[2] : (imsize[2] - 1) // 2 + 1 - xyz[2],
-            ].astype("int32")
+            ]
 
         else:
             [xmesh, ymesh, zmesh] = np.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0],
                 -imsize[1] // 2 + m[1] - xyz[1] : (imsize[1] - 1) // 2 + 1 - xyz[1],
                 0 - xyz[2] : imsize[2] // 2 + 1 - xyz[2],
-            ].astype("int32")
+            ]
             xmesh = np.fft.ifftshift(xmesh)
             ymesh = np.fft.ifftshift(ymesh)
 
         # rmesh = ne.evaluate(
         #     "sqrt(xmesh * xmesh + ymesh * ymesh + zmesh * zmesh)")
-        rmesh = np.sqrt(xmesh * xmesh + ymesh * ymesh + zmesh * zmesh, dtype="float32")
+        rmesh = np.sqrt(xmesh * xmesh + ymesh * ymesh + zmesh * zmesh)
 
         # amesh = ne.evaluate("arccos(zmesh / rmesh)")
-        amesh = np.arccos(zmesh / rmesh, dtype="float32")
+        amesh = np.arccos(zmesh / rmesh)
 
         n = 3  # Normalization factor
 
@@ -165,9 +165,9 @@ def RadialIndices(
         rmesh = np.round(rmesh)
 
     if normalize:
-        a = np.sum(imsize * imsize, dtype="int32")
+        a = np.sum(imsize * imsize)
         # ne.evaluate("rmesh / (sqrt(a) / sqrt(n))", out=rmesh)
-        rmesh = rmesh / (np.sqrt(a, dtype="float32") / np.sqrt(n, dtype="float32"))
+        rmesh = rmesh / (np.sqrt(a) / np.sqrt(n))
         # rmesh = rmesh / (np.sqrt(np.sum(np.power(imsize, 2))) / np.sqrt(n))
 
     if nozero:
@@ -221,7 +221,6 @@ def CTF(
         Whether to return an array consistent with np.fft.rfftn i.e. exploiting the \
         Hermitian symmetry of the Fourier transform of real data.
 
-
     Returns
     -------
     CTFim : ndarray
@@ -251,7 +250,7 @@ def CTF(
 
     WL = ElectronWavelength(kV)
 
-    w1 = np.sqrt(1 - WGH * WGH, dtype="float32")
+    w1 = np.sqrt(1 - WGH * WGH)
     w2 = WGH
 
     import warnings
@@ -380,6 +379,11 @@ def CorrectCTF(
         A list containing the corrected image(s), the CTF (if return_ctf is True) and \
         a string indicating the type of correction(s) applied.
 
+    Raises
+    ------
+    ValueError
+        If any entry of the Wiener filter constant is lower than or equal to zero.
+
     Notes
     -----
     More than one type of CTF correction can be performed with one call, in which case \
@@ -399,29 +403,27 @@ def CorrectCTF(
         # ne.evaluate("CTFim * -1.0", out=CTFim)
         pass
 
-    FT = np.fft.rfftn(img).astype("complex64")
+    FT = np.fft.rfftn(img)
 
     if phase_flip:  # Phase-flipping
         s = np.sign(CTFim)
         # CTFcor.append(np.fft.irfftn(ne.evaluate("FT * s")))
-        CTFcor.append(np.fft.irfftn(FT * s).astype("float32"))
+        CTFcor.append(np.fft.irfftn(FT * s))
         cortype.append("pf")
 
     if ctf_multiply:  # CTF multiplication
         # CTFcor.append(np.fft.irfftn(ne.evaluate("FT * CTFim")))
-        CTFcor.append(np.fft.irfftn(FT * CTFim).astype("float32"))
+        CTFcor.append(np.fft.irfftn(FT * CTFim))
         cortype.append("cm")
 
     if wiener_filter:  # Wiener filtering
         if np.any(C <= 0.0):
             raise ValueError(
-                "Error: Wiener filter constant cannot be less than or equal to zero! C \
-                = %f "
-                % C
+                "Error: Wiener filter contain value(s) less than or equal to zero!"
             )
 
         # CTFcor.append(np.fft.irfftn(ne.evaluate("FT * CTFim / (CTFim * CTFim + C)")))
-        CTFcor.append(np.fft.irfftn(FT * CTFim / (CTFim * CTFim + C)).astype("float32"))
+        CTFcor.append(np.fft.irfftn(FT * CTFim / (CTFim * CTFim + C)))
         cortype.append("wf")
 
     if return_ctf:
@@ -474,11 +476,11 @@ def AdhocSSNR(
     Returns
     -------
     ssnr : ndarray
-        A 1D containing the radial ad hoc SSNR.
+        Array containing the radial ad hoc SSNR.
 
     Notes
     -----
-    Since this model only comprises a 1D SSNR model, astigmatism is ignored.
+    This SSNR model ignores astigmatism.
 
     References
     ----------
@@ -513,7 +515,12 @@ def AdhocSSNR(
         # ssnr = ne.evaluate("highpass * falloff")  # Composite filter
         ssnr = highpass * falloff  # Composite filter
 
-    return ssnr
+    # if np.any(np.isclose(ssnr,0.0)):
+    #     print("SSNR contains zero values!")
+    # if np.any(ssnr < 0.0):
+    #     print("SSNR contains negative values!")
+
+    return np.abs(ssnr)
 
 
 def ElectronWavelength(kV: float = 300.0):

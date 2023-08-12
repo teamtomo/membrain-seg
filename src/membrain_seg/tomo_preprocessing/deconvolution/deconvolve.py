@@ -20,7 +20,7 @@ def deconvolve(
     apix: float = None,
     strength: float = 1.0,
     falloff: float = 1.0,
-    skip_lowpass: bool = False,
+    skip_lowpass: bool = True,
 ) -> None:
     """
     Deconvolve the input tomogram using the Warp deconvolution filter. 
@@ -100,8 +100,9 @@ def deconvolve(
         f"\nCs: {Cs:.1f}",
         f"\nstrength: {strength:.3f}",
         f"\nfalloff: {falloff:.3f}",
-        f"\nskip_lowpass: {skip_lowpass}",
+        f"\nskip_lowpass: {skip_lowpass}\n",
     )
+    print("Deconvolution can take a few minutes, please wait...")
 
     ssnr = AdhocSSNR(
         imsize=tomo.data.shape,

@@ -59,8 +59,8 @@ def deconvolve(
         False,
         help="The denoising filter by default will have a smooth low-pass effect that \
         enforces filtering out any information beyond the first zero of the CTF. Use \
-        this option to skip this filter (i.e. potentially include information beyond \
-        the first CTF zero).",
+        this option to skip this filter i.e. potentially include information beyond \
+        the first CTF zero (not recommended).",
     ),
 ):
     """Deconvolve the input tomogram using the Warp deconvolution filter."""
