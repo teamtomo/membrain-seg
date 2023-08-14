@@ -7,6 +7,7 @@ from membrain_seg.tomo_preprocessing.deconvolution.deconv_utils import (
     CorrectCTF,
 )
 
+import numpy as np
 
 def deconvolve(
     mrcin: str,
@@ -112,7 +113,7 @@ def deconvolve(
     ssnr = AdhocSSNR(
         imsize=tomo.data.shape,
         apix=apix,
-        df=0.5 * (df1 + df2),
+        df=np.max([df1, df2]),
         ampcon=ampcon,
         Cs=Cs,
         kV=kV,

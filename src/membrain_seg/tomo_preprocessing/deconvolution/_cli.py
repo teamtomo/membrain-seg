@@ -33,7 +33,9 @@ def deconvolve(
     ),
     ast: float = Option(  # noqa: B008
         0.0,
-        help="Angle for astigmatic data (in degrees).",
+        help="Angle for astigmatic data (in degrees). Astigmatism is currently not \
+        used in deconvolution (only the axis of largest defocus is considered), but \
+        maybe some better model in the future will use it?",
     ),
     ampcon: float = Option(  # noqa: B008
         0.07,
