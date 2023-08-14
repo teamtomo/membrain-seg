@@ -26,6 +26,7 @@ def RadialIndices(
     rfft: bool = False,
     xyz: tuple = (0, 0, 0),
     nozero: bool = True,
+    nozeroval: float = 1e-3,
 ):
     """
     Generates a 1D/2D/3D array whose values are the distance counted from the origin. 
@@ -49,6 +50,8 @@ def RadialIndices(
         Whether the value of the origin (corresponding to the zero frequency or DC \
         component in the Fourier transform) should be set to a small value instead of \
         zero.
+    nozeroval : float
+        The value to put at the origin if nozero is True.
 
     Returns
     -------
@@ -175,17 +178,17 @@ def RadialIndices(
         # other programs
         # idx = ne.evaluate("rmesh == 0")
         idx = rmesh == 0
-        rmesh[idx] = 1e-3
+        rmesh[idx] = nozeroval
 
     return rmesh, np.nan_to_num(amesh)
 
 
 def CTF(
     imsize: tuple = (128, 128),
-    DF1: float = 1000.0,
-    DF2: float = None,
-    AST: float = 0.0,
-    WGH: float = 0.10,
+    df1: float = 50000.0,
+    df2: float = None,
+    ast: float = 0.0,
+    ampcon: float = 0.07,
     Cs: float = 2.7,
     kV: float = 300.0,
     apix: float = 1.0,
@@ -199,15 +202,15 @@ def CTF(
     ----------
     imsize : tuple
         The shape of the input ndarray.
-    DF1 : float
+    df1 : float
         Defocus 1 (or Defocus U in some notations) in Angstroms. Principal defocus \
         axis. Underfocus is positive.
-    DF2 : float
+    df2 : float
         Defocus 2 (or Defocus V in some notations) in Angstroms. Defocus axis \
         orthogonal to the U axis. Only mandatory for astigmatic data.
-    AST : float
+    ast : float
         Angle for astigmatic data (in degrees).
-    WGH : float
+    ampcon : float
         Amplitude contrast fraction (between 0.0 and 1.0).
     Cs : float
         Spherical aberration (in mm).
@@ -237,21 +240,21 @@ def CTF(
 
     Cs *= 1e7  # Convert Cs to Angstroms
 
-    if DF2 is None or np.isscalar(imsize):
-        DF2 = DF1
+    if df2 is None or np.isscalar(imsize):
+        df2 = df1
 
     # else:
 
-    # NOTATION FOR DEFOCUS1, DEFOCUS2, ASTIGMASTISM BELOW IS INVERTED DUE TO NUMPY
+    # NOTATION FOR DEFOCUS1, DEFOCUS2, ASTIGMATISM BELOW IS INVERTED DUE TO NUMPY
     # CONVENTION:
-    # DF1, DF2 = DF2, DF1
+    # df1, df2 = df2, df1
 
-    AST *= -pi / 180.0
+    ast *= -pi / 180.0
 
     WL = ElectronWavelength(kV)
 
-    w1 = np.sqrt(1 - WGH * WGH)
-    w2 = WGH
+    w1 = np.sqrt(1 - ampcon * ampcon)
+    w2 = ampcon
 
     import warnings
 
@@ -269,6 +272,7 @@ def CTF(
             rmesh, amesh = RadialIndices(imsize, normalize=True, rfft=rfft)
             # rmesh2 = ne.evaluate( "rmesh**2 / apix**2"
             rmesh2 = rmesh**2 / apix**2
+
         #             xmesh = np.fft.fftfreq(imsize[0])
         #             if rfft:
         #                 ymesh = np.fft.rfftfreq(imsize[1])
@@ -289,12 +293,12 @@ def CTF(
         # rmesh2 = ne.evaluate("rmesh * rmesh")
 
         # From Mindell & Grigorieff, JSB 2003:
-        # DF = ne.evaluate("0.5 * (DF1 + DF2 + (DF1 - DF2) * cos(2.0 * (amesh - AST)))")
-        DF = 0.5 * (DF1 + DF2 + (DF1 - DF2) * np.cos(2.0 * (amesh - AST)))
+        # df = ne.evaluate("0.5 * (df1 + df2 + (df1 - df2) * cos(2.0 * (amesh - ast)))")
+        df = 0.5 * (df1 + df2 + (df1 - df2) * np.cos(2.0 * (amesh - ast)))
 
-        # Xr = np.nan_to_num(ne.evaluate("pi * WL * rmesh2 * (DF - 0.5 * WL * WL * ...
+        # Xr = np.nan_to_num(ne.evaluate("pi * WL * rmesh2 * (df - 0.5 * WL * WL * ...
         # rmesh2 * Cs)"))
-        Xr = np.nan_to_num(pi * WL * rmesh2 * (DF - 0.5 * WL * WL * rmesh2 * Cs))
+        Xr = np.nan_to_num(pi * WL * rmesh2 * (df - 0.5 * WL * WL * rmesh2 * Cs))
 
     # sinXr = ne.evaluate("sin(Xr)")
     # cosXr = ne.evaluate("cos(Xr)")
@@ -314,10 +318,10 @@ def CTF(
 
 def CorrectCTF(
     img=None,
-    DF1: float = 1000.0,
-    DF2: float = None,
-    AST: float = 0.0,
-    WGH: float = 0.10,
+    df1: float = 50000.0,
+    df2: float = None,
+    ast: float = 0.0,
+    ampcon: float = 0.07,
     invert_contrast: bool = False,
     Cs: float = 2.7,
     kV: float = 300.0,
@@ -335,15 +339,15 @@ def CorrectCTF(
     ----------
     img : 
         The input image to be corrected.
-    DF1 : float
+    df1 : float
         Defocus 1 (or Defocus U in some notations) in Angstroms. Principal defocus \
         axis. Underfocus is positive.
-    DF2 : float
+    df2 : float
         Defocus 2 (or Defocus V in some notations) in Angstroms. Defocus axis \
         orthogonal to the U axis. Only mandatory for astigmatic data.
-    AST : float
+    ast : float
         Angle for astigmatic data (in degrees).
-    WGH : float
+    ampcon : float
         Amplitude contrast fraction (between 0.0 and 1.0).
     invert_contrast: bool
         Whether to invert the contrast of the input image.
@@ -394,7 +398,7 @@ def CorrectCTF(
     """
     # Direct CTF correction would invert the image contrast. By default we don't do
     # that, hence the negative sign:
-    CTFim = -CTF(img.shape, DF1, DF2, AST, WGH, Cs, kV, apix, 0.0, rfft=True)
+    CTFim = -CTF(img.shape, df1, df2, ast, ampcon, Cs, kV, apix, 0.0, rfft=True)
 
     CTFcor = []
     cortype = []
@@ -437,13 +441,13 @@ def CorrectCTF(
 def AdhocSSNR(
     imsize: tuple = (128, 128),
     apix: float = 1.0,
-    DF: float = 1000.0,
-    WGH: float = 0.1,
+    df: float = 50000.0,
+    ampcon: float = 0.07,
     Cs: float = 2.7,
     kV: float = 300.0,
     S: float = 1.0,
     F: float = 1.0,
-    hp_frac: float = 0.01,
+    hp_frac: float = 0.02,
     lp: bool = True,
 ):
     """
@@ -455,9 +459,9 @@ def AdhocSSNR(
         The shape of the input array.
     apix : float
         Input pixel size in Angstroms.
-    DF : float
+    df : float
         Average defocus in Angstroms.
-    WGH : float
+    ampcon : float
         Amplitude contrast fraction (between 0.0 and 1.0).
     Cs : float
         Spherical aberration (in mm).
@@ -502,9 +506,10 @@ def AdhocSSNR(
 
     if lp:
         # Ensure the filter will reach zero at the first zero of the CTF
-        first_zero_res = FirstZeroCTF(DF=DF, WGH=WGH, Cs=Cs, kV=kV)
+        first_zero_res = FirstZeroCTF(df=df, ampcon=ampcon, Cs=Cs, kV=kV)
         # a = np.minimum(1.0, ne.evaluate("rmesh / first_zero_res"))
         a = np.minimum(1.0, rmesh / first_zero_res)
+
         # lowpass = ne.evaluate("cos(a * pi/2)")
         lowpass = np.cos(a * pi / 2)
 
@@ -543,16 +548,16 @@ def ElectronWavelength(kV: float = 300.0):
 
 
 def FirstZeroCTF(
-    DF: float = 1000.0, WGH: float = 0.10, Cs: float = 2.7, kV: float = 300.0
+    df: float = 50000.0, ampcon: float = 0.07, Cs: float = 2.7, kV: float = 300.0
 ):
     """
     The frequency at which the CTF first crosses zero.
 
     Parameters
     ----------
-    DF : float
+    df : float
         Average defocus in Angstroms. 
-    WGH : float
+    ampcon : float
         Amplitude contrast fraction (between 0.0 and 1.0).
     Cs : float
         Spherical aberration (in mm).
@@ -574,13 +579,13 @@ def FirstZeroCTF(
     """
     Cs *= 1e7  # Convert Cs to Angstroms
 
-    w1 = np.sqrt(1 - WGH * WGH)
-    w2 = WGH
+    w1 = np.sqrt(1 - ampcon * ampcon)
+    w2 = ampcon
 
     WL = ElectronWavelength(kV)
 
     g = np.sqrt(-2 * Cs * WL * np.arctan2(w2, w1) + 2 * pi * Cs * WL + pi) / (
-        np.sqrt(2 * pi * Cs * DF) * WL
+        np.sqrt(2 * pi * Cs * df) * WL
     )
 
     return g

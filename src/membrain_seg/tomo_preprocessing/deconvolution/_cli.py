@@ -22,7 +22,7 @@ def deconvolve(
         pixel size is not correct.",
     ),
     df1: float = Option(  # noqa: B008
-        40000,
+        50000,
         help="Defocus 1 (or Defocus U in some notations) in Angstroms. Principal \
         defocus axis. Underfocus is positive.",
     ),
@@ -55,6 +55,11 @@ def deconvolve(
         1.0,
         help="Falloff parameter for the denoising filter.",
     ),
+    hp_fraction: float = Option(  # noqa: B008
+        0.02,
+        help="Fraction of Nyquist frequency to be cut off on the lower end (since it \
+        will be boosted the most)",
+    ),
     skip_lowpass: bool = Option(  # noqa: B008
         False,
         help="The denoising filter by default will have a smooth low-pass effect that \
@@ -76,5 +81,6 @@ def deconvolve(
         pixel_size,
         strength,
         falloff,
+        hp_fraction,
         skip_lowpass,
     )
