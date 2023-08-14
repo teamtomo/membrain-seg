@@ -1,3 +1,5 @@
+import numpy as np
+
 from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     store_tomogram,
@@ -7,7 +9,6 @@ from membrain_seg.tomo_preprocessing.deconvolution.deconv_utils import (
     CorrectCTF,
 )
 
-import numpy as np
 
 def deconvolve(
     mrcin: str,
