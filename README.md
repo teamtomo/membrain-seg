@@ -53,7 +53,7 @@ Please find more detailed instructions [here](./docs/Usage/Segmentation.md).
 Currently, we provide the following two [preprocessing](https://github.com/teamtomo/membrain-seg/tree/main/src/tomo_preprocessing) options:
 - Pixel size matching: Rescale your tomogram to match the training pixel sizes
 - Fourier amplitude matching: Scale Fourier components to match the "style" of different tomograms
-- Deconvolution: denosies the tomogram by applying the deconvolution filter from Warp
+- Deconvolution: denoises the tomogram by applying the deconvolution filter from Warp
 
 For more information, see the [Preprocessing](./docs/Usage/Preprocessing.md) subsection.
 
