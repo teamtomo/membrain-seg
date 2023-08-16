@@ -29,7 +29,7 @@ already some rules of thumb:
 2. The Fourier amplitude matching only works in some cases, depending on the CTFs of input 
 and target tomograms. Our current recommendation is: If you're not satisfied with MemBrain's 
 segmentation performance, why not give the amplitude matching a shot?
-3. Deconvolution is almost always recommended if your tomogram has not already been denoised somehow (e.g. using cryo-CARE, IsoNet or Warp). Deconvolving an already denoised tomogram is not recommended, it will most likely make things worse.
+3. Deconvolution can help with the segmentation performance if your tomogram has not already been denoised somehow (e.g. using cryo-CARE, IsoNet or Warp). Deconvolving an already denoised tomogram is not recommended, it will most likely make things worse.
 
 More detailed guidelines are in progress!
 
