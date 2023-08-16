@@ -14,7 +14,7 @@ pi = np.pi  # global PI
 # TO-DO:
 # Port heavy calculations to Torch or something more efficient than pure NumPy?
 # Original implementation used numexpr (see commented code) but that would add one more
-# dependency to MemBrain and does not give significant speedups, at least not with the 
+# dependency to MemBrain and does not give significant speedups, at least not with the
 # defaults.
 # For now, we stick to pure Numpy.
 
@@ -154,7 +154,6 @@ component in the Fourier transform) should be set to a small value instead of ze
         rmesh = np.round(rmesh)
 
     if normalize:
-
         a = np.sum(imsize * imsize)
 
         rmesh = rmesh / (np.sqrt(a) / np.sqrt(n))
@@ -228,7 +227,6 @@ cisTEM, RELION and many other packages.
     if df2 is None or np.isscalar(imsize):
         df2 = df1
 
-
     # NOTATION FOR DEFOCUS1, DEFOCUS2, ASTIGMATISM BELOW IS INVERTED DUE TO NUMPY
     # CONVENTION:
     # df1, df2 = df2, df1
@@ -265,7 +263,6 @@ cisTEM, RELION and many other packages.
     CTFim = -w1 * np.sin(Xr) - w2 * np.cos(Xr)
 
     if B != 0.0:  # Apply B-factor only if necessary:
-
         CTFim = CTFim * np.exp(-B * (rmesh2) / 4)
 
     return CTFim
@@ -351,7 +348,6 @@ a string indicating the type of correction(s) applied.
     CTFim = -CTF(img.shape, df1, df2, ast, ampcon, Cs, kV, apix, 0.0, rfft=True)
 
     if invert_contrast:
-
         CTFim = -CTFim
 
         pass
@@ -374,11 +370,9 @@ a string indicating the type of correction(s) applied.
         CTFcor = np.fft.irfftn(FT * CTFim / (CTFim * CTFim + C))
 
     if return_ctf:
-
         return CTFcor, CTFim
 
     else:
-
         return CTFcor
 
 

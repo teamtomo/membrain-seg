@@ -1,5 +1,3 @@
-import numpy as np
-
 from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     store_tomogram,

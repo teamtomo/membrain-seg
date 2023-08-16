@@ -24,18 +24,19 @@ is not correct.",
     df: float = Option(  # noqa: B008
         50000,
         help="The defocus value to be used for deconvolution, in Angstroms. This is \
-typically the defocus of the zero tilt. Underfocus is positive.", **PKWARGS
+typically the defocus of the zero tilt. Underfocus is positive.",
+        **PKWARGS,
     ),
-    # df2: float = Option(  # noqa: B008
+    # df2: float = Option(
     #     None,
     #     help="Defocus 2 (or Defocus V in some notations) in Angstroms. Defocus axis \
-# orthogonal to the U axis. Only mandatory for astigmatic data.",
+    # orthogonal to the U axis. Only mandatory for astigmatic data.",
     # ),
-    # ast: float = Option(  # noqa: B008
+    # ast: float = Option(
     #     0.0,
     #     help="Angle for astigmatic data (in degrees). Astigmatism is currently not \
-# used in deconvolution (only the axis of largest defocus is considered), but maybe \
-# some better model in the future will use it?",
+    # used in deconvolution (only the axis of largest defocus is considered), but maybe\
+    # some better model in the future will use it?",
     # ),
     ampcon: float = Option(  # noqa: B008
         0.07,

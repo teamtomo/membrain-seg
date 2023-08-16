@@ -55,7 +55,7 @@ For help on a specific command, use:
 - **match_spectrum**: Match amplitude of Fourier spectrum from input tomogram to target spectrum. Example:  
 `tomo_preprocessing match_spectrum --input <path-to-tomo> --target <path-to-spectrum> --output <path-to-output>`
 - **deconvolve**: Denoises the tomogram by deconvolving the contrast transfer function. Example:  
-`tomo_preprocessing deconvolve --input <path-to-tomo> --output <path-to-output-tomo> --df1 <defocus-of-the-zero-tilt>`
+`tomo_preprocessing deconvolve --input <path-to-tomo> --output <path-to-output-tomo> --df <defocus-value>`
 
 ### **Pixel Size Matching**
 Pixel size matching is recommended when your tomogram pixel sizes differs strongly from the training pixel size range (roughly 10-14&Aring;). You can perform it using the command
@@ -87,7 +87,7 @@ Now, the input tomograms Fourier components are re-scaled based on the equalizat
 Deconvolution is a denoising method that works by "removing" the effects of the contrast transfer function (CTF) from the tomogram. This is based on an ad-hoc model of the spectral signal-to-noise-ratio (SSNR) in the data, following the implementation in the Warp package [1]. Effectively what the filter does is to boost the very low frequencies, thus enhancing the tomogram contrast, while low-pass filtering beyond the first zero-crossing of the CTF.
 For the filter to work, you need to provide the CTF parameters, namely a defocus value for the tomogram, as well as the acceleration voltage, spherical aberration and amplitude contrast, if those differ from the defaults. This is typically the defocus value of the zero tilt. It does not need to be super accurate, a roughly correct value already produces decent results. While the defaults usually work well, you can play with the filter parameters, namely the deconvolution strength and the falloff, to fine-tune the results.
 Example detailed command:
-`tomo_preprocessing deconvolve --input <path-to-tomo> --output <path-to-output-tomo> --df1 45000 --ampcon 0.07 --cs 2.7 --kv 300 --strength 1.0 --falloff 1.0`
+`tomo_preprocessing deconvolve --input <path-to-tomo> --output <path-to-output-tomo> --df 45000 --ampcon 0.07 --cs 2.7 --kv 300 --strength 1.0 --falloff 1.0`
 
 ```
 [1] Tegunov, D., Cramer, P., 2019. Real-time cryo-electron microscopy data preprocessing with Warp. Nature Methods 16, 11461152. https://doi.org/10.1038/s41592-019-0580-y
