@@ -132,6 +132,6 @@ on that of the focustools package: https://github.com/C-CINA/focustools/
         return_ctf=False,
     )
 
-    store_tomogram(mrcout, deconvtomo[0], voxel_size=apix)
+    store_tomogram(mrcout, deconvtomo, voxel_size=apix)
 
     print("\nDone!")

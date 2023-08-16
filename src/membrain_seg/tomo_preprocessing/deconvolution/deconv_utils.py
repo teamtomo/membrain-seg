@@ -342,13 +342,6 @@ a string indicating the type of correction(s) applied.
     ValueError
         If any entry of the Wiener filter constant is lower than or equal to zero.
 
-    Notes
-    -----
-    More than one type of CTF correction can be performed with one call, in which case \
-all of the corrected versions will be returned consecutively as the first entries of \
-the returned list. The last entries of the returned list are strings indicating the \
-type of correction applied: "pf" for phase-flipping, "cm" for CTF multiplication and \
-"wf" for Wiener filtering.
     """
     if df2 is None:
         df2 = df1
@@ -356,9 +349,6 @@ type of correction applied: "pf" for phase-flipping, "cm" for CTF multiplication
     # Direct CTF correction would invert the image contrast. By default we don't do
     # that, hence the negative sign:
     CTFim = -CTF(img.shape, df1, df2, ast, ampcon, Cs, kV, apix, 0.0, rfft=True)
-
-    CTFcor = []
-    cortype = []
 
     if invert_contrast:
 
@@ -370,28 +360,26 @@ type of correction applied: "pf" for phase-flipping, "cm" for CTF multiplication
 
     if phase_flip:  # Phase-flipping
         s = np.sign(CTFim)
-        CTFcor.append(np.fft.irfftn(FT * s))
-        cortype.append("pf")
+        CTFcor = np.fft.irfftn(FT * s)
 
-    if ctf_multiply:  # CTF multiplication
-        CTFcor.append(np.fft.irfftn(FT * CTFim))
-        cortype.append("cm")
+    elif ctf_multiply:  # CTF multiplication
+        CTFcor = np.fft.irfftn(FT * CTFim)
 
-    if wiener_filter:  # Wiener filtering
+    elif wiener_filter:  # Wiener filtering
         if np.any(C <= 0.0):
             raise ValueError(
                 "Error: Wiener filter contain value(s) less than or equal to zero!"
             )
 
-        CTFcor.append(np.fft.irfftn(FT * CTFim / (CTFim * CTFim + C)))
-        cortype.append("wf")
+        CTFcor = np.fft.irfftn(FT * CTFim / (CTFim * CTFim + C))
 
     if return_ctf:
-        CTFcor.append(CTFim)
 
-    CTFcor.append(cortype)
+        return CTFcor, CTFim
 
-    return CTFcor
+    else:
+
+        return CTFcor
 
 
 def AdhocSSNR(
