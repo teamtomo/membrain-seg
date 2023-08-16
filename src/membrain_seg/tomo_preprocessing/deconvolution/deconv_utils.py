@@ -3,7 +3,6 @@
 # E-mail: ricardo.righetto@unibas.ch
 # https://github.com/C-CINA/focustools/
 
-# import numexpr as ne
 import warnings
 
 import numpy as np
@@ -15,7 +14,8 @@ pi = np.pi  # global PI
 # TO-DO:
 # Port heavy calculations to Torch or something more efficient than pure NumPy?
 # Original implementation used numexpr (see commented code) but that would add one more
-# dependency to MemBrain.
+# dependency to MemBrain and does not give significant speedups, at least not with the 
+# defaults.
 # For now, we stick to pure Numpy.
 
 
@@ -37,19 +37,18 @@ def RadialIndices(
         The shape of the input ndarray.
     rounding : bool
         Whether the radius values should be rounded to the nearest integer ensuring \
-        "perfect radial symmetry".
+"perfect" radial symmetry.
     normalize : bool
         Whether the radius values should be normalized to the range [0.0,11.0].
     rfft : bool
         Whether to return an array consistent with np.fft.rfftn i.e. exploiting the \
-        Hermitian symmetry of the Fourier transform of real data.
+Hermitian symmetry of the Fourier transform of real data.
     xyz : tuple
         Shifts to be applied to the origin specified as (x_shift, y_shift, z_shift). \
-        Useful when applying phase shifts.
+Useful when applying phase shifts.
     nozero : bool
         Whether the value of the origin (corresponding to the zero frequency or DC \
-        component in the Fourier transform) should be set to a small value instead of \
-        zero.
+component in the Fourier transform) should be set to a small value instead of zero.
     nozeroval : float
         The value to put at the origin if nozero is True.
 
@@ -59,7 +58,7 @@ def RadialIndices(
         Array whose values are the distance from the origin.
     amesh : ndarray
         Array whose values are the angle from the x- axis (2D) or from the x,y plane \
-        (3D)
+(3D)
 
     Raises
     ------
@@ -82,10 +81,6 @@ def RadialIndices(
 
     xyz = np.flipud(xyz)
 
-    # import warnings
-    # with warnings.catch_warnings():
-    #     warnings.filterwarnings("ignore", category=RuntimeWarning)
-
     m = np.mod(imsize, 2)  # Check if dimensions are odd or even
 
     if len(imsize) == 1:
@@ -99,9 +94,7 @@ def RadialIndices(
 
         else:
             xmesh = np.mgrid[0 - xyz[0] : imsize[0] // 2 + 1 - xyz[0]]
-            # xmesh = np.fft.ifftshift(xmesh)
 
-        # rmesh = ne.evaluate("sqrt(xmesh * xmesh)")
         rmesh = np.sqrt(xmesh * xmesh)
 
         amesh = np.zeros(xmesh.shape)
@@ -124,10 +117,6 @@ def RadialIndices(
                 0 - xyz[1] : imsize[1] // 2 + 1 - xyz[1],
             ]
             xmesh = np.fft.ifftshift(xmesh)
-
-        # rmesh = ne.evaluate("sqrt(xmesh * xmesh + ymesh * ymesh)")
-
-        # amesh = ne.evaluate("arctan2(ymesh, xmesh)")
 
         rmesh = np.sqrt(xmesh * xmesh + ymesh * ymesh)
 
@@ -155,11 +144,8 @@ def RadialIndices(
             xmesh = np.fft.ifftshift(xmesh)
             ymesh = np.fft.ifftshift(ymesh)
 
-        # rmesh = ne.evaluate(
-        #     "sqrt(xmesh * xmesh + ymesh * ymesh + zmesh * zmesh)")
         rmesh = np.sqrt(xmesh * xmesh + ymesh * ymesh + zmesh * zmesh)
 
-        # amesh = ne.evaluate("arccos(zmesh / rmesh)")
         amesh = np.arccos(zmesh / rmesh)
 
         n = 3  # Normalization factor
@@ -168,15 +154,14 @@ def RadialIndices(
         rmesh = np.round(rmesh)
 
     if normalize:
+
         a = np.sum(imsize * imsize)
-        # ne.evaluate("rmesh / (sqrt(a) / sqrt(n))", out=rmesh)
+
         rmesh = rmesh / (np.sqrt(a) / np.sqrt(n))
-        # rmesh = rmesh / (np.sqrt(np.sum(np.power(imsize, 2))) / np.sqrt(n))
 
     if nozero:
         # Replaces the "zero radius" by a small value to prevent division by zero in
         # other programs
-        # idx = ne.evaluate("rmesh == 0")
         idx = rmesh == 0
         rmesh[idx] = nozeroval
 
@@ -204,10 +189,10 @@ def CTF(
         The shape of the input ndarray.
     df1 : float
         Defocus 1 (or Defocus U in some notations) in Angstroms. Principal defocus \
-        axis. Underfocus is positive.
+axis. Underfocus is positive.
     df2 : float
         Defocus 2 (or Defocus V in some notations) in Angstroms. Defocus axis \
-        orthogonal to the U axis. Only mandatory for astigmatic data.
+orthogonal to the U axis. Only mandatory for astigmatic data.
     ast : float
         Angle for astigmatic data (in degrees).
     ampcon : float
@@ -222,7 +207,7 @@ def CTF(
         B-factor in Angstroms**2.
     rfft : bool
         Whether to return an array consistent with np.fft.rfftn i.e. exploiting the \
-        Hermitian symmetry of the Fourier transform of real data.
+Hermitian symmetry of the Fourier transform of real data.
 
     Returns
     -------
@@ -232,8 +217,8 @@ def CTF(
     Notes
     -----
     Follows the CTF definition from Mindell & Grigorieff, JSB (2003) \
-    (https://doi.org/10.1016/S1047-8477(03)00069-8), which is adopted in FREALIGN/\
-    cisTEM, RELION and many other packages.
+(https://doi.org/10.1016/S1047-8477(03)00069-8), which is adopted in FREALIGN/\
+cisTEM, RELION and many other packages.
     """
     if not np.isscalar(imsize) and len(imsize) == 1:
         imsize = imsize[0]
@@ -243,7 +228,6 @@ def CTF(
     if df2 is None or np.isscalar(imsize):
         df2 = df1
 
-    # else:
 
     # NOTATION FOR DEFOCUS1, DEFOCUS2, ASTIGMATISM BELOW IS INVERTED DUE TO NUMPY
     # CONVENTION:
@@ -270,47 +254,18 @@ def CTF(
 
         else:
             rmesh, amesh = RadialIndices(imsize, normalize=True, rfft=rfft)
-            # rmesh2 = ne.evaluate( "rmesh**2 / apix**2"
+
             rmesh2 = rmesh**2 / apix**2
 
-        #             xmesh = np.fft.fftfreq(imsize[0])
-        #             if rfft:
-        #                 ymesh = np.fft.rfftfreq(imsize[1])
-        #             else:
-        #                 ymesh = np.fft.fftfreq(imsize[1])
-
-        #             xmeshtile = np.tile(xmesh, [len(ymesh), 1]).T
-        #             ymeshtile = np.tile(ymesh, [len(xmesh), 1])
-
-        #             # rmesh = np.sqrt(xmeshtile * xmeshtile +
-        #             #                 ymeshtile * ymeshtile) / apix
-        #             rmesh = ne.evaluate("sqrt(xmeshtile * xmeshtile + ymeshtile * ...
-        # ymeshtile) / apix")
-
-        #             amesh = np.nan_to_num(ne.evaluate("arctan2(ymeshtile, ...
-        # xmeshtile)"))
-
-        # rmesh2 = ne.evaluate("rmesh * rmesh")
-
         # From Mindell & Grigorieff, JSB 2003:
-        # df = ne.evaluate("0.5 * (df1 + df2 + (df1 - df2) * cos(2.0 * (amesh - ast)))")
         df = 0.5 * (df1 + df2 + (df1 - df2) * np.cos(2.0 * (amesh - ast)))
 
-        # Xr = np.nan_to_num(ne.evaluate("pi * WL * rmesh2 * (df - 0.5 * WL * WL * ...
-        # rmesh2 * Cs)"))
         Xr = np.nan_to_num(pi * WL * rmesh2 * (df - 0.5 * WL * WL * rmesh2 * Cs))
 
-    # sinXr = ne.evaluate("sin(Xr)")
-    # cosXr = ne.evaluate("cos(Xr)")
-    # CTFreal = w1 * sinXr - w2 * cosXr
-    # CTFimag = -w1 * cosXr - w2 * sinXr
-
-    # CTFim = CTFreal + CTFimag*1j
-    # CTFim = ne.evaluate("-w1 * sin(Xr) - w2 * cos(Xr)")
     CTFim = -w1 * np.sin(Xr) - w2 * np.cos(Xr)
 
     if B != 0.0:  # Apply B-factor only if necessary:
-        # ne.evaluate("CTFim * exp(-B * (rmesh2) / 4)", out=CTFim)
+
         CTFim = CTFim * np.exp(-B * (rmesh2) / 4)
 
     return CTFim
@@ -341,10 +296,10 @@ def CorrectCTF(
         The input image to be corrected.
     df1 : float
         Defocus 1 (or Defocus U in some notations) in Angstroms. Principal defocus \
-        axis. Underfocus is positive.
+axis. Underfocus is positive.
     df2 : float
         Defocus 2 (or Defocus V in some notations) in Angstroms. Defocus axis \
-        orthogonal to the U axis. Only mandatory for astigmatic data.
+orthogonal to the U axis. Only mandatory for astigmatic data.
     ast : float
         Angle for astigmatic data (in degrees).
     ampcon : float
@@ -359,29 +314,28 @@ def CorrectCTF(
         Input pixel size in Angstroms.
     phase_flip :  bool
         Correct CTF by phase-flipping only. This corrects phases but leaves the \
-        amplitudes unchanged.
+amplitudes unchanged.
     ctf_multiply :  bool
         Correct CTF by multiplying the input image FT with the CTF. This corrects \
-        phases and dampens amplitudes even further near the CTF zeros.
+phases and dampens amplitudes even further near the CTF zeros.
     wiener_filter : bool
         Correct CTF by applying a Wiener filter. This corrects phases and attempts to \
-        restore amplitudes to their original values based on an ad-hoc spectral \
-        signal-to-noise ratio (SSNR) value. That means, at frequencies where the SNR \
-        is low amplitudes will be restored conservatively, while where the SNR is \
-        high these frequencies will be boosted.
+restore amplitudes to their original values based on an ad-hoc spectral signal-to-noise\
+ratio (SSNR) value. That means, at frequencies where the SNR is low amplitudes will be\
+restored conservatively, while where the SNR is high these frequencies will be boosted.
     C : float
         Wiener filter constant (per frequency). A scalar can be given to use the same \
-        constant for all frequencies, whereas an 1D array (radial average) can be \
-        given to restore each frequency using a different SNR value.
+constant for all frequencies, whereas an 1D array (radial average) can be given to \
+restore each frequency using a different SNR value.
     return_ctf : bool
         Whether to return an array containing the CTF itself alongside the corrected \
-        image.
+image.
 
     Returns
     -------
     CTFcor : list
         A list containing the corrected image(s), the CTF (if return_ctf is True) and \
-        a string indicating the type of correction(s) applied.
+a string indicating the type of correction(s) applied.
 
     Raises
     ------
@@ -391,11 +345,14 @@ def CorrectCTF(
     Notes
     -----
     More than one type of CTF correction can be performed with one call, in which case \
-    all of the corrected versions will be returned consecutively as the first entries \
-    of the returned list. The last entries of the returned list are strings indicating \
-    the type of correction applied: "pf" for phase-flipping, "cm" for CTF \
-    multiplication and "wf" for Wiener filtering.
+all of the corrected versions will be returned consecutively as the first entries of \
+the returned list. The last entries of the returned list are strings indicating the \
+type of correction applied: "pf" for phase-flipping, "cm" for CTF multiplication and \
+"wf" for Wiener filtering.
     """
+    if df2 is None:
+        df2 = df1
+
     # Direct CTF correction would invert the image contrast. By default we don't do
     # that, hence the negative sign:
     CTFim = -CTF(img.shape, df1, df2, ast, ampcon, Cs, kV, apix, 0.0, rfft=True)
@@ -404,19 +361,19 @@ def CorrectCTF(
     cortype = []
 
     if invert_contrast:
-        # ne.evaluate("CTFim * -1.0", out=CTFim)
+
+        CTFim = -CTFim
+
         pass
 
     FT = np.fft.rfftn(img)
 
     if phase_flip:  # Phase-flipping
         s = np.sign(CTFim)
-        # CTFcor.append(np.fft.irfftn(ne.evaluate("FT * s")))
         CTFcor.append(np.fft.irfftn(FT * s))
         cortype.append("pf")
 
     if ctf_multiply:  # CTF multiplication
-        # CTFcor.append(np.fft.irfftn(ne.evaluate("FT * CTFim")))
         CTFcor.append(np.fft.irfftn(FT * CTFim))
         cortype.append("cm")
 
@@ -426,7 +383,6 @@ def CorrectCTF(
                 "Error: Wiener filter contain value(s) less than or equal to zero!"
             )
 
-        # CTFcor.append(np.fft.irfftn(ne.evaluate("FT * CTFim / (CTFim * CTFim + C)")))
         CTFcor.append(np.fft.irfftn(FT * CTFim / (CTFim * CTFim + C)))
         cortype.append("wf")
 
@@ -473,7 +429,7 @@ def AdhocSSNR(
         Strength of the SSNR falloff.
     hp_frac : float
         fraction of Nyquist frequency to be cut off on the lower end (since it will \
-        be boosted the most).
+be boosted the most).
     lp : bool
         Whether to low-pass all information beyond the first zero of the CTF.
 
@@ -492,38 +448,27 @@ def AdhocSSNR(
     [2] https://github.com/dtegunov/tom_deconv/blob/master/tom_deconv.m
     """
     rmesh = RadialIndices(imsize, rounding=False, normalize=True, rfft=True)[0] / apix
-    # ne.evaluate("rmesh / apix", out=rmesh)
+
     # The ad hoc SSNR exponential falloff
-    # falloff = ne.evaluate("exp(-100 * rmesh * F) * 10**(3 * S)")
     falloff = np.exp(-100 * rmesh * F) * 10 ** (3 * S)
 
     # The cosine-shaped high-pass filter. It starts at zero frequency and reaches 1.0
     # at hp_freq (fraction of the Nyquist frequency)
-    # a = np.minimum(1.0, ne.evaluate("rmesh * apix / hp_frac"))
     a = np.minimum(1.0, rmesh * apix / hp_frac)
-    # highpass = ne.evaluate("1.0 - cos(a * pi/2)")
     highpass = 1.0 - np.cos(a * pi / 2)
 
     if lp:
         # Ensure the filter will reach zero at the first zero of the CTF
         first_zero_res = FirstZeroCTF(df=df, ampcon=ampcon, Cs=Cs, kV=kV)
-        # a = np.minimum(1.0, ne.evaluate("rmesh / first_zero_res"))
         a = np.minimum(1.0, rmesh / first_zero_res)
 
-        # lowpass = ne.evaluate("cos(a * pi/2)")
         lowpass = np.cos(a * pi / 2)
 
-        # ssnr = ne.evaluate("highpass * falloff * lowpass")  # Composite filter
+        # Composite filter
         ssnr = highpass * falloff * lowpass
 
     else:
-        # ssnr = ne.evaluate("highpass * falloff")  # Composite filter
         ssnr = highpass * falloff  # Composite filter
-
-    # if np.any(np.isclose(ssnr,0.0)):
-    #     print("SSNR contains zero values!")
-    # if np.any(ssnr < 0.0):
-    #     print("SSNR contains negative values!")
 
     return np.abs(ssnr)
 
@@ -568,7 +513,7 @@ def FirstZeroCTF(
     -------
     g : float
         A scalar containing the resolution in Angstroms corresponding to the first \
-        zero crossing of the CTF.
+zero crossing of the CTF.
 
     Notes
     -----
