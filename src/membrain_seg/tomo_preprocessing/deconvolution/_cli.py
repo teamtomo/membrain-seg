@@ -24,7 +24,7 @@ def deconvolve(
     df1: float = Option(  # noqa: B008
         50000,
         help="Defocus 1 (or Defocus U in some notations) in Angstroms. Principal \
-        defocus axis. Underfocus is positive.",
+        defocus axis. Underfocus is positive.", **PKWARGS
     ),
     df2: float = Option(  # noqa: B008
         None,
