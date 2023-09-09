@@ -86,7 +86,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         max_epochs: int = 1000,
         use_deep_supervision: bool = False,
         use_BCE_dice=True,
-        use_surf_dice=False
+        use_surf_dice=False,
+        surf_dice_weight=1.0,
+        exclude_deepict_from_dice=False
     ):
         super().__init__()
 
@@ -121,18 +123,28 @@ class SemanticSegmentationUnet(pl.LightningModule):
         if use_BCE_dice:
             ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
             losses.append(ignore_dice_loss)
-            weights.append(7.)
+            weights.append(1.)
         if use_surf_dice:
             ignore_surf_dice_loss  = IgnoreLabelSurfaceDiceLoss(ignore_label=2, soft_skel_iterations=3)
             losses.append(ignore_surf_dice_loss)
-            weights.append(3.)
+            weights.append(surf_dice_weight)
 
         weight_sum = 0.
         for entry in weights:
             weight_sum += entry
         scaled_weights = [entry / weight_sum for entry in weights]
+        if exclude_deepict_from_dice:
+            apply_loss_not_for = [
+                ['Deepict'],
+                ['None']
+            ]
+        else:
+            apply_loss_not_for = [
+                ['None'],
+                ['None']
+            ]
 
-        loss_function  = CombinedLoss(losses=losses, weights=scaled_weights)
+        loss_function  = CombinedLoss(losses=losses, weights=scaled_weights, apply_loss_not_for=apply_loss_not_for)
         self.loss_function = DeepSuperVisionLoss(
             # ignore_dice_loss,
             loss_function,
@@ -206,9 +218,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         See the pytorch-lightning module documentation for details.
         """
-        images, labels = batch["image"], batch["label"]
+        images, labels, ds_label = batch["image"], batch["label"], batch['dataset']
         output = self.forward(images)
-        loss = self.loss_function(output, labels)
+        loss = self.loss_function(output, labels, ds_label)
 
         stats_dict = {"train_loss": loss, "train_number": output[0].shape[0]}
         self.training_step_outputs.append(stats_dict)
@@ -257,13 +269,13 @@ class SemanticSegmentationUnet(pl.LightningModule):
         using a sliding window. See the pytorch-lightning
         module documentation for details.
         """
-        images, labels = batch[self.image_key], batch[self.label_key]
+        images, labels, ds_label = batch[self.image_key], batch[self.label_key], batch["dataset"]
         # sw_batch_size = 4
         # outputs = sliding_window_inference(
         #     images, self.roi_size, sw_batch_size, self.forward
         # )
         outputs = self.forward(images)
-        loss = self.loss_function(outputs, labels)
+        loss = self.loss_function(outputs, labels, ds_label)
 
         # Cloning and adjusting preds & labels for Dice.
         # Could also use the same labels, but maybe we want to
