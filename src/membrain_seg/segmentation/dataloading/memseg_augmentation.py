@@ -150,15 +150,15 @@ def get_training_transforms(
     aug_sequence = [
         RandRotate90d(
             keys=("image", "label"),
-            prob=(1.0 if prob_to_one else 0.70),
+            prob=(0.75 if prob_to_one else 0.70),
             max_k=4,
             spatial_axes=(0, 1),
         ),
         MissingWedgeMaskAndFourierAmplitudeMatchingCombined(
             keys=["image"], amplitude_aug=fourier_amplitude_aug,
             missing_wedge_aug=missing_wedge_aug,
-            missing_wedge_prob=(1.0 if prob_to_one else 0.5),
-            amplitude_prob=(1.0 if prob_to_one else 0.5)
+            missing_wedge_prob=(0.75 if prob_to_one else 0.5),
+            amplitude_prob=(0.75 if prob_to_one else 0.5)
         ),
         RandRotate90d(
             keys=("image", "label"),
