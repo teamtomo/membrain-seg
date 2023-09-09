@@ -83,7 +83,7 @@ class CryoETMemSegDataset(Dataset):
             else get_validation_transforms()
         )
 
-    def __getitem__(self, idx: int) -> Dict[str, np.ndarray]:
+    def __getitem__(self, idx: int, orig: bool=False) -> Dict[str, np.ndarray]:
         """
         Returns a dictionary containing an image-label pair for the provided index.
 
@@ -103,7 +103,9 @@ class CryoETMemSegDataset(Dataset):
             "image": np.expand_dims(self.imgs[idx], 0),
             "label": np.expand_dims(self.labels[idx], 0),
         }
-        idx_dict = self.transforms(idx_dict)
+        if not orig:
+            idx_dict = self.transforms(idx_dict)
+        idx_dict["dataset"] = self.dataset_labels[idx]
         return idx_dict
 
     def __len__(self) -> int:
@@ -128,6 +130,7 @@ class CryoETMemSegDataset(Dataset):
         print("Loading images into dataset.")
         self.imgs = []
         self.labels = []
+        self.dataset_labels = []
         for entry in self.data_paths:
             label = read_nifti(
                 entry[1]
@@ -139,6 +142,7 @@ class CryoETMemSegDataset(Dataset):
             img = np.transpose(img, (1, 2, 0))
             self.imgs.append(img)
             self.labels.append(label)
+            self.dataset_labels.append(get_dataset_token(entry[0]))
 
     def initialize_imgs_paths(self) -> None:
         """
@@ -173,12 +177,28 @@ class CryoETMemSegDataset(Dataset):
         """
         os.makedirs(test_folder, exist_ok=True)
         from membrain_seg.segmentation.dataloading.data_utils import store_tomogram
+        from numpy import fft as fft
         for i in range(num_files):
-            test_sample = self.__getitem__(i % self.__len__())
+            test_sample = self.__getitem__(i % self.__len__(), orig=False)
+            test_sample_orig = self.__getitem__(i % self.__len__(), orig=True)
+            test_sample_fft = fft.fftshift(fft.fftn(test_sample["image"][0, :, :, :]))
+            test_sample_orig_fft = fft.fftshift(fft.fftn(test_sample_orig["image"][0, :, :, :]))
             print(i)
             store_tomogram(
                 os.path.join(test_folder, f"test_img{i}.mrc"),
                 test_sample["image"][0, :, :, :],
+            )
+            store_tomogram(
+                os.path.join(test_folder, f"test_img_fft{i}.mrc"),
+                test_sample_fft,
+            )
+            store_tomogram(
+                os.path.join(test_folder, f"test_img_orig{i}.mrc"),
+                test_sample_orig["image"][0, :, :, :],
+            )
+            store_tomogram(
+                os.path.join(test_folder, f"test_img_orig_fft{i}.mrc"),
+                test_sample_orig_fft,
             )
             store_tomogram(
                 os.path.join(test_folder, f"test_img{i}_lab.mrc"),
@@ -212,3 +232,36 @@ class CryoETMemSegDataset(Dataset):
             #         os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
             #         test_sample["label"][1][0, :, :, num_mask],
             #     )
+
+
+def get_dataset_token(patch_name):
+    basename = os.path.basename(patch_name)
+    
+    if basename.startswith("50_") or \
+        basename.startswith("633_") or \
+            basename.startswith("165_") or \
+                basename.startswith("24_") or \
+                    basename.startswith("38_") or \
+                        basename.startswith("441_") or \
+                            basename.startswith("54_") or \
+                                basename.startswith("8_"):
+        if not "_raw" in basename:
+            return "Chlamy"
+        else:
+            return "Chlamy_raw"
+    if basename.startswith("HDCR_"):
+            return "HDCR"
+    if basename.startswith("AntonioSim"):
+            return "AntonioSim"
+    if basename.startswith("CryoTomoSim"):
+            return "CTS"
+    if basename.startswith("tomo"):
+            if not "_raw" in basename:
+                return "Spinach"
+            else:
+                return "Spinach_raw"
+    if basename.startswith("TS_"):
+            return "Deepict"
+    if basename.startswith("YTC"):
+            return "Atty"
+    raise IOError("dataset token not known!!")
