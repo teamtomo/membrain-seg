@@ -9,6 +9,9 @@ from membrain_seg.segmentation.dataloading.memseg_pl_datamodule import (
     MemBrainSegDataModule,
 )
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
+import os
+
+os.environ['WANDB_MODE'] = 'offline'
 
 warnings.filterwarnings("ignore", category=UserWarning, module="torch._tensor")
 warnings.filterwarnings("ignore", category=UserWarning, module="monai.data")
@@ -26,8 +29,10 @@ def train(
     sub_name: str = "1",
     use_BCE_dice: bool = True,
     use_surf_dice: bool = False,
+    surf_dice_weight: float = 1.0,
     missing_wedge_aug: bool = False,
-    fourier_amplitude_aug: bool = False
+    fourier_amplitude_aug: bool = False,
+    exclude_deepict_from_dice: bool = False
 ):
     """
     Train the model on the specified data.
@@ -79,7 +84,9 @@ def train(
     model = SemanticSegmentationUnet(
         max_epochs=max_epochs, use_deep_supervision=use_deep_supervision,
         use_BCE_dice=use_BCE_dice,
-        use_surf_dice=use_surf_dice
+        use_surf_dice=use_surf_dice,
+        surf_dice_weight=surf_dice_weight,
+        exclude_deepict_from_dice=exclude_deepict_from_dice
     )
 
     project_name = project_name
