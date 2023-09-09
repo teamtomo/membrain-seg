@@ -121,13 +121,15 @@ class CombinedLoss(_Loss):
         self,
         losses: list,
         weights: list,
+        apply_loss_not_for: list,
         **kwargs,
     ) -> None:
         super().__init__()
         self.losses = losses
         self.weights = weights
+        self.apply_loss_not_for = apply_loss_not_for
 
-    def forward(self, data: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def forward(self, data: torch.Tensor, target: torch.Tensor, ds_label: str) -> torch.Tensor:
         """
         Compute the combined loss.
 
@@ -144,10 +146,13 @@ class CombinedLoss(_Loss):
             The calculated combined loss.
         """
         loss = 0.
-        a = 0
-        for cur_loss, cur_weight in zip(self.losses, self.weights):
-            a += 1
-            loss += cur_weight * cur_loss(data, target)
+        weight_fac = 1.
+        for cur_loss, cur_weight, skip_cases in zip(self.losses, self.weights, self.apply_loss_not_for):
+            if not any(ds_lab in skip_cases for ds_lab in ds_label) or ("None" in skip_cases):
+                loss += weight_fac * cur_weight * cur_loss(data, target)
+            else:
+                loss *= (1. / (1 - cur_weight + 1e-3)) # This assumes that all weights add up to one!! 
+                weight_fac *= (1. / (1 - cur_weight + 1e-3))
         return loss
 
 
@@ -182,7 +187,7 @@ class DeepSuperVisionLoss(_Loss):
         self.loss_fn = loss_fn
         self.weights = weights
 
-    def forward(self, inputs: list, targets: list) -> torch.Tensor:
+    def forward(self, inputs: list, targets: list, ds_labels: list) -> torch.Tensor:
         """
         Compute the loss.
 
@@ -199,6 +204,7 @@ class DeepSuperVisionLoss(_Loss):
             The calculated loss.
         """
         loss = 0.0
-        for weight, data, target in zip(self.weights, inputs, targets):
-            loss += weight * self.loss_fn(data, target)
+        ds_labels_loop = [ds_labels] * 5
+        for weight, data, target, ds_label in zip(self.weights, inputs, targets, ds_labels_loop):
+            loss += weight * self.loss_fn(data, target, ds_label)
         return loss
