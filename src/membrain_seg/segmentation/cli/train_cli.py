@@ -100,6 +100,10 @@ def train_advanced(
         False,
         help="Should Surface Dice loss be used?",
     ),
+    surf_sice_weight: float = Option(  # noqa: B008
+        1.0,
+        help="surface dice weight compared to BCE dice loss",
+    ),
     use_BCE_dice: bool = Option(  # noqa: B008
         True,
         help="Should a combination of Dice and binary cross entropy loss be used?",
@@ -111,6 +115,10 @@ def train_advanced(
     missing_wedge_aug: bool = Option(  # noqa: B008
         False,
         help="Should additional, artificial missing wedges be used for data augmentation?",
+    ),
+    exclude_deepict_from_dice: bool = Option(  # noqa: B008
+        False,
+        help="Should we compute only Surface Dice for Deepict data?",
     ),
     
 ):
@@ -161,8 +169,10 @@ def train_advanced(
         sub_name=sub_name,
         use_BCE_dice=use_BCE_dice,
         use_surf_dice=use_surf_dice,
+        surf_dice_weight=surf_sice_weight,
         missing_wedge_aug=missing_wedge_aug,
-        fourier_amplitude_aug=fourier_amplitude_aug
+        fourier_amplitude_aug=fourier_amplitude_aug,
+        exclude_deepict_from_dice=exclude_deepict_from_dice
     )
 
 
