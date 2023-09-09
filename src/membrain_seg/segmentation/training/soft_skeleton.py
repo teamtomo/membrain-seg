@@ -29,12 +29,12 @@ def soft_open(img, separate_pool=False):
     return soft_dilate(soft_erode(img, separate_pool=separate_pool))
 
 
-def soft_skel(img, iter_):
-    img1  =  soft_open(img, separate_pool=True)
+def soft_skel(img, iter_, separate_pool=False):
+    img1  =  soft_open(img, separate_pool=separate_pool)
     skel  =  F.relu(img-img1)
     for j in range(iter_):
         img  =  soft_erode(img)
-        img1  =  soft_open(img)
+        img1  =  soft_open(img, separate_pool=separate_pool)
         delta  =  F.relu(img-img1)
         skel  =  skel +  F.relu(delta-skel*delta)
     return skel

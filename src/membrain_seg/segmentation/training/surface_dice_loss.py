@@ -9,7 +9,7 @@ from monai.utils import LossReduction
 from torch.nn.functional import binary_cross_entropy, sigmoid
 from torch.nn.modules.loss import _Loss
 
-
+from matplotlib import pyplot as plt
 
 def masked_surface_dice(data: torch.Tensor, target: torch.Tensor, ignore_label, soft_skel_iterations, smooth) -> torch.Tensor:
         """
@@ -32,18 +32,20 @@ def masked_surface_dice(data: torch.Tensor, target: torch.Tensor, ignore_label, 
         mask = target != ignore_label
 
         # Compute soft skeletonization
-        skel_pred = soft_skel(data.clone(), soft_skel_iterations)
-        skel_true = soft_skel(target.clone(), soft_skel_iterations)
+        skel_pred = soft_skel(data.clone(), soft_skel_iterations, separate_pool=False)
+        skel_true = soft_skel(target.clone(), soft_skel_iterations, separate_pool=False)
 
+
+        
         # Mask out ignore labels
         skel_pred[~mask] = 0
         skel_true[~mask] = 0
+
 
         # compute surface dice loss
         tprec = (torch.sum(torch.multiply(skel_pred, target))+smooth)/(torch.sum(skel_pred)+smooth)    
         tsens = (torch.sum(torch.multiply(skel_true, data))+smooth)/(torch.sum(skel_true)+smooth)    
         surf_dice_loss = 2.0*(tprec*tsens)/(tprec+tsens)
-
         return surf_dice_loss
 
 class IgnoreLabelSurfaceDiceLoss(_Loss):
