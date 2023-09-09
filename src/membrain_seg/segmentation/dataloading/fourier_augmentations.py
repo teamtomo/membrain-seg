@@ -32,8 +32,8 @@ def wedge_mask(shape, angle):
 
     x_above_wedge = np.concatenate((x_left_above_wedge, x_right_above_wedge), axis=0)
     x_below_wedge = np.concatenate((x_left_below_wedge, x_right_below_wedge), axis=0)
-    above_wedge_mask = x_above_wedge < z_coords + 1.5
-    below_wedge_mask = x_below_wedge > z_coords - 1.5
+    above_wedge_mask = x_above_wedge < z_coords - 1.5
+    below_wedge_mask = x_below_wedge > z_coords + 1.5
 
     wedge_mask = above_wedge_mask + below_wedge_mask
     wedge_mask = wedge_mask > 0
@@ -75,7 +75,7 @@ class MissingWedgeMaskAndFourierAmplitudeMatchingCombined(Randomizable, Transfor
     """
 
     def __init__(self, keys, amplitude_aug=True, missing_wedge_aug=True, smooth_sigma_range=(2., 4.), step_sigma_range=(0.1, 4.), offset_range=(2., 10.),
-            missing_angle_range=(10., 30.), missing_wedge_prob=0.5, amplitude_prob=0.5):
+            missing_angle_range=(55.,88.), missing_wedge_prob=0.5, amplitude_prob=0.5):
         self.keys = keys
 
         self.amplitude_aug = amplitude_aug
@@ -131,7 +131,7 @@ class MissingWedgeMaskAndFourierAmplitudeMatchingCombined(Randomizable, Transfor
                     fft_patch *= equal_kernel
                 if self.missing_wedge_aug and self._do_mw_transform:
                     missing_wedge_mask = wedge_mask(patch.shape, self.missing_angle)
-                    fft_patch[missing_wedge_mask] = 0.
+                    fft_patch[~missing_wedge_mask] = 0.
                 real_patch = fft_patch_to_real(fft_patch)
                 real_patch -= real_patch.mean()
                 real_patch /= real_patch.std()
