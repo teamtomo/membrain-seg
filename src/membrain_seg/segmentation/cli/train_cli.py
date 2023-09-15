@@ -120,7 +120,15 @@ def train_advanced(
         False,
         help="Should we compute only Surface Dice for Deepict data?",
     ),
-    
+    no_sdice_for_no_deepict: bool = Option( # noqa: B008
+        False,
+        help="Should we compute only normal dice for non-Deepict samples?",
+    ),
+    cosine_annealing_interval: int = Option( # noqa: B008
+        None,
+        help="If an integer is specified, cosine annealing with warm restarts is performed\
+            in the given interval times.",
+    )
 ):
     """
     Initiates the MemBrain training routine with more advanced options.
@@ -172,7 +180,9 @@ def train_advanced(
         surf_dice_weight=surf_sice_weight,
         missing_wedge_aug=missing_wedge_aug,
         fourier_amplitude_aug=fourier_amplitude_aug,
-        exclude_deepict_from_dice=exclude_deepict_from_dice
+        exclude_deepict_from_dice=exclude_deepict_from_dice,
+        no_sdice_for_no_deepict=no_sdice_for_no_deepict,
+        cosine_annealing_interval=cosine_annealing_interval
     )
 
 
