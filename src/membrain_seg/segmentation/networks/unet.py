@@ -88,7 +88,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         use_BCE_dice=True,
         use_surf_dice=False,
         surf_dice_weight=1.0,
-        exclude_deepict_from_dice=False
+        exclude_deepict_from_dice=False,
+        no_sdice_for_no_deepict=False,
+        cosine_annealing_interval: int = None
     ):
         super().__init__()
 
@@ -100,6 +102,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.label_key = label_key
         self.roi_size = roi_size
         self.max_epochs = max_epochs
+        self.cosine_annealing_interval = cosine_annealing_interval
 
         # make the network
         self._model = DynUNetDirectDeepSupervision(
@@ -134,17 +137,23 @@ class SemanticSegmentationUnet(pl.LightningModule):
             weight_sum += entry
         scaled_weights = [entry / weight_sum for entry in weights]
         if exclude_deepict_from_dice:
-            apply_loss_not_for = [
-                ['Deepict'],
-                ['None']
-            ]
+            if not no_sdice_for_no_deepict:
+                apply_loss_not_for = [
+                    ['Deepict'],
+                    ['None']
+                ]
+            else:
+                apply_loss_not_for = [
+                    ['Deepict'],
+                    ['Chlamy', "Chlamy_raw", "HDCR", "AntonioSim", "CTS", "Spinach", "Spinach_raw", "Atty"]
+                ]
         else:
             apply_loss_not_for = [
                 ['None'],
                 ['None']
             ]
 
-        loss_function  = CombinedLoss(losses=losses, weights=scaled_weights, apply_loss_not_for=apply_loss_not_for)
+        loss_function  = CombinedLoss(losses=losses, weights=scaled_weights, apply_loss_not_for=apply_loss_not_for, no_sdice_for_no_deepict=no_sdice_for_no_deepict)
         self.loss_function = DeepSuperVisionLoss(
             # ignore_dice_loss,
             loss_function,
@@ -206,9 +215,13 @@ class SemanticSegmentationUnet(pl.LightningModule):
         # scheduler = CosineAnnealingLR(
         #     optimizer, T_max=self.max_epochs, eta_min=self.min_learning_rate
         # )
-        scheduler = torch.optim.lr_scheduler.LambdaLR(
-            optimizer, lr_lambda=lambda epoch: (1 - epoch / self.max_epochs) ** 0.9
-        )  # PolyLR from nnUNet
+        
+        if self.cosine_annealing_interval is not None:
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, self.cosine_annealing_interval, T_mult=1, eta_min=0, last_epoch=-1, verbose=False)
+        else:
+            scheduler = torch.optim.lr_scheduler.LambdaLR(
+                optimizer, lr_lambda=lambda epoch: (1 - epoch / self.max_epochs) ** 0.9
+            )  # PolyLR from nnUNet
         return [optimizer], [scheduler]
 
     def training_step(

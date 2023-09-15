@@ -32,7 +32,9 @@ def train(
     surf_dice_weight: float = 1.0,
     missing_wedge_aug: bool = False,
     fourier_amplitude_aug: bool = False,
-    exclude_deepict_from_dice: bool = False
+    exclude_deepict_from_dice: bool = False,
+    no_sdice_for_no_deepict: bool = False,
+    cosine_annealing_interval: int = None
 ):
     """
     Train the model on the specified data.
@@ -86,7 +88,9 @@ def train(
         use_BCE_dice=use_BCE_dice,
         use_surf_dice=use_surf_dice,
         surf_dice_weight=surf_dice_weight,
-        exclude_deepict_from_dice=exclude_deepict_from_dice
+        exclude_deepict_from_dice=exclude_deepict_from_dice,
+        no_sdice_for_no_deepict=no_sdice_for_no_deepict,
+        cosine_annealing_interval=cosine_annealing_interval
     )
 
     project_name = project_name
