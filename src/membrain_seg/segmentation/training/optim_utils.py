@@ -122,12 +122,14 @@ class CombinedLoss(_Loss):
         losses: list,
         weights: list,
         apply_loss_not_for: list,
+        no_sdice_for_no_deepict: bool,
         **kwargs,
     ) -> None:
         super().__init__()
         self.losses = losses
         self.weights = weights
         self.apply_loss_not_for = apply_loss_not_for
+        self.no_sdice_for_no_deepict = no_sdice_for_no_deepict
 
     def forward(self, data: torch.Tensor, target: torch.Tensor, ds_label: str) -> torch.Tensor:
         """
@@ -147,8 +149,11 @@ class CombinedLoss(_Loss):
         """
         loss = 0.
         weight_fac = 1.
-        for cur_loss, cur_weight, skip_cases in zip(self.losses, self.weights, self.apply_loss_not_for):
-            if not any(ds_lab in skip_cases for ds_lab in ds_label) or ("None" in skip_cases):
+        for loss_idx, (cur_loss, cur_weight, skip_cases) in enumerate(zip(self.losses, self.weights, self.apply_loss_not_for)):
+            
+            if loss_idx == 0 and not any(ds_lab in skip_cases for ds_lab in ds_label) or ("None" in skip_cases):
+                loss += weight_fac * cur_weight * cur_loss(data, target)
+            elif loss_idx == 1 and any(ds_lab not in skip_cases for ds_lab in ds_label) or ("None" in skip_cases): 
                 loss += weight_fac * cur_weight * cur_loss(data, target)
             else:
                 loss *= (1. / (1 - cur_weight + 1e-3)) # This assumes that all weights add up to one!! 
