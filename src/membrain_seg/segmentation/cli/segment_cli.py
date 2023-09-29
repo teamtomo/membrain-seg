@@ -116,14 +116,14 @@ def thresholds(
     scoremap_path: str = Option(  # noqa: B008
         help="Path to the membrane scoremap to be processed.", **PKWARGS
     ),
+    thresholds: List[float] = Option(  # noqa: B008
+        ...,
+        help="List of thresholds. Provide multiple by repeating the option.",
+    ),
     out_folder: str = Option(  # noqa: B008
         "./predictions",
         help="Path to the folder where thresholdedsegmentations \
             should be stored.",
-    ),
-    thresholds: List[float] = Option(  # noqa: B008
-        ...,
-        help="List of thresholds. Provide multiple by repeating the option.",
     ),
 ):
     """Process the provided scoremap using given thresholds.
