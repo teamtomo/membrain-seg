@@ -79,6 +79,10 @@ You can also compute the connected components [after you have segmented your tom
 
 **--connected-component-thres**: Threshold for connected components. Components smaller than this will be removed from the segmentation. [default: None]
 
+**--test-time-augmentation / --no-test-time-augmentation**: Should 8-fold test time augmentation be used? If activated (default), segmentations tendo be slightly better, but runtime is increased.
+
+**--segmentation-threshold**: Set a custom threshold for thresholding your membrane scoremap to increase / decrease segmented membranes (default: 0.0).
+
 **--sliding-window-size** INTEGER Sliding window size used for inference. Smaller values than 160 consume less GPU, but also lead to worse segmentation results! [default: 160] 
 
 **--help** Show this message and exit.     
@@ -98,10 +102,17 @@ If you have segmented your tomograms already, but would still like to extract th
 ```shell
 membrain components --segmentation-path <path-to-your-segmentation> --connected-component-thres 50 --out-folder <folder-to-store-components>
 ```
-
 ### Note: 
 Computing the connected components, and particularly also removing the small components can be quite compute intensive and take a while.
 
+## Custom thresholding
+In some cases, the standard threshold ($0.0$) may not be the ideal value for segmenting your tomograms. In order to explore what threshold may be best, you can use the above segmentation command with the flag `--store-probabilities`. This will store a membrane scoremap that you can threshold using different values using the command:
+
+```
+membrain thresholds --scoremap-path <path-to-scoremap>
+        --thresholds -1.5 --thresholds -0.5 --thresholds 0.0 --thresholds 0.5
+```
+In this way, you can pass as many thresholds as you would like and the function will output one segmentation for each.
 
 
 ## Post-Processing
