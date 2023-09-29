@@ -148,8 +148,9 @@ def thresholds(
     if not isinstance(thresholds, list):
         thresholds = [thresholds]
     for threshold in thresholds:
+        print("Thresholding at", threshold)
         thresholded_data = score_data > threshold
-        segmentation = scoremap.copy()
+        segmentation = scoremap
         segmentation.data = thresholded_data
         out_file = os.path.join(
             out_folder,
@@ -157,3 +158,4 @@ def thresholds(
             + f"_threshold_{threshold}.mrc",
         )
         store_tomogram(filename=out_file, tomogram=segmentation)
+        print("Saved thresholded scoremap to", out_file)
