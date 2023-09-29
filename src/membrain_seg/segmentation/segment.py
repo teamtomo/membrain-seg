@@ -21,6 +21,7 @@ def segment(
     store_connected_components=False,
     connected_component_thres=None,
     test_time_augmentation=True,
+    segmentation_threshold=0.0,
 ):
     """
     Segment tomograms using a trained model.
@@ -55,6 +56,9 @@ def segment(
     test_time_augmentation: bool, optional
         If True, test-time augmentation is performed, i.e. data is rotated
         into eight different orientations and predictions are averaged.
+    segmentation_threshold: float, optional
+        Threshold for the membrane segmentation. Only voxels with a membrane
+        score higher than this threshold will be segmented. (default: 0.0)
 
     Returns
     -------
@@ -106,7 +110,7 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     print("Performing 8-fold test-time augmentation.")
-    for m in range(8 if test_time_augmentation else 1):
+    for m in range(1 if test_time_augmentation else 1):
         with torch.no_grad():
             with torch.cuda.amp.autocast():
                 predictions += (
@@ -133,5 +137,6 @@ def segment(
         connected_component_thres=connected_component_thres,
         mrc_header=mrc_header,
         voxel_size=voxel_size,
+        segmentation_threshold=segmentation_threshold,
     )
     return segmentation_file

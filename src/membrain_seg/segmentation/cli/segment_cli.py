@@ -37,6 +37,17 @@ def segment(
         help="Threshold for connected components. Components smaller than this will \
             be removed from the segmentation.",
     ),
+    test_time_augmentation: bool = Option(  # noqa: B008
+        True,
+        help="Use 8-fold test time augmentation (TTA)? TTA improves segmentation \
+        quality slightly, but also increases runtime.",
+    ),
+    segmentation_threshold: float = Option(  # noqa: B008
+        0.0,
+        help="Threshold for the membrane segmentation. Only voxels with a \
+            membrane score higher than this threshold will be segmented. \
+                (default: 0.0)",
+    ),
     sliding_window_size: int = Option(  # noqa: B008
         160,
         help="Sliding window size used for inference. Smaller values than 160 \
@@ -58,6 +69,8 @@ def segment(
         store_connected_components=store_connected_components,
         connected_component_thres=connected_component_thres,
         sw_roi_size=sliding_window_size,
+        test_time_augmentation=test_time_augmentation,
+        segmentation_threshold=segmentation_threshold,
     )
 
 

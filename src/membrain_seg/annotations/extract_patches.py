@@ -193,7 +193,7 @@ def extract_patches(
                 min_coords[0] : min_coords[0] + 160,
                 min_coords[1] : min_coords[1] + 160,
                 min_coords[2] : min_coords[2] + 160,
-            ]
+            ].copy()
             cur_patch_labels = pad_labels(
                 cur_patch_labels, padding, pad_value=pad_value
             )
