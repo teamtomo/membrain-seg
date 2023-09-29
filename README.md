@@ -21,8 +21,12 @@ MemBrain-seg is a practical tool for membrane segmentation in cryo-electron tomo
 The U-Net architecture and training parameters are largely inspired by nnUNet<sup>1</sup>.
 
 
-Our current best model is available for download [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). Please let us know how it works for you.
-The above model works best on denoised tomograms. As an alternative, [this model](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing) performs better on non-denoised tomograms.
+Our current best model is available for download [here](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing). Please let us know how it works for you.
+If the given model does not work properly, you may want to try one of our previous versions:
+
+Other (older) model versions:
+- [v9 -- best model until 10th Aug 2023](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing)
+- [v9b -- model for non-denoised data until 10th Aug 2023](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing)
 
 If you wish, you can also train a new model using your own data, or combine it with our (soon to come!) publicly-available dataset. 
 
@@ -34,8 +38,7 @@ Explore MemBrain-seg, use it for your needs, and let us know how it works for yo
 Preliminary [documentation](https://github.com/teamtomo/membrain-seg/blob/main/docs/index.md) is available, but far from perfect. Please let us know if you encounter any issues, and we are more than happy to help (and get feedback what does not work yet).
 
 ```
-[1] Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2020). nnU-Net: a self-configuring method 
-for deep learning-based biomedical image segmentation. Nature Methods, 1-9.
+[1] Isensee, F., Jaeger, P.F., Kohl, S.A.A., Petersen, J., Maier-Hein, K.H., 2021. nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nature Methods 18, 203-211. https://doi.org/10.1038/s41592-020-01008-z
 ```
 
 # Installation
@@ -48,8 +51,9 @@ Please find more detailed instructions [here](./docs/Usage/Segmentation.md).
 
 ## Preprocessing
 Currently, we provide the following two [preprocessing](https://github.com/teamtomo/membrain-seg/tree/main/src/tomo_preprocessing) options:
-- pixel size matching: Rescale your tomogram to match the training pixel sizes
+- Pixel size matching: Rescale your tomogram to match the training pixel sizes
 - Fourier amplitude matching: Scale Fourier components to match the "style" of different tomograms
+- Deconvolution: denoises the tomogram by applying the deconvolution filter from Warp
 
 For more information, see the [Preprocessing](./docs/Usage/Preprocessing.md) subsection.
 
