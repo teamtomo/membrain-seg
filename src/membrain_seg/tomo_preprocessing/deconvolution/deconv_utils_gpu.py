@@ -6,6 +6,7 @@
 import warnings
 
 import numpy as np
+import cupy as cp
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
@@ -69,9 +70,9 @@ component in the Fourier transform) should be set to a small value instead of ze
     -----
     This function is compliant with NumPy fft.fftfreq() and fft.rfftfreq().
     """
-    imsize = np.array(imsize)
+    imsize = cp.array(imsize)
 
-    # if np.isscalar(imsize):
+    # if cp.isscalar(imsize):
     #     imsize = [imsize, imsize]
 
     if len(imsize) > 3:
@@ -81,82 +82,82 @@ component in the Fourier transform) should be set to a small value instead of ze
 
     xyz = np.flipud(xyz)
 
-    m = np.mod(imsize, 2)  # Check if dimensions are odd or even
+    m = cp.mod(imsize, 2)  # Check if dimensions are odd or even
 
     if len(imsize) == 1:
-        # The definition below is consistent with numpy np.fft.fftfreq and
-        # np.fft.rfftfreq:
+        # The definition below is consistent with numpy cp.fft.fftfreq and
+        # cp.fft.rfftfreq:
 
         if not rfft:
-            xmesh = np.mgrid[
+            xmesh = cp.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0]
             ]
 
         else:
-            xmesh = np.mgrid[0 - xyz[0] : imsize[0] // 2 + 1 - xyz[0]]
+            xmesh = cp.mgrid[0 - xyz[0] : imsize[0] // 2 + 1 - xyz[0]]
 
-        rmesh = np.sqrt(xmesh * xmesh)
+        rmesh = cp.sqrt(xmesh * xmesh)
 
-        amesh = np.zeros(xmesh.shape)
+        amesh = cp.zeros(xmesh.shape)
 
         n = 1  # Normalization factor
 
     if len(imsize) == 2:
-        # The definition below is consistent with numpy np.fft.fftfreq and
-        # np.fft.rfftfreq:
+        # The definition below is consistent with numpy cp.fft.fftfreq and
+        # cp.fft.rfftfreq:
 
         if not rfft:
-            [xmesh, ymesh] = np.mgrid[
+            [xmesh, ymesh] = cp.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0],
                 -imsize[1] // 2 + m[1] - xyz[1] : (imsize[1] - 1) // 2 + 1 - xyz[1],
             ]
 
         else:
-            [xmesh, ymesh] = np.mgrid[
+            [xmesh, ymesh] = cp.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0],
                 0 - xyz[1] : imsize[1] // 2 + 1 - xyz[1],
             ]
-            xmesh = np.fft.ifftshift(xmesh)
+            xmesh = cp.fft.ifftshift(xmesh)
 
-        rmesh = np.sqrt(xmesh * xmesh + ymesh * ymesh)
+        rmesh = cp.sqrt(xmesh * xmesh + ymesh * ymesh)
 
-        amesh = np.arctan2(ymesh, xmesh)
+        amesh = cp.arctan2(ymesh, xmesh)
 
         n = 2  # Normalization factor
 
     if len(imsize) == 3:
-        # The definition below is consistent with numpy np.fft.fftfreq and
-        # np.fft.rfftfreq:
+        # The definition below is consistent with numpy cp.fft.fftfreq and
+        # cp.fft.rfftfreq:
 
         if not rfft:
-            [xmesh, ymesh, zmesh] = np.mgrid[
+            [xmesh, ymesh, zmesh] = cp.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0],
                 -imsize[1] // 2 + m[1] - xyz[1] : (imsize[1] - 1) // 2 + 1 - xyz[1],
                 -imsize[2] // 2 + m[2] - xyz[2] : (imsize[2] - 1) // 2 + 1 - xyz[2],
             ]
 
         else:
-            [xmesh, ymesh, zmesh] = np.mgrid[
+            [xmesh, ymesh, zmesh] = cp.mgrid[
                 -imsize[0] // 2 + m[0] - xyz[0] : (imsize[0] - 1) // 2 + 1 - xyz[0],
                 -imsize[1] // 2 + m[1] - xyz[1] : (imsize[1] - 1) // 2 + 1 - xyz[1],
                 0 - xyz[2] : imsize[2] // 2 + 1 - xyz[2],
             ]
-            xmesh = np.fft.ifftshift(xmesh)
-            ymesh = np.fft.ifftshift(ymesh)
+            xmesh = cp.fft.ifftshift(xmesh)
+            ymesh = cp.fft.ifftshift(ymesh)
 
-        rmesh = np.sqrt(xmesh * xmesh + ymesh * ymesh + zmesh * zmesh)
+        rmesh = cp.sqrt(xmesh * xmesh + ymesh * ymesh + zmesh * zmesh)
 
-        amesh = np.arccos(zmesh / rmesh)
+        amesh = cp.arccos(zmesh / rmesh)
 
         n = 3  # Normalization factor
 
     if rounding:
-        rmesh = np.round(rmesh)
+        rmesh = cp.round(rmesh)
 
     if normalize:
-        a = np.sum(imsize * imsize)
+        a = cp.sum(imsize * imsize)
 
-        rmesh = rmesh / (np.sqrt(a) / np.sqrt(n))
+        rmesh = rmesh / (cp.sqrt(a) / cp.sqrt(n))
 
     if nozero:
         # Replaces the "zero radius" by a small value to prevent division by zero in
@@ -164,7 +165,7 @@ component in the Fourier transform) should be set to a small value instead of ze
         idx = rmesh == 0
         rmesh[idx] = nozeroval
 
-    return rmesh, np.nan_to_num(amesh)
+    return rmesh, cp.nan_to_num(amesh)
 
 
 def CTF(
@@ -205,7 +206,7 @@ orthogonal to the U axis. Only mandatory for astigmatic data.
     B : float
         B-factor in Angstroms**2.
     rfft : bool
-        Whether to return an array consistent with np.fft.rfftn i.e. exploiting the \
+        Whether to return an array consistent with cp.fft.rfftn i.e. exploiting the \
 Hermitian symmetry of the Fourier transform of real data.
 
     Returns
@@ -219,12 +220,12 @@ Hermitian symmetry of the Fourier transform of real data.
 (https://doi.org/10.1016/S1047-8477(03)00069-8), which is adopted in FREALIGN/\
 cisTEM, RELION and many other packages.
     """
-    if not np.isscalar(imsize) and len(imsize) == 1:
+    if not cp.isscalar(imsize) and len(imsize) == 1:
         imsize = imsize[0]
 
     Cs *= 1e7  # Convert Cs to Angstroms
 
-    if df2 is None or np.isscalar(imsize):
+    if df2 is None or cp.isscalar(imsize):
         df2 = df1
 
     # NOTATION FOR DEFOCUS1, DEFOCUS2, ASTIGMATISM BELOW IS INVERTED DUE TO NUMPY
@@ -235,7 +236,7 @@ cisTEM, RELION and many other packages.
 
     WL = ElectronWavelength(kV)
 
-    w1 = np.sqrt(1 - ampcon * ampcon)
+    w1 = cp.sqrt(1 - ampcon * ampcon)
     w2 = ampcon
 
     import warnings
@@ -243,11 +244,11 @@ cisTEM, RELION and many other packages.
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-        if np.isscalar(imsize):
+        if cp.isscalar(imsize):
             if rfft:
-                rmesh = np.fft.rfftfreq(imsize)
+                rmesh = cp.fft.rfftfreq(imsize)
             else:
-                rmesh = np.fft.fftfreq(imsize)
+                rmesh = cp.fft.fftfreq(imsize)
             amesh = 0.0
 
         else:
@@ -256,14 +257,14 @@ cisTEM, RELION and many other packages.
             rmesh2 = rmesh**2 / apix**2
 
         # From Mindell & Grigorieff, JSB 2003:
-        df = 0.5 * (df1 + df2 + (df1 - df2) * np.cos(2.0 * (amesh - ast)))
+        df = 0.5 * (df1 + df2 + (df1 - df2) * cp.cos(2.0 * (amesh - ast)))
 
-        Xr = np.nan_to_num(pi * WL * rmesh2 * (df - 0.5 * WL * WL * rmesh2 * Cs))
+        Xr = cp.nan_to_num(pi * WL * rmesh2 * (df - 0.5 * WL * WL * rmesh2 * Cs))
 
-    CTFim = -w1 * np.sin(Xr) - w2 * np.cos(Xr)
+    CTFim = -w1 * cp.sin(Xr) - w2 * cp.cos(Xr)
 
     if B != 0.0:  # Apply B-factor only if necessary:
-        CTFim = CTFim * np.exp(-B * (rmesh2) / 4)
+        CTFim = CTFim * cp.exp(-B * (rmesh2) / 4)
 
     return CTFim
 
@@ -352,28 +353,30 @@ a string indicating the type of correction(s) applied.
 
         pass
 
-    FT = np.fft.rfftn(img)
+    img = cp.array(img)
+
+    FT = cp.fft.rfftn(img)
 
     if phase_flip:  # Phase-flipping
-        s = np.sign(CTFim)
-        CTFcor = np.fft.irfftn(FT * s)
+        s = cp.sign(CTFim)
+        CTFcor = cp.fft.irfftn(FT * s)
 
     elif ctf_multiply:  # CTF multiplication
-        CTFcor = np.fft.irfftn(FT * CTFim)
+        CTFcor = cp.fft.irfftn(FT * CTFim)
 
     elif wiener_filter:  # Wiener filtering
-        if np.any(C <= 0.0):
+        if cp.any(C <= 0.0):
             raise ValueError(
                 "Error: Wiener filter contain value(s) less than or equal to zero!"
             )
 
-        CTFcor = np.fft.irfftn(FT * CTFim / (CTFim * CTFim + C))
+        CTFcor = cp.fft.irfftn(FT * CTFim / (CTFim * CTFim + C))
 
     if return_ctf:
-        return CTFcor, CTFim
+        return cp.asnumpy(CTFcor), CTFim
 
     else:
-        return CTFcor
+        return cp.asnumpy(CTFcor)
 
 
 def AdhocSSNR(
@@ -429,22 +432,24 @@ be boosted the most).
     [1] Tegunov & Cramer, Nat. Meth. (2019). https://doi.org/10.1038/s41592-019-0580-y
     [2] https://github.com/dtegunov/tom_deconv/blob/master/tom_deconv.m
     """
+    apix = cp.array(apix)
+
     rmesh = RadialIndices(imsize, rounding=False, normalize=True, rfft=True)[0] / apix
 
     # The ad hoc SSNR exponential falloff
-    falloff = np.exp(-100 * rmesh * F) * 10 ** (3 * S)
+    falloff = cp.exp(-100 * rmesh * F) * 10 ** (3 * S)
 
     # The cosine-shaped high-pass filter. It starts at zero frequency and reaches 1.0
     # at hp_freq (fraction of the Nyquist frequency)
-    a = np.minimum(1.0, rmesh * apix / hp_frac)
-    highpass = 1.0 - np.cos(a * pi / 2)
+    a = cp.minimum(1.0, rmesh * apix / hp_frac)
+    highpass = 1.0 - cp.cos(a * pi / 2)
 
     if lp:
         # Ensure the filter will reach zero at the first zero of the CTF
         first_zero_res = FirstZeroCTF(df=df, ampcon=ampcon, Cs=Cs, kV=kV)
-        a = np.minimum(1.0, rmesh / first_zero_res)
+        a = cp.minimum(1.0, rmesh / first_zero_res)
 
-        lowpass = np.cos(a * pi / 2)
+        lowpass = cp.cos(a * pi / 2)
 
         # Composite filter
         ssnr = highpass * falloff * lowpass
@@ -452,7 +457,7 @@ be boosted the most).
     else:
         ssnr = highpass * falloff  # Composite filter
 
-    return np.abs(ssnr)
+    return cp.abs(ssnr)
 
 
 def ElectronWavelength(kV: float = 300.0):
@@ -469,7 +474,7 @@ def ElectronWavelength(kV: float = 300.0):
     WL : float
         A scalar value containing the electron wavelength in Angstroms.
     """
-    WL = 12.2639 / np.sqrt(kV * 1e3 + 0.97845 * kV * kV)
+    WL = 12.2639 / cp.sqrt(kV * 1e3 + 0.97845 * kV * kV)
 
     return WL
 
@@ -506,13 +511,13 @@ zero crossing of the CTF.
     """
     Cs *= 1e7  # Convert Cs to Angstroms
 
-    w1 = np.sqrt(1 - ampcon * ampcon)
+    w1 = cp.sqrt(1 - ampcon * ampcon)
     w2 = ampcon
 
     WL = ElectronWavelength(kV)
 
-    g = np.sqrt(-2 * Cs * WL * np.arctan2(w2, w1) + 2 * pi * Cs * WL + pi) / (
-        np.sqrt(2 * pi * Cs * df) * WL
+    g = cp.sqrt(-2 * Cs * WL * cp.arctan2(w2, w1) + 2 * pi * Cs * WL + pi) / (
+        cp.sqrt(2 * pi * Cs * df) * WL
     )
 
     return g

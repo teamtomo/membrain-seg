@@ -70,6 +70,10 @@ enforces filtering out any information beyond the first zero of the CTF. Use thi
 option to skip this filter i.e. potentially include information beyond the first CTF \
 zero (not recommended).",
     ),
+    cpu: bool = Option(  # noqa: B008
+        False,
+        help="Use CPU for computations. Helpful if running out of memory on the GPU.",
+    ),
 ):
     """Deconvolve the input tomogram using the Warp deconvolution filter."""
     run_deconvolve(
@@ -84,4 +88,5 @@ zero (not recommended).",
         falloff,
         hp_fraction,
         skip_lowpass,
+        cpu,
     )

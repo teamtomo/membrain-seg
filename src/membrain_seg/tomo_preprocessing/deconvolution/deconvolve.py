@@ -2,9 +2,9 @@ from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     store_tomogram,
 )
-from membrain_seg.tomo_preprocessing.deconvolution.deconv_utils import (
-    AdhocSSNR,
-    CorrectCTF,
+from membrain_seg.tomo_preprocessing.deconvolution import (
+    deconv_utils_cpu,
+    deconv_utils_gpu,
 )
 
 
@@ -20,6 +20,7 @@ def deconvolve(
     falloff: float = 1.0,
     hp_frac: float = 0.02,
     skip_lowpass: bool = True,
+    cpu: bool = False,
 ) -> None:
     """
     Deconvolve the input tomogram using the Warp deconvolution filter. 
@@ -55,6 +56,8 @@ be boosted the most).
 enforces filtering out any information beyond the first zero of the CTF. Use this \
 option to skip this filter (i.e. potentially include information beyond the first CTF \
 zero).
+    cpu: bool
+        Use CPU for computations. Helpful if running out of memory on the GPU.
 
     Returns
     -------
@@ -95,40 +98,74 @@ on that of the focustools package: https://github.com/C-CINA/focustools/
         f"\nstrength: {strength:.3f}",
         f"\nfalloff: {falloff:.3f}",
         f"\nhp_fraction: {hp_frac:.3f}",
-        f"\nskip_lowpass: {skip_lowpass}\n",
+        f"\nskip_lowpass: {skip_lowpass}",
+        f"\ncpu: {cpu}\n",
     )
     print("Deconvolution can take a few minutes, please wait...")
 
-    ssnr = AdhocSSNR(
-        imsize=tomo.data.shape,
-        apix=apix,
-        df=df,
-        ampcon=ampcon,
-        Cs=Cs,
-        kV=kV,
-        S=strength,
-        F=falloff,
-        hp_frac=hp_frac,
-        lp=not skip_lowpass,
-    )
+    if cpu:
+        ssnr = deconv_utils_cpu.AdhocSSNR(
+            imsize=tomo.data.shape,
+            apix=apix,
+            df=df,
+            ampcon=ampcon,
+            Cs=Cs,
+            kV=kV,
+            S=strength,
+            F=falloff,
+            hp_frac=hp_frac,
+            lp=not skip_lowpass,
+        )
 
-    wiener_constant = 1 / ssnr
+        wiener_constant = 1 / ssnr
 
-    deconvtomo = CorrectCTF(
-        tomo.data,
-        df1=df,
-        ast=0.0,
-        ampcon=ampcon,
-        invert_contrast=False,
-        Cs=Cs,
-        kV=kV,
-        apix=apix,
-        phase_flip=False,
-        ctf_multiply=False,
-        wiener_filter=True,
-        C=wiener_constant,
-        return_ctf=False,
-    )
+        deconvtomo = deconv_utils_cpu.CorrectCTF(
+            tomo.data,
+            df1=df,
+            ast=0.0,
+            ampcon=ampcon,
+            invert_contrast=False,
+            Cs=Cs,
+            kV=kV,
+            apix=apix,
+            phase_flip=False,
+            ctf_multiply=False,
+            wiener_filter=True,
+            C=wiener_constant,
+            return_ctf=False,
+        )
+
+    else:
+        ssnr = deconv_utils_gpu.AdhocSSNR(
+            imsize=tomo.data.shape,
+            apix=apix,
+            df=df,
+            ampcon=ampcon,
+            Cs=Cs,
+            kV=kV,
+            S=strength,
+            F=falloff,
+            hp_frac=hp_frac,
+            lp=not skip_lowpass,
+        )
+
+        wiener_constant = 1 / ssnr
+
+        deconvtomo = deconv_utils_gpu.CorrectCTF(
+            tomo.data,
+            df1=df,
+            ast=0.0,
+            ampcon=ampcon,
+            invert_contrast=False,
+            Cs=Cs,
+            kV=kV,
+            apix=apix,
+            phase_flip=False,
+            ctf_multiply=False,
+            wiener_filter=True,
+            C=wiener_constant,
+            return_ctf=False,
+        )
 
     store_tomogram(mrcout, deconvtomo, voxel_size=apix)
 
