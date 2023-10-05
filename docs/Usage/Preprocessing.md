@@ -51,11 +51,11 @@ tomo_preprocessing <command> --help
 
 
 - **match_pixel_size**: Tomogram rescaling to specified pixel size. Example:  
-`tomo_preprocessing match_pixel_size --input_tomogram <path-to-tomo> --output_path <path-to-output> --pixel_size_out 10.0 --pixel_size_in <your-px-size>`
+`tomo_preprocessing match_pixel_size --input-tomogram <path-to-tomo> --output-path <path-to-output> --pixel-size-out 10.0 --pixel-size-in <your-px-size>`
 - **match_seg_to_tomo**: Segmentation rescaling to fit to target tomogram's shape. Example:  
-`tomo_preprocessing match_seg_to_tomo --seg_path <path-to-seg> --orig_tomo_path <path-to-tomo> --output_path <path-to-output>`
+`tomo_preprocessing match_seg_to_tomo --seg-path <path-to-seg> --orig-tomo-path <path-to-tomo> --output-path <path-to-output>`
 - **extract_spectrum**: Extracts the radially averaged amplitude spectrum from the input tomogram. Example:  
-`tomo_preprocessing extract_spectrum --input_path <path-to-tomo> --output_path <path-to-output>`
+`tomo_preprocessing extract_spectrum --input-path <path-to-tomo> --output-path <path-to-output>`
 - **match_spectrum**: Match amplitude of Fourier spectrum from input tomogram to target spectrum. Example:  
 `tomo_preprocessing match_spectrum --input <path-to-tomo> --target <path-to-spectrum> --output <path-to-output>`
 
@@ -64,18 +64,18 @@ tomo_preprocessing <command> --help
 Pixel size matching is recommended when your tomogram pixel sizes differs strongly from the training pixel size range (roughly 10-14&Aring;). You can perform it using the command
 
 ```shell
-tomo_preprocessing match_pixel_size --input_tomogram <path-to-tomo> --output_path <path-to-output> --pixel_size_out 10.0 --pixel_size_in <your-px-size>
+tomo_preprocessing match_pixel_size --input-tomogram <path-to-tomo> --output-path <path-to-output> --pixel-size-out 10.0 --pixel-size-in <your-px-size>
 ```
 
 after adjusting the paths to your respective tomograms.
-Afterwards, you can perform MemBrain's segmentation on the rescaled tomogram (i.e. the one specified in `--output_path`).  
+Afterwards, you can perform MemBrain's segmentation on the rescaled tomogram (i.e. the one specified in `--output-path`).  
 Now, this new segmentation does not have the same shape as the original non-pixel-size-matched tomogram. To rescale the new segmentation to the original tomogram again, you can use
 
 ```shell
-tomo_preprocessing match_seg_to_tomo --seg_path <path-to-seg> --orig_tomo_path <path-to-tomo> --output_path <path-to-output>
+tomo_preprocessing match_seg_to_tomo --seg_path <path-to-seg> --orig-tomo-path <path-to-tomo> --output-path <path-to-output>
 ```
 
-where the `--seg_path`is the segmentation created by MemBrain and the `--orig_tomo_path`is the original tomogram before rescaling to the new pixel size.  
+where the `--seg-path`is the segmentation created by MemBrain and the `--orig-tomo-path`is the original tomogram before rescaling to the new pixel size.  
 The output of this function will be MemBrain's segmentation, but matched to the pixel size of the original tomogram.
 
 
@@ -84,7 +84,7 @@ Fourier amplitude matching is performed in two steps:
 
 1. Extraction of the target Fourier spectrum:  
 ```shell
-tomo_preprocessing extract_spectrum --input_path <path-to-tomo> --output_path <path-to-output>
+tomo_preprocessing extract_spectrum --input-path <path-to-tomo> --output-path <path-to-output>
 ```  
 This extracts the radially averaged Fourier spectrum and stores it into a .tsv file.
 2. Matching of the input tomogram to the extracted spectrum:  
