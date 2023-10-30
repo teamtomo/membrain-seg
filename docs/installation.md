@@ -52,6 +52,9 @@ This should display the different options you can choose from MemBrain, like "se
 
 ## Step 5: Download pre-trained segmentation model (optional)
 We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. However, our current best model is available for download [here](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing) and should also work on non-denoised data. Please let us know how it works for you.
+
+NOTE: Previous model files are not compatible with MONAI v1.3.0 or higher. So if you're using v1.3.0 or higher, consider downgrading to MONAI v1.2.0 or downloading this [adapted version](https://drive.google.com/file/d/1Tfg2Ju-cgSj_71_b1gVMnjqNYea7L1Hm/view?usp=sharing) of our most recent model file. 
+
 If the given model does not work properly, you may want to try one of our previous versions:
 
 Other (older) model versions:
