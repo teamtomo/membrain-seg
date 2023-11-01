@@ -68,3 +68,16 @@ Once downloaded, you can use it in MemBrain-seg's [Segmentation](./Usage/Segment
 ```
 [1] T. -O. Buchholz, M. Jordan, G. Pigino and F. Jug, "Cryo-CARE: Content-Aware Image Restoration for Cryo-Transmission Electron Microscopy Data," 2019 IEEE 16th International Symposium on Biomedical Imaging (ISBI 2019), Venice, Italy, 2019, pp. 502-506, doi: 10.1109/ISBI.2019.8759519.
 ```
+
+
+# Troubleshooting
+Here is a collection of common issues and how to fix them:
+
+- `RuntimeError: The NVIDIA driver on your system is too old (found version 11070). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has 
+been compiled with your version of the CUDA driver.` 
+
+  The latest Pytorch versions require higher CUDA versions that may not be installed on your system yet. You can either install the new CUDA version or (maybe easier) downgrade Pytorch to a version that is compatible:
+
+  `pip uninstall torch`
+
+  `pip install torch==2.0.1`
