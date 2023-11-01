@@ -78,7 +78,7 @@ def segment(
 @cli.command(name="components", no_args_is_help=True)
 def components(
     segmentation_path: str = Option(  # noqa: B008
-        help="Path to the membrane segmentation to be processed.", **PKWARGS
+        ..., help="Path to the membrane segmentation to be processed.", **PKWARGS
     ),
     out_folder: str = Option(  # noqa: B008
         "./predictions", help="Path to the folder where segmentations should be stored."
@@ -114,7 +114,7 @@ def components(
 @cli.command(name="thresholds", no_args_is_help=True)
 def thresholds(
     scoremap_path: str = Option(  # noqa: B008
-        help="Path to the membrane scoremap to be processed.", **PKWARGS
+        ..., help="Path to the membrane scoremap to be processed.", **PKWARGS
     ),
     thresholds: List[float] = Option(  # noqa: B008
         ...,
