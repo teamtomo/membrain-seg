@@ -8,14 +8,12 @@ from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete, Compose, EnsureType, Lambda
 
 from ..training.metric_utils import masked_accuracy, threshold_function
-
 from ..training.optim_utils import (
-    DeepSuperVisionLoss,
-    DynUNetDirectDeepSupervision,  
-    IgnoreLabelDiceCELoss,
     CombinedLoss,
+    DeepSuperVisionLoss,
+    DynUNetDirectDeepSupervision,
+    IgnoreLabelDiceCELoss,
 )
-
 from ..training.surface_dice import IgnoreLabelSurfaceDiceLoss, masked_surface_dice
 
 
@@ -84,9 +82,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         roi_size: Tuple[int, ...] = (160, 160, 160),
         max_epochs: int = 1000,
         use_deep_supervision: bool = False,
-        use_surf_dice=False,
-        surf_dice_weight=1.0,
-        surf_dice_tokens=[],
+        use_surf_dice: bool = False,
+        surf_dice_weight: float = 1.0,
+        surf_dice_tokens: list = None,
     ):
         super().__init__()
 
@@ -113,7 +111,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
             deep_supr_num=2,
         )
 
-
         ### Build up loss function
 
         losses = []
@@ -121,26 +118,32 @@ class SemanticSegmentationUnet(pl.LightningModule):
         loss_inclusion_tokens = []
         ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
         losses.append(ignore_dice_loss)
-        weights.append(1.)
-        loss_inclusion_tokens.append(["all"]) # Apply to every element
+        weights.append(1.0)
+        loss_inclusion_tokens.append(["all"])  # Apply to every element
 
         if use_surf_dice:
-            ignore_surf_dice_loss  = IgnoreLabelSurfaceDiceLoss(ignore_label=2, soft_skel_iterations=3)
+            if surf_dice_tokens is None:
+                surf_dice_tokens = ["all"]
+            ignore_surf_dice_loss = IgnoreLabelSurfaceDiceLoss(
+                ignore_label=2, soft_skel_iterations=3
+            )
             losses.append(ignore_surf_dice_loss)
             weights.append(surf_dice_weight)
             loss_inclusion_tokens.append(surf_dice_tokens)
 
         scaled_weights = [entry / sum(weights) for entry in weights]
-        loss_function  = CombinedLoss(losses=losses, weights=scaled_weights, 
-                                      loss_exclusion_tokens=loss_inclusion_tokens)
-        
+        loss_function = CombinedLoss(
+            losses=losses,
+            weights=scaled_weights,
+            loss_exclusion_tokens=loss_inclusion_tokens,
+        )
+
         self.loss_function = DeepSuperVisionLoss(
             loss_function,
             weights=[1.0, 0.5, 0.25, 0.125, 0.0675]
             if use_deep_supervision
             else [1.0, 0.0, 0.0, 0.0, 0.0],
         )
-
 
         # validation metric
         self.dice_metric = DiceMetric(
@@ -207,7 +210,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         See the pytorch-lightning module documentation for details.
         """
-        images, labels, ds_label = batch["image"], batch["label"], batch['dataset']
+        images, labels, ds_label = batch["image"], batch["label"], batch["dataset"]
         output = self.forward(images)
         loss = self.loss_function(output, labels, ds_label)
 
@@ -219,11 +222,14 @@ class SemanticSegmentationUnet(pl.LightningModule):
         )
 
         self.running_train_surf_dice += (
-            masked_surface_dice(data=output[0].detach(), 
-                                target=labels[0].detach(), 
-                                ignore_label=2., 
-                                soft_skel_iterations=3,
-                                smooth=1.) * output[0].shape[0]
+            masked_surface_dice(
+                data=output[0].detach(),
+                target=labels[0].detach(),
+                ignore_label=2.0,
+                soft_skel_iterations=3,
+                smooth=1.0,
+            )
+            * output[0].shape[0]
         )
 
         return {"loss": loss}
@@ -245,9 +251,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         mean_train_surf_dice = self.running_train_surf_dice / num_items
         self.running_train_acc = 0.0
         self.running_train_surf_dice = 0.0
-        self.log("train_loss", mean_train_loss) 
-        self.log("train_acc", mean_train_acc) 
-        self.log("train_surf_dice", mean_train_surf_dice)  
+        self.log("train_loss", mean_train_loss)
+        self.log("train_acc", mean_train_acc)
+        self.log("train_surf_dice", mean_train_surf_dice)
 
         self.training_step_outputs = []
         print("EPOCH Training loss", mean_train_loss.item())
@@ -291,11 +297,14 @@ class SemanticSegmentationUnet(pl.LightningModule):
         )
 
         self.running_val_surf_dice += (
-            masked_surface_dice(data=outputs[0].detach(), 
-                                target=labels[0].detach(), 
-                                ignore_label=2., 
-                                soft_skel_iterations=3,
-                                smooth=1.) * outputs[0].shape[0]
+            masked_surface_dice(
+                data=outputs[0].detach(),
+                target=labels[0].detach(),
+                ignore_label=2.0,
+                soft_skel_iterations=3,
+                smooth=1.0,
+            )
+            * outputs[0].shape[0]
         )
 
         return stats_dict
@@ -317,8 +326,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
         mean_val_surf_dice = self.running_val_surf_dice / num_items
         self.running_val_acc = 0.0
         self.running_val_surf_dice = 0.0
-        self.log("val_loss", mean_val_loss),  
-        self.log("val_dice", mean_val_dice) 
+        self.log("val_loss", mean_val_loss),
+        self.log("val_dice", mean_val_dice)
         self.log("val_surf_dice", mean_val_surf_dice)
         self.log("val_accuracy", mean_val_acc)
 

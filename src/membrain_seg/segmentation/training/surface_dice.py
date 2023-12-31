@@ -1,13 +1,18 @@
 """
-Adapted from: clDice - A Novel Topology-Preserving Loss Function for Tubular Structure Segmentation
-Original Authors: Johannes C. Paetzold and Suprosanna Shit
-Sources: https://github.com/jocpae/clDice/blob/master/cldice_loss/pytorch/soft_skeleton.py
-         https://github.com/jocpae/clDice/blob/master/cldice_loss/pytorch/cldice.py 
-License: MIT License
+Surface Dice implementation.
 
-The following code is a modification of the original clDice implementation. Modifications were made to 
-include additional functionality and integrate with new project requirements. The original license and 
-copyright notice are provided below.
+Adapted from: clDice - A Novel Topology-Preserving Loss Function for Tubular 
+Structure Segmentation
+Original Authors: Johannes C. Paetzold and Suprosanna Shit
+Sources: https://github.com/jocpae/clDice/blob/master/cldice_loss/pytorch/
+        soft_skeleton.py
+         https://github.com/jocpae/clDice/blob/master/cldice_loss/pytorch/cldice.py 
+License: MIT License.
+
+The following code is a modification of the original clDice implementation.
+Modifications were made to include additional functionality and integrate 
+with new project requirements. The original license and copyright notice are 
+provided below.
 
 MIT License
 
@@ -34,11 +39,9 @@ SOFTWARE.
 
 import torch
 import torch.nn.functional as F
-from .soft_skeleton import soft_skel
+from scipy.ndimage import gaussian_filter
 from torch.nn.functional import sigmoid
 from torch.nn.modules.loss import _Loss
-from scipy.ndimage import gaussian_filter
-
 
 
 def soft_erode(img: torch.Tensor, separate_pool: bool = False) -> torch.Tensor:
@@ -67,18 +70,18 @@ def soft_erode(img: torch.Tensor, separate_pool: bool = False) -> torch.Tensor:
 
     Notes
     -----
-    - The soft erosion can be performed with separate 3D min-pooling operations 
-            along different axes if separate_pool is True, or with a single 
-            3D min-pooling operation with a kernel of size (3, 3, 3) if 
+    - The soft erosion can be performed with separate 3D min-pooling operations
+            along different axes if separate_pool is True, or with a single
+            3D min-pooling operation with a kernel of size (3, 3, 3) if
             separate_pool is False.
     """
-    assert len(img.shape)==5
+    assert len(img.shape) == 5
     if separate_pool:
-        p1 = -F.max_pool3d(-img,(3,1,1),(1,1,1),(1,0,0))
-        p2 = -F.max_pool3d(-img,(1,3,1),(1,1,1),(0,1,0))
-        p3 = -F.max_pool3d(-img,(1,1,3),(1,1,1),(0,0,1))
+        p1 = -F.max_pool3d(-img, (3, 1, 1), (1, 1, 1), (1, 0, 0))
+        p2 = -F.max_pool3d(-img, (1, 3, 1), (1, 1, 1), (0, 1, 0))
+        p3 = -F.max_pool3d(-img, (1, 1, 3), (1, 1, 1), (0, 0, 1))
         return torch.min(torch.min(p1, p2), p3)
-    p4 = -F.max_pool3d(-img,(3,3,3),(1,1,1),(1,1,1))
+    p4 = -F.max_pool3d(-img, (3, 3, 3), (1, 1, 1), (1, 1, 1))
     return p4
 
 
@@ -105,11 +108,11 @@ def soft_dilate(img: torch.Tensor) -> torch.Tensor:
 
     Notes
     -----
-    - For 5D input, the soft dilation is performed using a 3D max-pooling operation 
+    - For 5D input, the soft dilation is performed using a 3D max-pooling operation
             with a kernel of size (3, 3, 3).
     """
-    assert len(img.shape)==5
-    return F.max_pool3d(img,(3,3,3),(1,1,1),(1,1,1))
+    assert len(img.shape) == 5
+    return F.max_pool3d(img, (3, 3, 3), (1, 1, 1), (1, 1, 1))
 
 
 def soft_open(img: torch.Tensor, separate_pool: bool = False) -> torch.Tensor:
@@ -133,15 +136,17 @@ def soft_open(img: torch.Tensor, separate_pool: bool = False) -> torch.Tensor:
 
     Notes
     -----
-    - Soft opening is performed by applying soft erosion followed by soft dilation 
+    - Soft opening is performed by applying soft erosion followed by soft dilation
             to the input image.
-    - For 5D input, separate erosion and dilation can be performed if separate_pool 
+    - For 5D input, separate erosion and dilation can be performed if separate_pool
             is True.
     """
     return soft_dilate(soft_erode(img, separate_pool=separate_pool))
 
 
-def soft_skel(img: torch.Tensor, iter_: int, separate_pool: bool = False) -> torch.Tensor:
+def soft_skel(
+    img: torch.Tensor, iter_: int, separate_pool: bool = False
+) -> torch.Tensor:
     """
     Compute the soft skeleton of the input image.
 
@@ -150,7 +155,7 @@ def soft_skel(img: torch.Tensor, iter_: int, separate_pool: bool = False) -> tor
     computed and added to the skeleton.
 
     Reasoning: if there is a difference between the input image and the "opened" image,
-    there must be a thin membrane skeleton in the input image that was removed by the 
+    there must be a thin membrane skeleton in the input image that was removed by the
     opening operation.
 
     Parameters
@@ -160,7 +165,8 @@ def soft_skel(img: torch.Tensor, iter_: int, separate_pool: bool = False) -> tor
     iter_ : int
         Number of iterations for skeletonization.
     separate_pool : bool, optional
-        If True, perform separate erosion and dilation operations. Default is False.
+        If True, perform separate erosion and dilation operations.
+        Default is False.
 
     Returns
     -------
@@ -171,13 +177,13 @@ def soft_skel(img: torch.Tensor, iter_: int, separate_pool: bool = False) -> tor
     -----
     - Separate erosion can be performed if separate_pool is True.
     """
-    img1  =  soft_open(img, separate_pool=separate_pool)
-    skel  =  F.relu(img-img1)
-    for j in range(iter_):
-        img  =  soft_erode(img)
-        img1  =  soft_open(img, separate_pool=separate_pool)
-        delta  =  F.relu(img-img1)
-        skel  =  skel +  F.relu(delta-skel*delta)
+    img1 = soft_open(img, separate_pool=separate_pool)
+    skel = F.relu(img - img1)
+    for _j in range(iter_):
+        img = soft_erode(img)
+        img1 = soft_open(img, separate_pool=separate_pool)
+        delta = F.relu(img - img1)
+        skel = skel + F.relu(delta - skel * delta)
     return skel
 
 
@@ -185,17 +191,19 @@ def get_GT_skeleton(gt_seg: torch.Tensor, iterations: int = 5) -> torch.Tensor:
     """
     Generate the skeleton of a ground truth segmentation.
 
-    This function takes a ground truth segmentation `gt_seg`, smooths it using a Gaussian filter,
-    and then computes its soft skeleton using the `soft_skel` function.
+    This function takes a ground truth segmentation `gt_seg`, smooths it using a
+    Gaussian filter, and then computes its soft skeleton using the `soft_skel` function.
 
-    Intention: When using the binary ground truth segmentation for skeletonization, the resulting
-    skeleton is very patchy and not smooth. When using the smoothed ground truth segmentation, the
-    resulting skeleton is much smoother and more accurate.
+    Intention: When using the binary ground truth segmentation for skeletonization,
+    the resulting skeleton is very patchy and not smooth. When using the smoothed
+    ground truth segmentation, the resulting skeleton is much smoother and more
+    accurate.
 
     Parameters
     ----------
     gt_seg : torch.Tensor
-        A torch.Tensor representing the ground truth segmentation. Shape: (B, C, D, H, W)
+        A torch.Tensor representing the ground truth segmentation.
+        Shape: (B, C, D, H, W)
     iterations : int, optional
         The number of iterations for skeletonization. Default is 5.
 
@@ -206,66 +214,88 @@ def get_GT_skeleton(gt_seg: torch.Tensor, iterations: int = 5) -> torch.Tensor:
 
     Notes
     -----
-    - The input `gt_seg` should be a binary segmentation tensor where 1 represents the object of interest.
-    - The function first smooths the `gt_seg` using a Gaussian filter to enhance the object's structure.
-    - The skeletonization process is performed using the `soft_skel` function with the specified number of 
-            iterations.
-    - The resulting skeleton is returned as a binary torch.Tensor where 1 indicates the skeleton points.
+    - The input `gt_seg` should be a binary segmentation tensor where 1 represents the
+        object of interest.
+    - The function first smooths the `gt_seg` using a Gaussian filter to enhance the
+        object's structure.
+    - The skeletonization process is performed using the `soft_skel` function with the
+        specified number of iterations.
+    - The resulting skeleton is returned as a binary torch.Tensor where 1 indicates the
+        skeleton points.
     """
-    gt_smooth = gaussian_filter((gt_seg == 1) * 1., 2) * 1.5 # The Gaussian smoothing parameters are work in progress
-    skel_gt = soft_skel(torch.from_numpy(gt_smooth)*1.0, iter_=iterations)
+    gt_smooth = (
+        gaussian_filter((gt_seg == 1) * 1.0, 2) * 1.5
+    )  # The Gaussian smoothing parameters are work in progress
+    skel_gt = soft_skel(torch.from_numpy(gt_smooth) * 1.0, iter_=iterations)
     return skel_gt
 
 
-def masked_surface_dice(data: torch.Tensor, target: torch.Tensor, ignore_label: int=2, soft_skel_iterations: int=3, 
-                        smooth: float=3., binary_prediction: bool=False) -> torch.Tensor:
-        """
-        Compute the surface Dice loss with masking for ignore labels.
+def masked_surface_dice(
+    data: torch.Tensor,
+    target: torch.Tensor,
+    ignore_label: int = 2,
+    soft_skel_iterations: int = 3,
+    smooth: float = 3.0,
+    binary_prediction: bool = False,
+) -> torch.Tensor:
+    """
+    Compute the surface Dice loss with masking for ignore labels.
 
-        The surface Dice loss measures the similarity between the predicted segmentation's skeleton and
-        the ground truth segmentation (and vice versa). Labels annotated with "ignore_label" are ignored.
+    The surface Dice loss measures the similarity between the predicted segmentation's
+    skeleton and the ground truth segmentation (and vice versa). Labels annotated with
+    "ignore_label" are ignored.
 
-        Parameters
-        ----------
-        data : torch.Tensor
-            Tensor of model outputs representing the predicted segmentation.
-        target : torch.Tensor
-            Tensor of target labels representing the ground truth segmentation.
-        ignore_label : int
-            The label value to be ignored when computing the loss.
-        soft_skel_iterations : int
-            Number of iterations for skeletonization in the underlying operations.
-        smooth : float
-            Smoothing factor to avoid division by zero.
+    Parameters
+    ----------
+    data : torch.Tensor
+        Tensor of model outputs representing the predicted segmentation.
+    target : torch.Tensor
+        Tensor of target labels representing the ground truth segmentation.
+    ignore_label : int
+        The label value to be ignored when computing the loss.
+    soft_skel_iterations : int
+        Number of iterations for skeletonization in the underlying operations.
+    smooth : float
+        Smoothing factor to avoid division by zero.
+    binary_prediction : bool
+        If True, the predicted segmentation is assumed to be binary. Default is False.
 
-        Returns
-        -------
-        torch.Tensor
-            The calculated surface Dice loss.
-        """
-        # Create a mask to ignore the specified label in the target
-        data = sigmoid(data)
-        mask = target != ignore_label
+    Returns
+    -------
+    torch.Tensor
+        The calculated surface Dice loss.
+    """
+    # Create a mask to ignore the specified label in the target
+    data = sigmoid(data)
+    mask = target != ignore_label
 
-        # Compute soft skeletonization
-        if binary_prediction:
-            skel_pred = get_GT_skeleton(data.clone(), soft_skel_iterations, separate_pool=False)
-        else:
-            skel_pred = soft_skel(data.clone(), soft_skel_iterations, separate_pool=False)
-        skel_true = get_GT_skeleton(target.clone(), soft_skel_iterations, separate_pool=False)
+    # Compute soft skeletonization
+    if binary_prediction:
+        skel_pred = get_GT_skeleton(
+            data.clone(), soft_skel_iterations, separate_pool=False
+        )
+    else:
+        skel_pred = soft_skel(data.clone(), soft_skel_iterations, separate_pool=False)
+    skel_true = get_GT_skeleton(
+        target.clone(), soft_skel_iterations, separate_pool=False
+    )
 
-        # Mask out ignore labels
-        skel_pred[~mask] = 0
-        skel_true[~mask] = 0
+    # Mask out ignore labels
+    skel_pred[~mask] = 0
+    skel_true[~mask] = 0
 
-        # compute surface dice loss
-        print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
-        print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
-        print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
-        tprec = (torch.sum(torch.multiply(skel_pred, target), dim=0)+smooth)/(torch.sum(skel_pred, dim=0)+smooth)    
-        tsens = (torch.sum(torch.multiply(skel_true, data), dim=0)+smooth)/(torch.sum(skel_true, dim=0)+smooth)    
-        surf_dice_loss = 2.0*(tprec*tsens)/(tprec+tsens)
-        return surf_dice_loss
+    # compute surface dice loss
+    print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
+    print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
+    print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
+    tprec = (torch.sum(torch.multiply(skel_pred, target), dim=0) + smooth) / (
+        torch.sum(skel_pred, dim=0) + smooth
+    )
+    tsens = (torch.sum(torch.multiply(skel_true, data), dim=0) + smooth) / (
+        torch.sum(skel_true, dim=0) + smooth
+    )
+    surf_dice_loss = 2.0 * (tprec * tsens) / (tprec + tsens)
+    return surf_dice_loss
 
 
 class IgnoreLabelSurfaceDiceLoss(_Loss):
@@ -286,7 +316,7 @@ class IgnoreLabelSurfaceDiceLoss(_Loss):
         self,
         ignore_label: int,
         soft_skel_iterations: int = 3,
-        smooth: float = 3.,
+        smooth: float = 3.0,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -311,8 +341,13 @@ class IgnoreLabelSurfaceDiceLoss(_Loss):
             The calculated loss.
         """
         # Create a mask to ignore the specified label in the target
-        surf_dice_score = masked_surface_dice(data=data, target=target, ignore_label=self.ignore_label, soft_skel_iterations=self.soft_skel_iterations, smooth=self.smooth)
-        surf_dice_loss = 1. - surf_dice_score
-        
+        surf_dice_score = masked_surface_dice(
+            data=data,
+            target=target,
+            ignore_label=self.ignore_label,
+            soft_skel_iterations=self.soft_skel_iterations,
+            smooth=self.smooth,
+        )
+        surf_dice_loss = 1.0 - surf_dice_score
 
         return surf_dice_loss

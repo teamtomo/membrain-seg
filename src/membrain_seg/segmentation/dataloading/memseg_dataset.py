@@ -141,7 +141,6 @@ class CryoETMemSegDataset(Dataset):
             self.labels.append(label)
             self.dataset_labels.append(get_dataset_token(entry[0]))
 
-
     def initialize_imgs_paths(self) -> None:
         """
         Initializes the list of paths to image-label pairs.
@@ -197,6 +196,20 @@ class CryoETMemSegDataset(Dataset):
 
 
 def get_dataset_token(patch_name):
+    """
+    Get the dataset token from the patch name.
+
+    Parameters
+    ----------
+    patch_name : str
+        The name of the patch.
+
+    Returns
+    -------
+    str
+        The dataset token.
+
+    """
     basename = os.path.basename(patch_name)
     dataset_token = basename.split("_")[0]
     return dataset_token
