@@ -53,7 +53,7 @@ class IgnoreLabelDiceCELoss(_Loss):
     def __init__(
         self,
         ignore_label: int,
-        reduction: str = "mean",
+        reduction: str = "none",
         lambda_dice: float = 1.0,
         lambda_ce: float = 1.0,
         **kwargs,
@@ -95,11 +95,23 @@ class IgnoreLabelDiceCELoss(_Loss):
             orig_data, target_tensor, reduction="none"
         )
         bce_loss[~mask] = 0.0
-        bce_loss = torch.sum(bce_loss) / torch.sum(mask)
+        #TODO: Check if this is correct: I adjusted the loss to be computed per batch element
+        bce_loss = torch.sum(bce_loss, dim=0) / torch.sum(mask, dim=0)
+        print(bce_loss.shape, "<------------- Please check the shape of the BCE loss here!!")
+        print(bce_loss.shape, "<------------- Please check the shape of the BCE loss here!!")
+        print(bce_loss.shape, "<------------- Please check the shape of the BCE loss here!!")
+        print(bce_loss.shape, "<------------- Please check the shape of the BCE loss here!!")
         dice_loss = self.dice_loss(data, target, mask)
+        dice_loss = torch.sum(dice_loss, dim=0) / torch.sum(mask, dim=0)
 
+
+        print(bce_loss.shape, "<------------- Please check the shape of the Dice loss here!!")
+        print(bce_loss.shape, "<------------- Please check the shape of the Dice loss here!!")
+        print(bce_loss.shape, "<------------- Please check the shape of the Dice loss here!!")
+        print(bce_loss.shape, "<------------- Please check the shape of the Dice loss here!!")
+        print("Also check values!")
         # Combine the Dice and Cross Entropy losses
-        combined_loss = self.lambda_dice * dice_loss + self.lambda_ce * bce_loss
+        combined_loss = self.lambda_dice * dice_loss + self.lambda_ce * bce_loss # Combined loss should be per batch element
         return combined_loss
 
 
@@ -153,4 +165,90 @@ class DeepSuperVisionLoss(_Loss):
         loss = 0.0
         for weight, data, target in zip(self.weights, inputs, targets):
             loss += weight * self.loss_fn(data, target)
+        return loss
+
+
+class CombinedLoss(_Loss):
+    """
+    Combine multiple loss functions into a single one.
+
+    Parameters
+    ----------
+    losses : List[Callable]
+        A list of loss function instances.
+    weights : List[float]
+        List of weights corresponding to each loss function (must 
+        be of same length as losses).
+    loss_inclusion_tokens : List[List[str]]
+        A list of lists containing tokens for each loss function.
+        Each sublist corresponds to a loss function and contains 
+        tokens for which the loss should be included.
+        If the list contains "all", then the loss will be included
+        for all cases.
+
+    Notes
+    ----------
+    IMPORTANT: Loss functions need to return a tensors containing the 
+    loss for each batch element. 
+
+    The loss_exclusion_tokens parameter is used to exclude certain
+    cases from the loss calculation. For example, if the loss_exclusion_tokens
+    parameter is [["ds1", "ds2"], ["ds1"]], then the first loss function
+    will be excluded for cases where the dataset label is "ds1" or "ds2",
+    and the second loss function will be excluded for cases where the
+    dataset label is "ds1".
+
+    
+    """
+
+    def __init__(
+        self,
+        losses: list,
+        weights: list,
+        loss_inclusion_tokens: list,
+        **kwargs,
+    ) -> None:
+        super().__init__()
+        self.losses = losses
+        self.weights = weights
+        self.loss_inclusion_tokens = loss_inclusion_tokens
+
+    def forward(self, data: torch.Tensor, target: torch.Tensor, ds_label: list) -> torch.Tensor:
+        """
+        Compute the combined loss.
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            Tensor of model outputs.
+        target : torch.Tensor
+            Tensor of target labels.
+        ds_label : List[str]
+            List of dataset labels for each batch element.
+
+        Returns
+        -------
+        torch.Tensor
+            The calculated combined loss.
+        """
+
+        loss = 0.
+        for loss_idx, (cur_loss, cur_weight, skip_cases) in enumerate(zip(self.losses, self.weights, self.apply_loss_not_for)):
+            cur_loss_val = cur_loss(data, target)
+
+            print("CHECK WHETHER THE COMBINED LOSS IS CORRECTLY COMPUTED HERE!")
+            print("CHECK WHETHER THE COMBINED LOSS IS CORRECTLY COMPUTED HERE!")
+            # Zero out losses for excluded cases
+            for batch_idx, ds_lab in ds_label:
+                if "all" in self.loss_inclusion_tokens[loss_idx] or \
+                        ds_lab in self.loss_inclusion_tokens[loss_idx]:
+                    continue
+                cur_loss_val[batch_idx] = 0.
+
+            # Aggregate loss
+            cur_loss_val = cur_loss_val.sum() / ((cur_loss_val != 0.).sum() + 1e-3)
+            loss += cur_weight * cur_loss_val
+        
+        # Normalize loss
+        loss = loss / self.weights.sum()
         return loss
