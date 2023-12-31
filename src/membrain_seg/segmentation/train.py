@@ -26,7 +26,7 @@ def train(
     sub_name: str = "1",
     use_surf_dice: bool = False,
     surf_dice_weight: float = 1.0,
-    surf_dice_tokens: list = ["all"],
+    surf_dice_tokens: list = None,
 ):
     """
     Train the model on the specified data.
@@ -55,6 +55,12 @@ def train(
         Name of the project for logging purposes.
     sub_name : str, optional
         Sub-name of the project for logging purposes.
+    use_surf_dice : bool, optional
+        If True, enables Surface-Dice loss.
+    surf_dice_weight : float, optional
+        Weight for the Surface-Dice loss.
+    surf_dice_tokens : list, optional
+        List of tokens to use for the Surface-Dice loss.
 
     Returns
     -------
@@ -70,10 +76,10 @@ def train(
 
     # Set up the model
     model = SemanticSegmentationUnet(
-        max_epochs=max_epochs, 
-        use_deep_supervision=use_deep_supervision, 
-        use_surf_dice=use_surf_dice, 
-        surf_dice_weight=surf_dice_weight, 
+        max_epochs=max_epochs,
+        use_deep_supervision=use_deep_supervision,
+        use_surf_dice=use_surf_dice,
+        surf_dice_weight=surf_dice_weight,
         surf_dice_tokens=surf_dice_tokens,
     )
 

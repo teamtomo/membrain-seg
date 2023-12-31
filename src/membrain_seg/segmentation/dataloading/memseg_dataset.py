@@ -53,7 +53,9 @@ class CryoETMemSegDataset(Dataset):
         self,
         img_folder: str,
         label_folder: str,
+        vec_folder: str = None,
         train: bool = False,
+        return_normals: bool = False,
         aug_prob_to_one: bool = False,
     ) -> None:
         """
@@ -65,14 +67,23 @@ class CryoETMemSegDataset(Dataset):
             The path to the directory containing the image files.
         label_folder : str
             The path to the directory containing the label files.
+        vec_folder : str, default None
+            The path to the directory containing the normal vector files.
         train : bool, default False
             A flag indicating whether the dataset is used for training or validation.
+        return_normals : bool, default False
+            A flag indicating whether the normals should be returned or not.
         aug_prob_to_one : bool, default False
             A flag indicating whether the probability of augmentation should be set
             to one or not.
         """
         self.train = train
-        self.img_folder, self.label_folder = img_folder, label_folder
+        self.img_folder, self.label_folder, self.vec_folder = (
+            img_folder,
+            label_folder,
+            vec_folder,
+        )
+        self.return_normals = return_normals
         self.initialize_imgs_paths()
         self.load_data()
         self.transforms = (
@@ -101,6 +112,8 @@ class CryoETMemSegDataset(Dataset):
             "image": np.expand_dims(self.imgs[idx], 0),
             "label": np.expand_dims(self.labels[idx], 0),
         }
+        if self.return_normals:
+            idx_dict["vectors"] = np.expand_dims(self.normals[idx], 0)
         idx_dict = self.transforms(idx_dict)
         idx_dict["dataset"] = self.dataset_labels[idx]
         return idx_dict
@@ -119,6 +132,9 @@ class CryoETMemSegDataset(Dataset):
     def load_data(self) -> None:
         """
         Loads image-label pairs into memory from the specified directories.
+
+        In addition to the image-label pairs, the normals are also loaded
+        if the return_normals flag is set to True.
 
         Notes
         -----
@@ -141,6 +157,17 @@ class CryoETMemSegDataset(Dataset):
             self.labels.append(label)
             self.dataset_labels.append(get_dataset_token(entry[0]))
 
+            if self.return_normals:
+                norm = np.stack(
+                    [
+                        np.transpose(read_nifti(entry[2][i]), (1, 2, 0))
+                        for i in range(3)
+                    ],
+                    axis=-1,
+                )
+                assert not np.isnan(norm).any(), f"NaNs detected in normals for {entry}"
+                assert not np.isinf(norm).any(), f"Infs detected in normals for {entry}"
+                self.normals.append(norm)
 
     def initialize_imgs_paths(self) -> None:
         """
@@ -157,6 +184,21 @@ class CryoETMemSegDataset(Dataset):
             filename = filename[:-7] + "_0000.nii.gz"
             img_filename = os.path.join(self.img_folder, filename)
             self.data_paths.append((img_filename, label_filename))
+
+            if self.return_normals:
+                filetoken = filename[:-7]  # assumes .nii.gz extension
+                vec_filenames = [
+                    os.path.join(
+                        self.vec_folder, filetoken + "_norm" + str(2) + ".nii.gz"
+                    ),
+                    os.path.join(
+                        self.vec_folder, filetoken + "_norm" + str(1) + ".nii.gz"
+                    ),
+                    os.path.join(
+                        self.vec_folder, filetoken + "_norm" + str(3) + ".nii.gz"
+                    ),
+                ]
+                self.data_paths[-1] += (vec_filenames,)
 
     def test(self, test_folder: str, num_files: int = 20) -> None:
         """
@@ -197,6 +239,20 @@ class CryoETMemSegDataset(Dataset):
 
 
 def get_dataset_token(patch_name):
+    """
+    Get the dataset token from the patch name.
+
+    Parameters
+    ----------
+    patch_name : str
+        The name of the patch.
+
+    Returns
+    -------
+    str
+        The dataset token.
+
+    """
     basename = os.path.basename(patch_name)
     dataset_token = basename.split("_")[0]
     return dataset_token

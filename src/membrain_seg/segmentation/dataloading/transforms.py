@@ -1,18 +1,43 @@
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 import torch
+from monai.config import KeysCollection
+from monai.data.meta_obj import get_track_meta
 from monai.transforms import (
     Compose,
     MapTransform,
     OneOf,
     RandAdjustContrastd,
+    RandAxisFlipd,
     Randomizable,
+    RandRotate90d,
+    RandRotated,
+    RandZoomd,
     Resize,
     Transform,
     Transposed,
     Zoomd,
 )
+from monai.transforms.spatial.dictionary import (
+    DtypeLike,
+    GridSampleMode,
+    GridSamplePadMode,
+)
+from monai.transforms.utils import _create_rotate
+from monai.utils import convert_to_tensor
+from monai.utils.enums import TraceKeys
 from scipy.ndimage import convolve, median_filter
 
 
@@ -612,3 +637,516 @@ AxesShuffle = Compose(
         RandApplyTransform(transform=AxesSwap, prob=0.5),
     ]
 )
+
+
+def adjust_normals_for_axes_shuffle(
+    normals: np.ndarray, shuffle_indices: List[int]
+) -> np.ndarray:
+    """
+    Adjust normal vectors to be correctly directed after axes shuffling.
+
+    Parameters
+    ----------
+    normals : ndarray
+        A 5-dimensional array of shape (batch_size, depth, height, width, 3)
+        representing the normal vectors.
+    shuffle_indices : List[int]
+        A list of indices representing the order of shuffled axes.
+
+    Returns
+    -------
+    ndarray
+        A 5-dimensional array containing the adjusted normals.
+
+    Notes
+    -----
+    This function assumes that the input normal vectors are in a 5-dimensional
+    array with the last dimension representing the 3 components of each normal vector.
+    It rearranges the normals based on the new order of axes provided by
+    shuffle_indices.
+    The shuffle_indices should be a permutation of [1, 2, 3] representing the new
+    order of the x, y, and z axes after shuffling.
+    """
+    # Create a mapping of the new axes order
+    new_axes_order = {shuffle_indices[i]: i for i in range(len(shuffle_indices))}
+    # Rearrange the normal vectors using the new axes order
+    adjusted_normals = normals[
+        :,
+        :,
+        :,
+        :,
+        [new_axes_order[1] - 1, new_axes_order[2] - 1, new_axes_order[3] - 1],
+    ]
+    return adjusted_normals
+
+
+class NormalsAxesShuffle(Randomizable, Transform):
+    """
+    A transform for shuffling axes, also adjusting normals accordingly if provided.
+
+    Parameters
+    ----------
+    keys : List[str]
+        Keys to the data items to be transformed.
+    vector_key : Optional[str]
+        Key to the vector data items to be adjusted.
+
+    Attributes
+    ----------
+    indices : tuple
+        The order of the indices after shuffling.
+
+    Methods
+    -------
+    randomize(data=None)
+        Randomly determine the axes order for shuffling.
+    __call__(data)
+        Apply the axis shuffling and adjust normals if vector_key is provided.
+    """
+
+    def __init__(self, keys, vector_key=None):
+        self.keys = keys
+        self.vector_key = vector_key
+
+    def randomize(self, data=None):
+        """Randomly choose the number of cuboids & their sizes."""
+        if self.R.random() < 1.0 / 3:
+            self.indices = (0, 2, 1, 3, 4)
+        elif self.R.random() < 2.0 / 3:
+            self.indices = (0, 1, 3, 2, 4)
+        else:
+            self.indices = (0, 3, 2, 1, 4)
+
+    def __call__(self, data):
+        """Apply transform."""
+        self.randomize(None)
+        shuffled_data = Transposed(keys=self.keys, indices=self.indices[:4])(data)
+        if self.vector_key is not None:
+            shuffled_vectors_data = Transposed(
+                keys=[self.vector_key], indices=self.indices
+            )(data)
+            shuffled_data["vectors"] = adjust_normals_for_axes_shuffle(
+                shuffled_vectors_data["vectors"], self.indices
+            )
+        return shuffled_data
+
+
+def create_axes_shuffle_with_vectors(vector_key: Optional[str] = None) -> Compose:
+    """
+    Axes shuffle with for image and vectors.
+
+    Create a composite transform for 3-fold axes shuffling with optional vector
+    adjustment.
+
+    Parameters
+    ----------
+    vector_key : Optional[str], default=None
+        Key to the vector data items to be adjusted.
+
+    Returns
+    -------
+    Compose
+        A composite transform comprising three random applications of
+        AdjustedAxesShuffle.
+
+    Notes
+    -----
+    This function returns a Compose object of MONAI transforms that applies
+    three instances of AdjustedAxesShuffle, each with a probability of 0.5,
+    to shuffle axes for 'image' and 'label' keys and adjust vectors if a
+    vector_key is provided.
+    """
+    return Compose(
+        [
+            RandApplyTransform(
+                transform=NormalsAxesShuffle(
+                    keys=("image", "label"), vector_key=vector_key
+                ),
+                prob=0.5,
+            ),
+            RandApplyTransform(
+                transform=NormalsAxesShuffle(
+                    keys=("image", "label"), vector_key=vector_key
+                ),
+                prob=0.5,
+            ),
+            RandApplyTransform(
+                transform=NormalsAxesShuffle(
+                    keys=("image", "label"), vector_key=vector_key
+                ),
+                prob=0.5,
+            ),
+        ]
+    )
+
+
+class RandRotate90dWithVectors(RandRotate90d):
+    """
+    Rotate image and vectors by 90 degrees.
+
+    Extend RandRotate90d to include the rotation of vector maps,
+    specifically normal vectors.
+
+    Parameters
+    ----------
+    keys : KeysCollection
+        Keys to the data items to be transformed.
+    vector_key : Hashable
+        Key to the vector data items to be adjusted.
+    prob : float, optional
+        Probability of applying the transformation. Default is 0.1.
+    max_k : int, optional
+        Maximum number of rotations to apply. Default is 3.
+    spatial_axes : Tuple[int, int], optional
+        Axes along which to rotate the image. Default is (0, 1).
+    allow_missing_keys : bool, optional
+        Do not raise exception if key is missing. Default is False.
+
+    Methods
+    -------
+    rotate_vectors(vector_map: torch.Tensor, k: int) -> torch.Tensor
+        Rotate the vector map after rotating the intensity map.
+    __call__(data: Mapping[Hashable, torch.Tensor]) -> Mapping[Hashable, torch.Tensor]
+        Apply the transform to the input data.
+    """
+
+    def __init__(
+        self,
+        keys: KeysCollection,
+        vector_key: Hashable,
+        prob: float = 0.1,
+        max_k: int = 3,
+        spatial_axes: Tuple[int, int] = (0, 1),
+        allow_missing_keys: bool = False,
+    ) -> None:
+        super().__init__(keys, prob, max_k, spatial_axes, allow_missing_keys)
+        self.vector_key = vector_key
+
+    def rotate_vectors(self, vector_map: torch.Tensor, k: int) -> torch.Tensor:
+        """After rotating the intensity maps, also rotate each normal."""
+        # Rotate the vector_map by k * 90 degrees
+        vector_map_rotated = torch.rot90(
+            vector_map, k, (self.spatial_axes[0] + 1, self.spatial_axes[1] + 1)
+        )
+        # Rotate each vector in its new position to its correct orientation
+        for _ in range(k):
+            dummy = vector_map_rotated.clone()
+            vector_map_rotated[..., self.spatial_axes[0]] = -vector_map_rotated[
+                ..., self.spatial_axes[1]
+            ]
+            vector_map_rotated[..., self.spatial_axes[1]] = dummy[
+                ..., self.spatial_axes[0]
+            ]
+
+        return vector_map_rotated
+
+    def __call__(
+        self, data: Mapping[Hashable, torch.Tensor]
+    ) -> Mapping[Hashable, torch.Tensor]:
+        """Apply the transform."""
+        # Apply the original RandRotate90d transformation (not on vectors map)
+        d = super().__call__(data)
+        if self.vector_key is not None:
+            if self._do_transform:
+                # Rotate the vectors within the vector mask
+                d[self.vector_key] = self.rotate_vectors(
+                    d[self.vector_key], self._rand_k
+                )
+
+        return d
+
+
+class RandRotatedWithVectors(RandRotated):
+    """
+    Rotate image and vectors.
+
+    Extend RandRotated to include rotation of vector maps with arbitrary angles,
+    adjusting normal vectors.
+
+    Parameters
+    ----------
+    keys : KeysCollection
+        Keys to the data items to be transformed.
+    vector_key : Hashable
+        Key to the vector data items to be adjusted.
+    range_x, range_y, range_z : Union[Tuple[float, float], float], optional
+        Range of rotation angles for the x, y, and z axes respectively.
+        Default is 0.0.
+    prob : float, optional
+        Probability of applying the transformation. Default is 0.1.
+    keep_size : bool, optional
+        Keep the original size of the image. Default is True.
+    mode : GridSampleMode, optional
+        Interpolation mode to calculate output values. Default is
+        GridSampleMode.BILINEAR.
+    padding_mode : GridSamplePadMode, optional
+        Padding mode for outside grid values. Default is GridSamplePadMode.BORDER.
+    align_corners : Union[Sequence[bool], bool], optional
+        Align the corners of the input and output. Default is False.
+    dtype : Union[Sequence[Union[DtypeLike, torch.dtype]], DtypeLike, torch.dtype],
+        optional
+        Data type of the output data. Default is np.float32.
+    allow_missing_keys : bool, optional
+        Do not raise exception if key is missing. Default is False.
+
+    Methods
+    -------
+    get_rotation_matrix() -> np.ndarray
+        Compute and return the rotation matrix for the transform.
+    rotate_vectors(vector_map: torch.Tensor, rot_matrix: np.ndarray) -> torch.Tensor
+        Rotate the vectors after their maps are rotated.
+    __call__(data: Mapping[Hashable, torch.Tensor]) -> Dict[Hashable, torch.Tensor]
+        Apply the transform to the input data.
+    """
+
+    def __init__(
+        self,
+        keys: KeysCollection,
+        vector_key: Hashable,
+        range_x: Union[Tuple[float, float], float] = 0.0,
+        range_y: Union[Tuple[float, float], float] = 0.0,
+        range_z: Union[Tuple[float, float], float] = 0.0,
+        prob: float = 0.1,
+        keep_size: bool = True,
+        mode: GridSampleMode = GridSampleMode.BILINEAR,
+        padding_mode: GridSamplePadMode = GridSamplePadMode.BORDER,
+        align_corners: Union[Sequence[bool], bool] = False,
+        dtype: Union[
+            Sequence[Union[DtypeLike, torch.dtype]], DtypeLike, torch.dtype
+        ] = np.float32,
+        allow_missing_keys: bool = False,
+    ) -> None:
+        super().__init__(
+            keys,
+            range_x,
+            range_y,
+            range_z,
+            prob,
+            keep_size,
+            mode,
+            padding_mode,
+            align_corners,
+            dtype,
+            allow_missing_keys,
+        )
+        self.vector_key = vector_key
+
+    def get_rotation_matrix(self) -> np.ndarray:
+        """Compute the rotation matrix used for the transform."""
+        radians = (self.rand_rotate.x, self.rand_rotate.y, self.rand_rotate.z)
+        rotation_matrix = _create_rotate(spatial_dims=3, radians=radians)
+        return rotation_matrix[:3, :3].T
+
+    def rotate_vectors(
+        self, vector_map: torch.Tensor, rot_matrix: np.ndarray
+    ) -> torch.Tensor:
+        """Rotate the vectors after their maps are rotated."""
+        vector_map_rotated = vector_map.clone()
+        vector_map_rotated_np = vector_map_rotated.numpy()
+        vector_map_rotated_np = np.einsum(
+            "ijklm,nm->ijkln", vector_map_rotated_np, rot_matrix
+        )
+        to_torch = torch.from_numpy(vector_map_rotated_np)
+        return to_torch
+
+    def __call__(
+        self, data: Mapping[Hashable, torch.Tensor]
+    ) -> Dict[Hashable, torch.Tensor]:
+        """Apply the transform."""
+        d = dict(data)
+        self.randomize(None)
+        # all the keys share the same random rotate angle
+        self.rand_rotate.randomize()
+        for key, mode, padding_mode, align_corners, dtype in self.key_iterator(
+            d, self.mode, self.padding_mode, self.align_corners, self.dtype
+        ):
+            if self._do_transform:
+                if key == "vectors":
+                    # Split the channels
+                    channels = torch.split(d[key], 1, -1)
+                    # Rotate the channels separately
+                    rotated_channels = []
+                    for channel in channels:
+                        squeezed_channel = torch.squeeze(channel, -1)
+                        rotated_squeezed_channel = self.rand_rotate(
+                            squeezed_channel,
+                            mode=mode,
+                            padding_mode=padding_mode,
+                            align_corners=align_corners,
+                            dtype=dtype,
+                            randomize=False,
+                        )
+                        rotated_channel = torch.unsqueeze(rotated_squeezed_channel, -1)
+                        rotated_channels.append(rotated_channel)
+
+                    # Merge the channels
+                    d[key] = torch.cat(rotated_channels, dim=-1)
+                else:
+                    d[key] = self.rand_rotate(
+                        d[key],
+                        mode=mode,
+                        padding_mode=padding_mode,
+                        align_corners=align_corners,
+                        dtype=dtype,
+                        randomize=False,
+                    )
+            else:
+                d[key] = convert_to_tensor(
+                    d[key], track_meta=get_track_meta(), dtype=torch.float32
+                )
+
+            if get_track_meta():
+                rot_info = (
+                    self.pop_transform(d[key], check=False)
+                    if self._do_transform
+                    else {}
+                )
+                self.push_transform(d[key], extra_info=rot_info)
+
+        if self._do_transform:
+            # Get the rotation matrix for the applied rotation
+            rot_matrix = self.get_rotation_matrix()
+            # Rotate the vectors within the vector mask
+            if self.vector_key is not None:
+                d[self.vector_key] = self.rotate_vectors(d[self.vector_key], rot_matrix)
+
+        return d
+
+
+class RandZoomdWithChannels(RandZoomd):
+    """
+    Extends RandZoomd for better handling of multi-channel data.
+
+    This class specifically adjusts the random zooming to handle cases where
+    the input data might have multiple channels (e.g., color images / normals).
+
+    Methods
+    -------
+    __call__(data: Mapping[Hashable, torch.Tensor]) -> Dict[Hashable, torch.Tensor]
+        Apply the random zoom transform to each channel of the input data.
+    """
+
+    def __call__(
+        self, data: Mapping[Hashable, torch.Tensor]
+    ) -> Dict[Hashable, torch.Tensor]:
+        """Apply the transform."""
+        d = dict(data)
+        first_key: Hashable = self.first_key(d)
+        if first_key == ():
+            out: Dict[Hashable, torch.Tensor] = convert_to_tensor(
+                d, track_meta=get_track_meta()
+            )
+            return out
+
+        self.randomize(None)
+
+        # all the keys share the same random zoom factor
+        self.rand_zoom.randomize(d[first_key])
+
+        for key, mode, padding_mode, align_corners in self.key_iterator(
+            d, self.mode, self.padding_mode, self.align_corners
+        ):
+            if self._do_transform:
+                # Check if the input has 3 channels
+                if d[key].shape[-1] == 3:
+                    transformed_channels = []
+                    # Process each channel separately
+                    for c in range(3):
+                        channel_data = d[key][..., c]
+                        transformed_channel = self.rand_zoom(
+                            channel_data,
+                            mode=mode,
+                            padding_mode=padding_mode,
+                            align_corners=align_corners,
+                            randomize=False,
+                        )
+                        transformed_channels.append(transformed_channel)
+                    # Combine the transformed channels
+                    d[key] = torch.stack(transformed_channels, dim=-1)
+                else:
+                    d[key] = self.rand_zoom(
+                        d[key],
+                        mode=mode,
+                        padding_mode=padding_mode,
+                        align_corners=align_corners,
+                        randomize=False,
+                    )
+            else:
+                d[key] = convert_to_tensor(
+                    d[key], track_meta=get_track_meta(), dtype=torch.float32
+                )
+            if get_track_meta():
+                xform = (
+                    self.pop_transform(d[key], check=False)
+                    if self._do_transform
+                    else {}
+                )
+                self.push_transform(d[key], extra_info=xform)
+        return d
+
+
+class RandAxisFlipdWithNormals(RandAxisFlipd):
+    """
+    Extends RandAxisFlipd to handle normal vectors during random axis flipping.
+
+    This class adjusts the axis flipping transform to correctly flip normal vectors
+    when flipping other associated data.
+
+    Parameters
+    ----------
+    keys : KeysCollection
+        Keys to the data items to be transformed.
+    normal_keys : KeysCollection
+        Keys to the normal vector data items to be adjusted.
+    prob : float, optional
+        Probability of applying the transformation. Default is 0.1.
+    allow_missing_keys : bool, optional
+        Do not raise exception if key is missing. Default is False.
+
+    Methods
+    -------
+    __call__(data: Mapping[Hashable, torch.Tensor]) -> Dict[Hashable, torch.Tensor]
+        Apply the transform to the input data and adjust normal vectors accordingly.
+    inverse(data: Mapping[Hashable, torch.Tensor]) -> Dict[Hashable, torch.Tensor]
+        Get the inverse transform, adjusting the normals back to their original
+        orientation.
+    """
+
+    def __init__(
+        self,
+        keys: KeysCollection,
+        normal_keys: KeysCollection,
+        prob: float = 0.1,
+        allow_missing_keys: bool = False,
+    ) -> None:
+        super().__init__(keys, prob, allow_missing_keys)
+        self.normal_keys = normal_keys
+
+    def __call__(
+        self, data: Mapping[Hashable, torch.Tensor]
+    ) -> Dict[Hashable, torch.Tensor]:
+        """Apply the transform."""
+        d = super().__call__(data)
+        if self.normal_keys is not None:
+            for key in self.normal_keys:
+                if key in d and self._do_transform:
+                    # Flip the corresponding axis of the normal vector
+                    d[key][:, :, :, :, self.flipper._axis] *= -1
+        return d
+
+    def inverse(
+        self, data: Mapping[Hashable, torch.Tensor]
+    ) -> Dict[Hashable, torch.Tensor]:
+        """Get the inverse transform."""
+        d = super().inverse(data)
+
+        for key in self.normal_keys:
+            if key in d:
+                # Get the flip axis from the first transformed key
+                first_key: Hashable = self.first_key(data)
+                xform = self.pop_transform(d[first_key])
+
+                if xform[TraceKeys.DO_TRANSFORM]:
+                    d[key][xform[TraceKeys.EXTRA_INFO]["axis"]] *= -1
+
+        return d

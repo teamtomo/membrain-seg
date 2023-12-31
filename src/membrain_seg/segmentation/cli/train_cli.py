@@ -88,7 +88,7 @@ def train_advanced(
         True, help='Whether to use Surface-Dice as a loss. Pass "True" or "False".'
     ),
     surface_dice_weight: float = Option(  # noqa: B008
-        1.0, help='Scaling factor for the Surface-Dice loss. '
+        1.0, help="Scaling factor for the Surface-Dice loss. "
     ),
     surface_dice_tokens: list = Option(  # noqa: B008
         ["all"],
