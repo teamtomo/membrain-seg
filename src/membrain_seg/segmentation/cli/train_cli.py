@@ -84,6 +84,18 @@ def train_advanced(
             but also severely increases training time.\
                 Pass "True" or "False".',
     ),
+    use_surface_dice: bool = Option(  # noqa: B008
+        True, help='Whether to use Surface-Dice as a loss. Pass "True" or "False".'
+    ),
+    surface_dice_weight: float = Option(  # noqa: B008
+        1.0, help='Scaling factor for the Surface-Dice loss. '
+    ),
+    surface_dice_tokens: list = Option(  # noqa: B008
+        ["all"],
+        help='List of tokens to use for the Surface-Dice loss. \
+            Pass a list of strings.\
+                For example, ["all", "membrane"]',
+    ),
     use_deep_supervision: bool = Option(  # noqa: B008
         True, help='Whether to use deep supervision. Pass "True" or "False".'
     ),
@@ -119,6 +131,12 @@ def train_advanced(
         If set to False, data augmentation still happens, but not as frequently.
         More data augmentation can lead to a better performance, but also increases the
         training time substantially.
+    use_surface_dice : bool
+        Determines whether to use Surface-Dice loss, by default True.
+    surface_dice_weight : float
+        Scaling factor for the Surface-Dice loss, by default 1.0.
+    surface_dice_tokens : list
+        List of tokens to use for the Surface-Dice loss, by default ["all"].
     use_deep_supervision : bool
         Determines whether to use deep supervision, by default True.
     project_name : str
@@ -140,6 +158,9 @@ def train_advanced(
         max_epochs=max_epochs,
         aug_prob_to_one=aug_prob_to_one,
         use_deep_supervision=use_deep_supervision,
+        use_surf_dice=use_surface_dice,
+        surf_dice_weight=surface_dice_weight,
+        surf_dice_tokens=surface_dice_tokens,
         project_name=project_name,
         sub_name=sub_name,
     )
