@@ -24,6 +24,9 @@ def train(
     use_deep_supervision: bool = False,
     project_name: str = "membrain-seg_v0",
     sub_name: str = "1",
+    use_surf_dice: bool = False,
+    surf_dice_weight: float = 1.0,
+    surf_dice_tokens: list = ["all"],
 ):
     """
     Train the model on the specified data.
@@ -67,7 +70,11 @@ def train(
 
     # Set up the model
     model = SemanticSegmentationUnet(
-        max_epochs=max_epochs, use_deep_supervision=use_deep_supervision
+        max_epochs=max_epochs, 
+        use_deep_supervision=use_deep_supervision, 
+        use_surf_dice=use_surf_dice, 
+        surf_dice_weight=surf_dice_weight, 
+        surf_dice_tokens=surf_dice_tokens,
     )
 
     project_name = project_name
