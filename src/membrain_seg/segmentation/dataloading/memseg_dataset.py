@@ -102,6 +102,7 @@ class CryoETMemSegDataset(Dataset):
             "label": np.expand_dims(self.labels[idx], 0),
         }
         idx_dict = self.transforms(idx_dict)
+        idx_dict["dataset"] = self.dataset_labels[idx]
         return idx_dict
 
     def __len__(self) -> int:
@@ -126,6 +127,7 @@ class CryoETMemSegDataset(Dataset):
         print("Loading images into dataset.")
         self.imgs = []
         self.labels = []
+        self.dataset_labels = []
         for entry in self.data_paths:
             label = read_nifti(
                 entry[1]
@@ -137,6 +139,8 @@ class CryoETMemSegDataset(Dataset):
             img = np.transpose(img, (1, 2, 0))
             self.imgs.append(img)
             self.labels.append(label)
+            self.dataset_labels.append(get_dataset_token(entry[0]))
+
 
     def initialize_imgs_paths(self) -> None:
         """
@@ -190,3 +194,9 @@ class CryoETMemSegDataset(Dataset):
                     os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
                     test_sample["label"][1][0, :, :, num_mask],
                 )
+
+
+def get_dataset_token(patch_name):
+    basename = os.path.basename(patch_name)
+    dataset_token = basename.split("_")[0]
+    return dataset_token
