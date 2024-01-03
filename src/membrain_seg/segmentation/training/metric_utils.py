@@ -34,7 +34,7 @@ def masked_accuracy(
     mask = (
         y_gt == ignore_label
         if ignore_label is not None
-        else torch.ones_like(y_gt).bool()
+        else torch.zeros_like(y_gt).bool()
     )
     acc = (threshold_function(y_pred, threshold_value=threshold_value) == y_gt).float()
     acc[mask] = 0.0
