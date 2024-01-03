@@ -46,13 +46,15 @@ def get_corrections_from_folder(folder_name, orig_pred_file):
             or filename.startswith("Ignore")
             or filename.startswith("ignore")
         ):
-            print("ATTENTION! Not processing", filename)
-            print("Is this intended?")
+            print(
+                "File does not fit into Add/Remove/Ignore naming! " "Not processing",
+                filename,
+            )
             continue
         readdata = sitk.GetArrayFromImage(
             sitk.ReadImage(os.path.join(folder_name, filename))
         )
-        print("Adding file", filename, "<--")
+        print("Adding file", filename)
 
         if filename.startswith("Add") or filename.startswith("add"):
             add_patch += readdata

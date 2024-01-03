@@ -12,6 +12,7 @@ def test_loss_fn_correctness():
 
     import torch
     from membrain_seg.segmentation.training.optim_utils import (
+        CombinedLoss,
         DeepSuperVisionLoss,
         IgnoreLabelDiceCELoss,
     )
@@ -73,17 +74,24 @@ def test_loss_fn_correctness():
     pred_labels[2][pred_labels[2] < 0.0] = 0.0
 
     ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
+    combined_loss = CombinedLoss(
+        losses=[ignore_dice_loss], weights=[1.0], loss_inclusion_tokens=["ds1"]
+    )
     losses = test_ignore_dice_loss(ignore_dice_loss, pred_labels, gt_labels)
     assert losses[0] == losses[1] == losses[2] == losses[4] != losses[3]
 
     deep_supervision_loss = DeepSuperVisionLoss(
-        ignore_dice_loss, weights=[1.0, 0.5, 0.25, 0.125, 0.0675]
+        combined_loss, weights=[1.0, 0.5, 0.25, 0.125, 0.0675]
     )
     gt_labels_ds = extend_labels(gt_labels)
 
     ds_losses = []
     for pred_label in pred_labels:
         pred_labels_ds = extend_labels(pred_label)
-        ds_losses.append(deep_supervision_loss(pred_labels_ds, gt_labels_ds))
+        ds_losses.append(
+            deep_supervision_loss(
+                pred_labels_ds, gt_labels_ds, ["ds1"] * len(gt_labels_ds)
+            )
+        )
     assert ds_losses[0] == ds_losses[1] == ds_losses[2] == ds_losses[4] != ds_losses[3]
     print("All ignore loss assertions passed.")

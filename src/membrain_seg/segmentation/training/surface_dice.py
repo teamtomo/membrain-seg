@@ -1,19 +1,18 @@
 """
-Surface-Dice loss implementation.
+Surface Dice implementation.
 
-Adapted from: clDice - A Novel Topology-Preserving Loss Function for 
-        Tubular Structure Segmentation
+Adapted from: clDice - A Novel Topology-Preserving Loss Function for Tubular 
+Structure Segmentation
 Original Authors: Johannes C. Paetzold and Suprosanna Shit
 Sources: https://github.com/jocpae/clDice/blob/master/cldice_loss/pytorch/
-         soft_skeleton.py
+        soft_skeleton.py
          https://github.com/jocpae/clDice/blob/master/cldice_loss/pytorch/cldice.py 
 License: MIT License.
 
-The following code is a modification of the original clDice implementation. 
-        Modifications were made to 
-include additional functionality and integrate with new project requirements. 
-        The original license and 
-copyright notice are provided below.
+The following code is a modification of the original clDice implementation.
+Modifications were made to include additional functionality and integrate 
+with new project requirements. The original license and copyright notice are 
+provided below.
 
 MIT License
 
@@ -38,9 +37,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import math
+
 import torch
 import torch.nn.functional as F
-from scipy.ndimage import gaussian_filter
 from torch.nn.functional import sigmoid
 from torch.nn.modules.loss import _Loss
 
@@ -166,7 +166,8 @@ def soft_skel(
     iter_ : int
         Number of iterations for skeletonization.
     separate_pool : bool, optional
-        If True, perform separate erosion and dilation operations. Default is False.
+        If True, perform separate erosion and dilation operations.
+        Default is False.
 
     Returns
     -------
@@ -187,13 +188,115 @@ def soft_skel(
     return skel
 
 
+def gaussian_kernel(size: int, sigma: float) -> torch.Tensor:
+    """
+    Creates a 3D Gaussian kernel using the specified size and sigma.
+
+    Parameters
+    ----------
+    size : int
+        The size of the Gaussian kernel. It determines the length of
+        each dimension of the cube.
+    sigma : float
+        The standard deviation of the Gaussian kernel. It controls
+        the spread of the Gaussian.
+
+    Returns
+    -------
+    torch.Tensor
+        A 3D tensor representing the Gaussian kernel.
+
+    Notes
+    -----
+    The function creates a Gaussian kernel, which is essentially a
+    cube of dimensions [size, size, size]. Each entry in the cube is
+    computed using the Gaussian function based on its distance from the center.
+    The kernel is normalized so that its total sum equals 1.
+    """
+    # Define a coordinate grid centered at (0,0,0)
+    grid = torch.arange(size, dtype=torch.float32) - (size - 1) / 2
+    # Create a 3D meshgrid
+    x, y, z = torch.meshgrid(grid, grid, grid)
+    xyz_grid = torch.stack([x, y, z], dim=-1)
+
+    # Calculate the 3D Gaussian kernel
+    gaussian_kernel = torch.exp(-torch.sum(xyz_grid**2, dim=-1) / (2 * sigma**2))
+    gaussian_kernel /= (2 * math.pi * sigma**2) ** (3 / 2)  # Normalize
+
+    # Ensure sum of values in gaussian kernel equals 1.
+    gaussian_kernel = gaussian_kernel / torch.sum(gaussian_kernel)
+    return gaussian_kernel
+
+
+gaussian_kernel_dict = {}
+""" Not sure why, but moving the gaussian kernel to GPU takes surprisingly long.+
+So we precompute it, store it on GPU, and reuse it.
+"""
+
+
+def apply_gaussian_filter(
+    seg: torch.Tensor, kernel_size: int, sigma: float
+) -> torch.Tensor:
+    """
+    Apply a Gaussian filter to a segmentation tensor using PyTorch.
+
+    This function convolves the input tensor with a Gaussian kernel.
+    The function creates or retrieves a Gaussian kernel based on the
+    specified size and standard deviation, and applies 3D convolution to each
+    channel of each batch item with appropriate padding to maintain spatial
+    dimensions.
+
+    Parameters
+    ----------
+    seg : torch.Tensor
+        The input segmentation tensor of shape (batch, channel, X, Y, Z).
+    kernel_size : int
+        The size of the Gaussian kernel, determining the length of each
+        dimension of the cube.
+    sigma : float
+        The standard deviation of the Gaussian kernel, controlling the spread.
+
+    Returns
+    -------
+    torch.Tensor
+        The filtered segmentation tensor of the same shape as input.
+
+    Notes
+    -----
+    This function uses a precomputed dictionary to enhance performance by
+    storing Gaussian kernels. If a kernel with the specified size and standard
+    deviation does not exist in the dictionary, it is created and added. The
+    function assumes the input tensor is a 5D tensor, applies 3D convolution
+    using the Gaussian kernel with padding to maintain spatial dimensions, and
+    it performs the operation separately for each channel of each batch item.
+    """
+    # Create the Gaussian kernel or load it from the dictionary
+    global gaussian_kernel_dict
+    if (kernel_size, sigma) not in gaussian_kernel_dict.keys():
+        gaussian_kernel_dict[(kernel_size, sigma)] = gaussian_kernel(
+            kernel_size, sigma
+        ).to(seg.device)
+    g_kernel = gaussian_kernel_dict[(kernel_size, sigma)]
+
+    # Add batch and channel dimensions
+    g_kernel = g_kernel.view(1, 1, *g_kernel.size())
+    # Apply the Gaussian filter to each channel
+    padding = kernel_size // 2
+
+    # Move the kernel to the same device as the segmentation tensor
+    g_kernel = g_kernel.to(seg.device)
+
+    # Apply the Gaussian filter
+    filtered_seg = F.conv3d(seg, g_kernel, padding=padding, groups=seg.shape[1])
+    return filtered_seg
+
+
 def get_GT_skeleton(gt_seg: torch.Tensor, iterations: int = 5) -> torch.Tensor:
     """
     Generate the skeleton of a ground truth segmentation.
 
     This function takes a ground truth segmentation `gt_seg`, smooths it using a
-    Gaussian filter, and then computes its soft skeleton using the `soft_skel`
-    function.
+    Gaussian filter, and then computes its soft skeleton using the `soft_skel` function.
 
     Intention: When using the binary ground truth segmentation for skeletonization,
     the resulting skeleton is very patchy and not smooth. When using the smoothed
@@ -215,19 +318,19 @@ def get_GT_skeleton(gt_seg: torch.Tensor, iterations: int = 5) -> torch.Tensor:
 
     Notes
     -----
-    - The input `gt_seg` should be a binary segmentation tensor where 1 represents
-            the object of interest.
+    - The input `gt_seg` should be a binary segmentation tensor where 1 represents the
+        object of interest.
     - The function first smooths the `gt_seg` using a Gaussian filter to enhance the
-            object's structure.
+        object's structure.
     - The skeletonization process is performed using the `soft_skel` function with the
-            specified number of iterations.
-    - The resulting skeleton is returned as a binary torch.Tensor where 1 indicates
-            the skeleton points.
+        specified number of iterations.
+    - The resulting skeleton is returned as a binary torch.Tensor where 1 indicates the
+        skeleton points.
     """
     gt_smooth = (
-        gaussian_filter((gt_seg == 1) * 1.0, 2) * 1.5
-    )  # The Gaussian smoothing parameters are work in progress
-    skel_gt = soft_skel(torch.from_numpy(gt_smooth) * 1.0, iter_=iterations)
+        apply_gaussian_filter((gt_seg == 1) * 1.0, kernel_size=15, sigma=2.0) * 1.5
+    )
+    skel_gt = soft_skel(gt_smooth, iter_=iterations)
     return skel_gt
 
 
@@ -238,13 +341,14 @@ def masked_surface_dice(
     soft_skel_iterations: int = 3,
     smooth: float = 3.0,
     binary_prediction: bool = False,
+    reduction: str = "none",
 ) -> torch.Tensor:
     """
     Compute the surface Dice loss with masking for ignore labels.
 
     The surface Dice loss measures the similarity between the predicted segmentation's
-    skeleton and the ground truth segmentation (and vice versa). Labels annotated
-    with "ignore_label" are ignored.
+    skeleton and the ground truth segmentation (and vice versa). Labels annotated with
+    "ignore_label" are ignored.
 
     Parameters
     ----------
@@ -259,7 +363,9 @@ def masked_surface_dice(
     smooth : float
         Smoothing factor to avoid division by zero.
     binary_prediction : bool
-        Determines whether the input data is a binary segmentation or not.
+        If True, the predicted segmentation is assumed to be binary. Default is False.
+    reduction : str
+        Specifies the reduction to apply to the output. Default is "none".
 
     Returns
     -------
@@ -272,31 +378,27 @@ def masked_surface_dice(
 
     # Compute soft skeletonization
     if binary_prediction:
-        skel_pred = get_GT_skeleton(
-            data.clone(), soft_skel_iterations, separate_pool=False
-        )
+        skel_pred = get_GT_skeleton(data.clone(), soft_skel_iterations)
     else:
         skel_pred = soft_skel(data.clone(), soft_skel_iterations, separate_pool=False)
-    skel_true = get_GT_skeleton(
-        target.clone(), soft_skel_iterations, separate_pool=False
-    )
+    skel_true = get_GT_skeleton(target.clone(), soft_skel_iterations)
 
     # Mask out ignore labels
     skel_pred[~mask] = 0
     skel_true[~mask] = 0
 
     # compute surface dice loss
-    print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
-    print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
-    print("ALSO CHECK DIMENSIONS AND VALUES HERE!!! (Surface dice loss)")
-    tprec = (torch.sum(torch.multiply(skel_pred, target), dim=0) + smooth) / (
-        torch.sum(skel_pred, dim=0) + smooth
-    )
-    tsens = (torch.sum(torch.multiply(skel_true, data), dim=0) + smooth) / (
-        torch.sum(skel_true, dim=0) + smooth
+    tprec = (
+        torch.sum(torch.multiply(skel_pred, target), dim=(1, 2, 3, 4)) + smooth
+    ) / (torch.sum(skel_pred, dim=(1, 2, 3, 4)) + smooth)
+    tsens = (torch.sum(torch.multiply(skel_true, data), dim=(1, 2, 3, 4)) + smooth) / (
+        torch.sum(skel_true, dim=(1, 2, 3, 4)) + smooth
     )
     surf_dice_loss = 2.0 * (tprec * tsens) / (tprec + tsens)
-    return surf_dice_loss
+    if reduction == "none":
+        return surf_dice_loss
+    elif reduction == "mean":
+        return torch.mean(surf_dice_loss)
 
 
 class IgnoreLabelSurfaceDiceLoss(_Loss):
@@ -350,5 +452,4 @@ class IgnoreLabelSurfaceDiceLoss(_Loss):
             smooth=self.smooth,
         )
         surf_dice_loss = 1.0 - surf_dice_score
-
         return surf_dice_loss
