@@ -1,7 +1,6 @@
 import os
 from typing import Dict
 
-# from skimage import io
 import imageio as io
 import numpy as np
 from torch.utils.data import Dataset
