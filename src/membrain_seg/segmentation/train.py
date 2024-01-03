@@ -9,6 +9,9 @@ from membrain_seg.segmentation.dataloading.memseg_pl_datamodule import (
     MemBrainSegDataModule,
 )
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
+from membrain_seg.segmentation.training.training_param_summary import (
+    print_training_parameters,
+)
 
 warnings.filterwarnings("ignore", category=UserWarning, module="torch._tensor")
 warnings.filterwarnings("ignore", category=UserWarning, module="monai.data")
@@ -66,6 +69,20 @@ def train(
     -------
     None
     """
+    print_training_parameters(
+        data_dir=data_dir,
+        log_dir=log_dir,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        max_epochs=max_epochs,
+        aug_prob_to_one=aug_prob_to_one,
+        use_deep_supervision=use_deep_supervision,
+        project_name=project_name,
+        sub_name=sub_name,
+        use_surf_dice=use_surf_dice,
+        surf_dice_weight=surf_dice_weight,
+        surf_dice_tokens=surf_dice_tokens,
+    )
     # Set up the data module
     data_module = MemBrainSegDataModule(
         data_dir=data_dir,
@@ -86,9 +103,6 @@ def train(
     project_name = project_name
     checkpointing_name = project_name + "_" + sub_name
     # Set up logging
-    wandb_logger = pl_loggers.WandbLogger(
-        project=project_name, log_model=False, save_code=True
-    )
     csv_logger = pl_loggers.CSVLogger(log_dir)
 
     # Set up model checkpointing
@@ -119,7 +133,7 @@ def train(
     # Set up the trainer
     trainer = pl.Trainer(
         precision="16-mixed",
-        logger=[csv_logger, wandb_logger],
+        logger=[csv_logger],
         callbacks=[
             checkpoint_callback_val_loss,
             checkpoint_callback_regular,
