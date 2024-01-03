@@ -1,5 +1,5 @@
 def print_training_parameters(
-    data_dir: str = "/scicore/home/engel0006/GROUP/pool-engel/Lorenz/MemBrain-seg/data",
+    data_dir: str = "",
     log_dir: str = "logs/",
     batch_size: int = 2,
     num_workers: int = 8,
