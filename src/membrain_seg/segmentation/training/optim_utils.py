@@ -111,6 +111,10 @@ class IgnoreLabelDiceCELoss(_Loss):
 
         # Combine the Dice and Cross Entropy losses
         combined_loss = self.lambda_dice * dice_loss + self.lambda_ce * bce_loss
+        if self.reduction == "mean":
+            combined_loss = combined_loss.mean()
+        elif self.reduction == "sum":
+            combined_loss = combined_loss.sum()
         return combined_loss
 
 

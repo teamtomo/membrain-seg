@@ -115,7 +115,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         losses = []
         weights = []
         loss_inclusion_tokens = []
-        ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
+        ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="none")
         losses.append(ignore_dice_loss)
         weights.append(1.0)
         loss_inclusion_tokens.append(["all"])  # Apply to every element
