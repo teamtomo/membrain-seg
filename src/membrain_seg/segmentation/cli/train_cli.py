@@ -1,4 +1,7 @@
+from typing import List, Optional
+
 from typer import Option
+from typing_extensions import Annotated
 
 from ..train import train as _train
 from .cli import OPTION_PROMPT_KWARGS as PKWARGS
@@ -70,7 +73,7 @@ def train_advanced(
         help="Batch size for training.",
     ),
     num_workers: int = Option(  # noqa: B008
-        1,
+        8,
         help="Number of worker threads for loading data",
     ),
     max_epochs: int = Option(  # noqa: B008
@@ -85,17 +88,21 @@ def train_advanced(
                 Pass "True" or "False".',
     ),
     use_surface_dice: bool = Option(  # noqa: B008
-        True, help='Whether to use Surface-Dice as a loss. Pass "True" or "False".'
+        False, help='Whether to use Surface-Dice as a loss. Pass "True" or "False".'
     ),
     surface_dice_weight: float = Option(  # noqa: B008
         1.0, help="Scaling factor for the Surface-Dice loss. "
     ),
-    surface_dice_tokens: list = Option(  # noqa: B008
-        ["all"],
-        help='List of tokens to use for the Surface-Dice loss. \
-            Pass a list of strings.\
-                For example, ["all", "membrane"]',
-    ),
+    surface_dice_tokens: Annotated[
+        Optional[List[str]],
+        Option(
+            help='List of tokens to \
+            use for the Surface-Dice loss. \
+            Pass tokens separately:\
+            For example, train_advanced --surface_dice_tokens "ds1" \
+            --surface_dice_tokens "ds2"'
+        ),
+    ] = None,
     use_deep_supervision: bool = Option(  # noqa: B008
         True, help='Whether to use deep supervision. Pass "True" or "False".'
     ),
