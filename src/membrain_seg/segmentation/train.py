@@ -30,6 +30,7 @@ def train(
     use_surf_dice: bool = False,
     surf_dice_weight: float = 1.0,
     surf_dice_tokens: list = None,
+    use_normals: bool = False,
 ):
     """
     Train the model on the specified data.
@@ -64,6 +65,9 @@ def train(
         Weight for the Surface-Dice loss.
     surf_dice_tokens : list, optional
         List of tokens to use for the Surface-Dice loss.
+    use_normals : bool, optional
+        If True, enables normal vectors as additional
+        target to the model.
 
     Returns
     -------
@@ -89,6 +93,7 @@ def train(
         batch_size=batch_size,
         num_workers=num_workers,
         aug_prob_to_one=aug_prob_to_one,
+        use_normals=use_normals,
     )
 
     # Set up the model
