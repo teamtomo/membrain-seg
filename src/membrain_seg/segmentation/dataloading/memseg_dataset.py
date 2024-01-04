@@ -86,7 +86,9 @@ class CryoETMemSegDataset(Dataset):
         self.initialize_imgs_paths()
         self.load_data()
         self.transforms = (
-            get_training_transforms(prob_to_one=aug_prob_to_one)
+            get_training_transforms(
+                prob_to_one=aug_prob_to_one, use_vectors=return_normals
+            )
             if self.train
             else get_validation_transforms()
         )
@@ -142,6 +144,7 @@ class CryoETMemSegDataset(Dataset):
         print("Loading images into dataset.")
         self.imgs = []
         self.labels = []
+        self.normals = []
         self.dataset_labels = []
         for entry in self.data_paths:
             label = read_nifti(
@@ -180,12 +183,12 @@ class CryoETMemSegDataset(Dataset):
         self.data_paths = []
         for filename in os.listdir(self.label_folder):
             label_filename = os.path.join(self.label_folder, filename)
+            filetoken = filename[:-7]
             filename = filename[:-7] + "_0000.nii.gz"
             img_filename = os.path.join(self.img_folder, filename)
             self.data_paths.append((img_filename, label_filename))
 
             if self.return_normals:
-                filetoken = filename[:-7]  # assumes .nii.gz extension
                 vec_filenames = [
                     os.path.join(
                         self.vec_folder, filetoken + "_norm" + str(2) + ".nii.gz"
@@ -234,6 +237,78 @@ class CryoETMemSegDataset(Dataset):
                 io.imsave(
                     os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
                     test_sample["label"][1][0, :, :, num_mask],
+                )
+
+    def test_with_normals(self, test_folder, num_files=20):
+        """
+        Testing of dataloading and augmentations.
+
+        To test data loading and augmentations, 2D images are
+        stored for inspection.
+        """
+        os.makedirs(test_folder, exist_ok=True)
+
+        for i in range(num_files):
+            print("sample", i + 1)
+            idx = np.random.randint(0, len(self))
+            test_sample = self.__getitem__(idx)
+
+            test_sample["image"] = np.array(test_sample["image"])
+            test_sample["label"][0] = np.array(test_sample["label"][0])
+            test_sample["vectors"][0] = np.array(test_sample["vectors"][0])
+
+            for num_img in range(0, test_sample["image"].shape[-1], 30):
+                io.imsave(
+                    os.path.join(test_folder, f"test_img{i}_group{num_img}.png"),
+                    (test_sample["image"] * 10 + 128).astype(np.uint8)[
+                        0, :, :, num_img
+                    ],
+                )
+
+            for num_mask in range(0, test_sample["label"][0].shape[-1], 30):
+                io.imsave(
+                    os.path.join(test_folder, f"test_mask{i}_group{num_mask}.png"),
+                    (test_sample["label"][0] * 64).astype(np.uint8)[0, :, :, num_mask],
+                )
+
+            for num_mask in range(0, test_sample["vectors"][0].shape[-2], 30):
+                io.imsave(
+                    os.path.join(test_folder, f"test_vecs{i}_group{num_mask}.png"),
+                    (test_sample["vectors"][0] * 64 + 64).astype(np.uint8)[
+                        0, :, :, num_mask
+                    ],
+                )
+                io.imsave(
+                    os.path.join(
+                        test_folder, f"test_vecs{i}_group{num_mask}_comp1.png"
+                    ),
+                    (test_sample["vectors"][0] * 64 + 64).astype(np.uint8)[
+                        0, :, :, num_mask, 0
+                    ],
+                )
+                io.imsave(
+                    os.path.join(
+                        test_folder, f"test_vecs{i}_group{num_mask}_comp2.png"
+                    ),
+                    (test_sample["vectors"][0] * 64 + 64).astype(np.uint8)[
+                        0, :, :, num_mask, 1
+                    ],
+                )
+                io.imsave(
+                    os.path.join(
+                        test_folder, f"test_vecs{i}_group{num_mask}_comp3.png"
+                    ),
+                    (test_sample["vectors"][0] * 64 + 64).astype(np.uint8)[
+                        0, :, :, num_mask, 2
+                    ],
+                )
+
+            for num_mask in range(0, test_sample["label"][1].shape[0], 15):
+                io.imsave(
+                    os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
+                    (test_sample["label"][1] * 64 + 64).astype(np.uint8)[
+                        0, :, :, num_mask
+                    ],
                 )
 
 

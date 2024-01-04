@@ -22,6 +22,8 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         The number of workers to use in the data loaders.
     aug_prob_to_one : bool, default False
         Whether to apply data augmentation.
+    use_normals : bool, default False
+        Whether to use the normal vectors as additional target channels.
 
     Attributes
     ----------
@@ -41,7 +43,14 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         The test dataset.
     """
 
-    def __init__(self, data_dir, batch_size, num_workers, aug_prob_to_one=False):
+    def __init__(
+        self,
+        data_dir,
+        batch_size,
+        num_workers,
+        aug_prob_to_one=False,
+        use_normals=False,
+    ):
         """Initialization of data paths and data loaders.
 
         The data_dir should have the following structure:
@@ -65,10 +74,14 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         """
         super().__init__()
         self.data_dir = data_dir
+        self.use_normals = use_normals
         self.train_img_dir = os.path.join(self.data_dir, "imagesTr")
         self.train_lab_dir = os.path.join(self.data_dir, "labelsTr")
         self.val_img_dir = os.path.join(self.data_dir, "imagesVal")
         self.val_lab_dir = os.path.join(self.data_dir, "labelsVal")
+        if self.use_normals:
+            self.train_vec_dir = os.path.join(self.data_dir, "labelsTr_vecs")
+            self.val_vec_dir = os.path.join(self.data_dir, "labelsVal_vecs")
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.aug_prob_to_one = aug_prob_to_one
@@ -91,9 +104,15 @@ class MemBrainSegDataModule(pl.LightningDataModule):
                 label_folder=self.train_lab_dir,
                 train=True,
                 aug_prob_to_one=self.aug_prob_to_one,
+                vec_folder=self.train_vec_dir if self.use_normals else None,
+                return_normals=self.use_normals,
             )
             self.val_dataset = CryoETMemSegDataset(
-                img_folder=self.val_img_dir, label_folder=self.val_lab_dir, train=False
+                img_folder=self.val_img_dir,
+                label_folder=self.val_lab_dir,
+                train=False,
+                vec_folder=self.val_vec_dir if self.use_normals else None,
+                return_normals=self.use_normals,
             )
 
         if stage in (None, "test"):

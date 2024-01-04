@@ -552,7 +552,7 @@ class DownsampleSegForDeepSupervisionTransform(MapTransform):
         self,
         keys: Union[str, Tuple[str]],
         ds_scales: Tuple[float, float, float] = (1, 0.5, 0.25),
-        order: int = 0,
+        order: tuple = ("nearest"),
         axes: Union[None, Tuple[int, int, int]] = None,
     ):
         super().__init__(keys)
@@ -562,9 +562,9 @@ class DownsampleSegForDeepSupervisionTransform(MapTransform):
 
     def __call__(self, data_dict):
         """Apply the transform."""
-        for key in self.keys:
+        for key, cur_order in zip(self.keys, self.order):
             data_dict[key] = downsample_seg_for_ds_transform(
-                data_dict[key], self.ds_scales, self.order, self.axes
+                data_dict[key], self.ds_scales, cur_order, self.axes
             )
         return data_dict
 
@@ -608,17 +608,20 @@ def downsample_seg_for_ds_transform(
             output.append(seg)
         else:
             new_shape = np.array(seg.shape).astype(float)
-            for i, a in enumerate(axes):
+            for i, a in enumerate(axes[:3]):  # only iterate to axis 3 (spatial dims)
                 new_shape[a] *= s[i]
             new_shape = np.round(new_shape).astype(int)
             resize_transform = Resize(
-                new_shape[1:],
+                new_shape[1:4],
                 mode=order,
                 align_corners=(None if order == "nearest" else False),
             )
             out_seg = np.zeros(new_shape, dtype=np.array(seg).dtype)
-            for c in range(seg.shape[0]):
-                out_seg[c] = resize_transform(np.expand_dims(seg[c], 0)).squeeze()
+            if len(seg.shape) == 4:
+                out_seg = resize_transform(seg)
+            elif len(seg.shape) == 5:
+                for c in range(seg.shape[-1]):
+                    out_seg[:, :, :, :, c] = resize_transform(seg[:, :, :, :, c])
             output.append(out_seg)
     return output
 
@@ -841,17 +844,19 @@ class RandRotate90dWithVectors(RandRotate90d):
         return vector_map_rotated
 
     def __call__(
-        self, data: Mapping[Hashable, torch.Tensor]
+        self, data: Mapping[Hashable, torch.Tensor], lazy: bool = False
     ) -> Mapping[Hashable, torch.Tensor]:
         """Apply the transform."""
         # Apply the original RandRotate90d transformation (not on vectors map)
-        d = super().__call__(data)
+        d = super().__call__(data, lazy=lazy)
+        lazy_ = self.lazy if lazy is None else lazy
         if self.vector_key is not None:
             if self._do_transform:
                 # Rotate the vectors within the vector mask
                 d[self.vector_key] = self.rotate_vectors(
                     d[self.vector_key], self._rand_k
                 )
+                self.push_transform(d[self.vector_key], replace=True, lazy=lazy_)
 
         return d
 
@@ -909,7 +914,7 @@ class RandRotatedWithVectors(RandRotated):
         prob: float = 0.1,
         keep_size: bool = True,
         mode: GridSampleMode = GridSampleMode.BILINEAR,
-        padding_mode: GridSamplePadMode = GridSamplePadMode.BORDER,
+        padding_mode: GridSamplePadMode = GridSamplePadMode.ZEROS,
         align_corners: Union[Sequence[bool], bool] = False,
         dtype: Union[
             Sequence[Union[DtypeLike, torch.dtype]], DtypeLike, torch.dtype
@@ -950,10 +955,11 @@ class RandRotatedWithVectors(RandRotated):
         return to_torch
 
     def __call__(
-        self, data: Mapping[Hashable, torch.Tensor]
+        self, data: Mapping[Hashable, torch.Tensor], lazy: bool = False
     ) -> Dict[Hashable, torch.Tensor]:
         """Apply the transform."""
         d = dict(data)
+        lazy_ = self.lazy if lazy is None else lazy
         self.randomize(None)
         # all the keys share the same random rotate angle
         self.rand_rotate.randomize()
@@ -1001,7 +1007,7 @@ class RandRotatedWithVectors(RandRotated):
                     if self._do_transform
                     else {}
                 )
-                self.push_transform(d[key], extra_info=rot_info)
+                self.push_transform(d[key], extra_info=rot_info, lazy=lazy_)
 
         if self._do_transform:
             # Get the rotation matrix for the applied rotation
@@ -1027,10 +1033,11 @@ class RandZoomdWithChannels(RandZoomd):
     """
 
     def __call__(
-        self, data: Mapping[Hashable, torch.Tensor]
+        self, data: Mapping[Hashable, torch.Tensor], lazy: bool = False
     ) -> Dict[Hashable, torch.Tensor]:
         """Apply the transform."""
         d = dict(data)
+        lazy_ = self.lazy if lazy is None else lazy
         first_key: Hashable = self.first_key(d)
         if first_key == ():
             out: Dict[Hashable, torch.Tensor] = convert_to_tensor(
@@ -1081,7 +1088,7 @@ class RandZoomdWithChannels(RandZoomd):
                     if self._do_transform
                     else {}
                 )
-                self.push_transform(d[key], extra_info=xform)
+                self.push_transform(d[key], extra_info=xform, lazy=lazy_)
         return d
 
 
@@ -1123,15 +1130,17 @@ class RandAxisFlipdWithNormals(RandAxisFlipd):
         self.normal_keys = normal_keys
 
     def __call__(
-        self, data: Mapping[Hashable, torch.Tensor]
+        self, data: Mapping[Hashable, torch.Tensor], lazy: bool = False
     ) -> Dict[Hashable, torch.Tensor]:
         """Apply the transform."""
-        d = super().__call__(data)
+        d = super().__call__(data, lazy=lazy)
+        lazy_ = self.lazy if lazy is None else lazy
         if self.normal_keys is not None:
             for key in self.normal_keys:
                 if key in d and self._do_transform:
                     # Flip the corresponding axis of the normal vector
                     d[key][:, :, :, :, self.flipper._axis] *= -1
+                    self.push_transform(d[key], replace=True, lazy=lazy_)
         return d
 
     def inverse(
@@ -1139,7 +1148,6 @@ class RandAxisFlipdWithNormals(RandAxisFlipd):
     ) -> Dict[Hashable, torch.Tensor]:
         """Get the inverse transform."""
         d = super().inverse(data)
-
         for key in self.normal_keys:
             if key in d:
                 # Get the flip axis from the first transformed key

@@ -5,18 +5,13 @@ import torch
 from monai.transforms import (
     Compose,
     OneOf,
-    RandAxisFlipd,
     RandGaussianNoised,
     RandGaussianSmoothd,
-    RandRotate90d,
-    RandRotated,
-    RandZoomd,
     ToTensor,
     ToTensord,
 )
 
 from membrain_seg.segmentation.dataloading.transforms import (
-    AxesShuffle,
     BlankCuboidTransform,
     BrightnessGradientAdditiveTransform,
     DownsampleSegForDeepSupervisionTransform,
@@ -24,10 +19,15 @@ from membrain_seg.segmentation.dataloading.transforms import (
     MedianFilterd,
     RandAdjustContrastWithInversionAndStats,
     RandApplyTransform,
+    RandAxisFlipdWithNormals,
     RandomBrightnessTransformd,
     RandomContrastTransformd,
+    RandRotate90dWithVectors,
+    RandRotatedWithVectors,
+    RandZoomdWithChannels,
     SharpeningTransformMONAI,
     SimulateLowResolutionTransform,
+    create_axes_shuffle_with_vectors,
 )
 
 ### Hard-coded area
@@ -47,9 +47,9 @@ deep_supervision_scales = [[1, 1, 1]] + [
 
 # Define 3D rotation ranges
 data_aug_params = {}
-data_aug_params["rotation_x"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
-data_aug_params["rotation_y"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
-data_aug_params["rotation_z"] = (-30.0 / 360 * 2.0 * np.pi, 30.0 / 360 * 2.0 * np.pi)
+data_aug_params["rotation_x"] = (-40.0 / 360 * 2.0 * np.pi, 40.0 / 360 * 2.0 * np.pi)
+data_aug_params["rotation_y"] = (-40.0 / 360 * 2.0 * np.pi, 40.0 / 360 * 2.0 * np.pi)
+data_aug_params["rotation_z"] = (-40.0 / 360 * 2.0 * np.pi, 40.0 / 360 * 2.0 * np.pi)
 
 # Which axes should be used for mirroring?
 mirror_axes = (0, 1, 2)
@@ -114,7 +114,7 @@ def get_mirrored_img(img: torch.Tensor, mirror_idx: int) -> torch.Tensor:
 
 
 def get_training_transforms(
-    prob_to_one: bool = False, return_as_list: bool = False
+    prob_to_one: bool = False, use_vectors: bool = False, return_as_list: bool = False
 ) -> Union[List[Callable], Compose]:
     """
     Returns the data augmentation transforms for training phase.
@@ -131,6 +131,9 @@ def get_training_transforms(
             all transformations in the sequence.
         If False, the probability is lower (specified within each transformation).
         Default is False.
+    use_vectors : bool, optional
+        If True, the sequence of transformations is set up to work with
+            vector data as well. Can be used to use also normal vectors as GT.
     return_as_list : bool, optional
         If True, the sequence of transformations is returned as a list.
         If False, the sequence is returned as a Compose object. Default is False.
@@ -145,41 +148,61 @@ def get_training_transforms(
 
     """
     aug_sequence = [
-        RandRotated(
-            keys=("image", "label"),
+        ToTensord(
+            keys=("image", "label")
+            if not use_vectors
+            else ("image", "label", "vectors"),
+            dtype=torch.float,
+        ),
+        RandRotatedWithVectors(
+            keys=("image", "label")
+            if not use_vectors
+            else ("image", "label", "vectors"),
             range_x=data_aug_params["rotation_x"],
             range_y=data_aug_params["rotation_y"],
             range_z=data_aug_params["rotation_x"],
             prob=(1.0 if prob_to_one else 0.75),
-            mode=("bilinear", "nearest"),
+            mode=("bilinear", "nearest")
+            if not use_vectors
+            else ("bilinear", "nearest", "bilinear"),
+            vector_key=("vectors" if use_vectors else None),
         ),
-        RandZoomd(
-            keys=("image", "label"),
+        RandZoomdWithChannels(
+            keys=("image", "label")
+            if not use_vectors
+            else ("image", "label", "vectors"),
             prob=(1.0 if prob_to_one else 0.3),
             min_zoom=0.7,
             max_zoom=1.43,
-            mode=("trilinear", "nearest-exact"),
-            padding_mode=("constant", "constant"),
-        ),  # TODO: Independent scale for each axis?
-        RandRotate90d(
+            mode=("trilinear", "nearest-exact")
+            if not use_vectors
+            else ("trilinear", "nearest-exact", "trilinear"),
+            padding_mode=("constant", "constant")
+            if not use_vectors
+            else ("constant", "constant", "constant"),
+        ),
+        RandRotate90dWithVectors(
             keys=("image", "label"),
             prob=(1.0 if prob_to_one else 0.70),
             max_k=3,
             spatial_axes=(0, 1),
+            vector_key=("vectors" if use_vectors else None),
         ),
-        RandRotate90d(
+        RandRotate90dWithVectors(
             keys=("image", "label"),
             prob=(1.0 if prob_to_one else 0.70),
             max_k=3,
             spatial_axes=(0, 2),
+            vector_key=("vectors" if use_vectors else None),
         ),
-        RandRotate90d(
+        RandRotate90dWithVectors(
             keys=("image", "label"),
             prob=(1.0 if prob_to_one else 0.70),
             max_k=3,
             spatial_axes=(1, 2),
+            vector_key=("vectors" if use_vectors else None),
         ),
-        AxesShuffle,
+        create_axes_shuffle_with_vectors(vector_key="vectors" if use_vectors else None),
         OneOf(
             [
                 RandApplyTransform(
@@ -238,7 +261,13 @@ def get_training_transforms(
             ),
             prob=(1.0 if prob_to_one else 0.25),
         ),
-        RandAxisFlipd(keys=("image", "label"), prob=(0.5)),
+        RandAxisFlipdWithNormals(
+            keys=("image", "label")
+            if not use_vectors
+            else ("image", "label", "vectors"),
+            normal_keys=["vectors"] if use_vectors else None,
+            prob=(0.5),
+        ),
         BlankCuboidTransform(
             keys=["image"],
             prob=(1.0 if prob_to_one else 0.4),
@@ -281,7 +310,9 @@ def get_training_transforms(
             p_per_channel=(1.0 if prob_to_one else 0.2),
         ),
         DownsampleSegForDeepSupervisionTransform(
-            keys=["label"], ds_scales=deep_supervision_scales, order="nearest"
+            keys=["label"] if not use_vectors else ("label", "vectors"),
+            ds_scales=deep_supervision_scales,
+            order=["nearest"] if not use_vectors else ("nearest", "nearest"),
         ),
         ToTensord(keys=["image"], dtype=torch.float),
     ]
@@ -292,6 +323,7 @@ def get_training_transforms(
 
 def get_validation_transforms(
     return_as_list: bool = False,
+    use_vectors: bool = False,
 ) -> Union[List[Callable], Compose]:
     """
     Returns the data augmentation transforms for the validation phase.
@@ -304,6 +336,9 @@ def get_validation_transforms(
     return_as_list : bool, optional
         If True, the sequence of transformations is returned as a list.
         If False, the sequence is returned as a Compose object. Default is False.
+    use_vectors : bool, optional
+        If True, the sequence of transformations is set up to work with
+            vector data as well. Can be used to use also normal vectors as GT.
 
     Returns
     -------
@@ -315,8 +350,16 @@ def get_validation_transforms(
 
     """
     aug_sequence = [
+        ToTensord(
+            keys=("image", "label")
+            if not use_vectors
+            else ("image", "label", "vectors"),
+            dtype=torch.float,
+        ),
         DownsampleSegForDeepSupervisionTransform(
-            keys=["label"], ds_scales=deep_supervision_scales, order="nearest"
+            keys=["label"] if not use_vectors else ("label", "vectors"),
+            ds_scales=deep_supervision_scales,
+            order=["nearest"] if not use_vectors else ("nearest", "nearest"),
         ),
         ToTensord(keys=["image"], dtype=torch.float),
     ]
