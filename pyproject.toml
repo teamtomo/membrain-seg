@@ -34,7 +34,9 @@ dependencies = [
     "scikit-image",
     "simpleitk",
     "pandas",
-    "mrcfile"
+    "mrcfile",
+    "pyvista",
+    "vtk",
 ]
 
 
@@ -65,7 +67,7 @@ repository = "https://github.com/teamtomo/membrain-seg"
 tomo_preprocessing = "membrain_seg.tomo_preprocessing:cli"
 membrain = "membrain_seg.segmentation.cli:cli"
 patch_corrections = "membrain_seg.annotations:cli"
-
+membrain_normals = "membrain_seg.normal_processing:cli"
 
 # Entry points
 # https://peps.python.org/pep-0621/#entry-points
