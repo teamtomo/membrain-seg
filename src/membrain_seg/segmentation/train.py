@@ -24,7 +24,7 @@ def train(
     num_workers: int = 8,
     max_epochs: int = 1000,
     aug_prob_to_one: bool = False,
-    use_deep_supervision: bool = False,
+    use_deep_supervision: bool = True,
     project_name: str = "membrain-seg_v0",
     sub_name: str = "1",
     use_surf_dice: bool = False,
@@ -103,6 +103,7 @@ def train(
         use_surf_dice=use_surf_dice,
         surf_dice_weight=surf_dice_weight,
         surf_dice_tokens=surf_dice_tokens,
+        compute_normal_vectors=use_normals,
     )
 
     project_name = project_name
