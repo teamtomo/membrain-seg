@@ -27,6 +27,7 @@ from membrain_seg.segmentation.dataloading.transforms import (
     RandZoomdWithChannels,
     SharpeningTransformMONAI,
     SimulateLowResolutionTransform,
+    TimingTransform,
     create_axes_shuffle_with_vectors,
 )
 
@@ -114,7 +115,10 @@ def get_mirrored_img(img: torch.Tensor, mirror_idx: int) -> torch.Tensor:
 
 
 def get_training_transforms(
-    prob_to_one: bool = False, use_vectors: bool = False, return_as_list: bool = False
+    prob_to_one: bool = False,
+    use_vectors: bool = False,
+    return_as_list: bool = False,
+    track_time: bool = False,
 ) -> Union[List[Callable], Compose]:
     """
     Returns the data augmentation transforms for training phase.
@@ -137,6 +141,9 @@ def get_training_transforms(
     return_as_list : bool, optional
         If True, the sequence of transformations is returned as a list.
         If False, the sequence is returned as a Compose object. Default is False.
+    track_time : bool, optional
+        If True, the sequence of transformations is wrapped in a TimingTransform
+            to track the time elapsed for each transformation.
 
     Returns
     -------
@@ -208,7 +215,7 @@ def get_training_transforms(
                 RandApplyTransform(
                     transform=MedianFilterd(keys=["image"], radius=(2, 8)),
                     prob=(
-                        1.0 if prob_to_one else 0.25
+                        1.0 if prob_to_one else 0.20
                     ),  # Changed range from 8 to 6 and prob to 15%
                     # for efficiency reasons
                 ),
@@ -316,6 +323,8 @@ def get_training_transforms(
         ),
         ToTensord(keys=["image"], dtype=torch.float),
     ]
+    if track_time:
+        aug_sequence = [TimingTransform(trafo) for trafo in aug_sequence]
     if return_as_list:
         return aug_sequence
     return Compose(aug_sequence)

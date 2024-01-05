@@ -1,3 +1,4 @@
+from time import time
 from typing import (
     Any,
     Callable,
@@ -1158,3 +1159,23 @@ class RandAxisFlipdWithNormals(RandAxisFlipd):
                     d[key][xform[TraceKeys.EXTRA_INFO]["axis"]] *= -1
 
         return d
+
+
+class TimingTransform:
+    """Transform for stopping the time of each module."""
+
+    def __init__(self, transform, name=None):
+        self.transform = transform
+        self.name = name if name else str(transform)
+        self.history = []
+
+    def __call__(self, data):
+        """Apply the transform."""
+        start_time = time()
+        transformed_data = self.transform(data)
+        end_time = time()
+        elapsed_time = end_time - start_time
+
+        self.history.append(elapsed_time)
+        print(f"{self.name} took on average {np.mean(self.history):.3f} seconds.")
+        return transformed_data
