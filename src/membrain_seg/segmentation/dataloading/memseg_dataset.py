@@ -90,7 +90,7 @@ class CryoETMemSegDataset(Dataset):
                 prob_to_one=aug_prob_to_one, use_vectors=return_normals
             )
             if self.train
-            else get_validation_transforms()
+            else get_validation_transforms(use_vectors=return_normals)
         )
 
     def __getitem__(self, idx: int) -> Dict[str, np.ndarray]:
@@ -117,6 +117,11 @@ class CryoETMemSegDataset(Dataset):
             idx_dict["vectors"] = np.expand_dims(self.normals[idx], 0)
         idx_dict = self.transforms(idx_dict)
         idx_dict["dataset"] = self.dataset_labels[idx]
+        if self.return_normals:
+            idx_dict["vectors"] = [
+                np.transpose(entry.squeeze(), axes=(3, 0, 1, 2))
+                for entry in idx_dict["vectors"]
+            ]
         return idx_dict
 
     def __len__(self) -> int:
@@ -128,7 +133,7 @@ class CryoETMemSegDataset(Dataset):
         int
             The number of image-label pairs in the dataset.
         """
-        return len(self.data_paths)
+        return len(self.imgs)
 
     def load_data(self) -> None:
         """
