@@ -32,6 +32,90 @@ class DynUNetDirectDeepSupervision(DynUNet):
         return out
 
 
+class MaskedNormalMSELoss(_Loss):
+    """
+    Masked Mean Squared Error (MSE) loss.
+
+    This loss function computes the mean squared error between the predicted and
+    target normals, but only considers the elements where the target is not equal
+    to a specified ignore label. Optionally, it can evaluate only the areas close
+    to a membrane based on the target values.
+
+    Parameters
+    ----------
+    ignore_label : int
+        The label in the target tensor that should be ignored when computing the loss.
+    eval_close_to_mb : bool
+        If True, evaluate only the areas close to a membrane (where target == 1.0).
+        Otherwise, evaluate all areas except those matching the ignore label.
+
+    """
+
+    def __init__(
+        self,
+        ignore_label: int,
+        eval_close_to_mb: bool = False,
+        reduction: str = "none",
+        data_channels: tuple = (1, 2, 3),
+    ) -> None:
+        super().__init__()
+        self.ignore_label = ignore_label
+        self.eval_close_to_mb = eval_close_to_mb
+        self.reduction = reduction
+        self.data_channels = data_channels
+
+    def forward(
+        self, data: torch.Tensor, target: torch.Tensor, vec_GT: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Calculate the masked MSE loss for the given data and target.
+
+        The loss is only computed for the areas specified by the mask, which is
+        determined by the target tensor and the initialization parameters of this class.
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            The predicted data. The shape should match that of 'target'.
+        target : torch.Tensor
+            The target data used to compute the loss and create the mask.
+        vec_GT : torch.Tensor
+            The ground truth vector values.
+
+        Returns
+        -------
+        torch.Tensor
+            The computed masked MSE loss.
+
+        """
+        data = data[:, self.data_channels, ...]
+        # Create a mask to ignore the specified label in the target
+        if not self.eval_close_to_mb:
+            mask = target != self.ignore_label
+            mask_membrane = target == 1.0
+            mask = 0.1 * mask + mask_membrane
+        else:
+            mask = target == 1.0
+        mask = torch.cat([mask, mask, mask], dim=1)
+
+        # Compute the squared difference between data and target
+        squared_diff = (data - vec_GT) ** 2
+
+        # Apply the mask to the squared difference
+        masked_squared_diff = squared_diff * mask.float()
+
+        # Compute the mean of the masked squared differences
+        loss = torch.sum(masked_squared_diff, dim=(1, 2, 3, 4)) / (
+            torch.sum(mask, dim=(1, 2, 3, 4)) + 1e-3
+        )
+
+        if self.reduction == "mean":
+            loss = loss.mean()
+        elif self.reduction == "sum":
+            loss = loss.sum()
+        return loss
+
+
 class IgnoreLabelDiceCELoss(_Loss):
     """
     Mix of Dice & Cross-entropy loss, adding ignore labels.
@@ -56,6 +140,7 @@ class IgnoreLabelDiceCELoss(_Loss):
         reduction: str = "none",
         lambda_dice: float = 1.0,
         lambda_ce: float = 1.0,
+        data_channel: int = 0,
         **kwargs,
     ) -> None:
         super().__init__(reduction=LossReduction(reduction).value)
@@ -64,8 +149,11 @@ class IgnoreLabelDiceCELoss(_Loss):
         self.reduction = reduction
         self.lambda_dice = lambda_dice
         self.lambda_ce = lambda_ce
+        self.data_channel = data_channel
 
-    def forward(self, data: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, data: torch.Tensor, target: torch.Tensor, **kwargs
+    ) -> torch.Tensor:
         """
         Compute the loss.
 
@@ -75,6 +163,8 @@ class IgnoreLabelDiceCELoss(_Loss):
             Tensor of model outputs.
         target : torch.Tensor
             Tensor of target labels.
+        **kwargs : dict
+            Additional keyword arguments.
 
         Returns
         -------
@@ -82,6 +172,7 @@ class IgnoreLabelDiceCELoss(_Loss):
             The calculated loss.
         """
         # Create a mask to ignore the specified label in the target
+        data = data[:, self.data_channel : self.data_channel + 1, ...]
         orig_data = data.clone()
         data = sigmoid(data)
         mask = target != self.ignore_label
@@ -149,7 +240,9 @@ class DeepSuperVisionLoss(_Loss):
         self.loss_fn = loss_fn
         self.weights = weights
 
-    def forward(self, inputs: list, targets: list, ds_labels: list) -> torch.Tensor:
+    def forward(
+        self, inputs: list, targets: list, ds_labels: list, vec_GTs: list = None
+    ) -> torch.Tensor:
         """
         Compute the loss.
 
@@ -161,6 +254,8 @@ class DeepSuperVisionLoss(_Loss):
             List of tensors of target labels.
         ds_labels : list
             List of dataset labels for each batch element.
+        vec_GTs : list, optional
+            List of tensors of target vector labels, by default None.
 
         Returns
         -------
@@ -169,10 +264,15 @@ class DeepSuperVisionLoss(_Loss):
         """
         loss = 0.0
         ds_labels_loop = [ds_labels] * 5
-        for weight, data, target, ds_label in zip(
-            self.weights, inputs, targets, ds_labels_loop
+        for idx, (weight, data, target, ds_label) in enumerate(
+            zip(self.weights, inputs, targets, ds_labels_loop)
         ):
-            loss += weight * self.loss_fn(data, target, ds_label)
+            loss += weight * self.loss_fn(
+                data,
+                target,
+                ds_label,
+                vec_GT=(None if vec_GTs is None else vec_GTs[idx]),
+            )
         return loss
 
 
@@ -220,7 +320,11 @@ class CombinedLoss(_Loss):
         self.loss_inclusion_tokens = loss_inclusion_tokens
 
     def forward(
-        self, data: torch.Tensor, target: torch.Tensor, ds_label: list
+        self,
+        data: torch.Tensor,
+        target: torch.Tensor,
+        ds_label: list,
+        vec_GT: torch.Tensor = None,
     ) -> torch.Tensor:
         """
         Compute the combined loss.
@@ -233,6 +337,8 @@ class CombinedLoss(_Loss):
             Tensor of target labels.
         ds_label : List[str]
             List of dataset labels for each batch element.
+        vec_GT : torch.Tensor, optional
+            Tensor of target vector labels, by default None.
 
         Returns
         -------
@@ -243,7 +349,7 @@ class CombinedLoss(_Loss):
         for loss_idx, (cur_loss, cur_weight) in enumerate(
             zip(self.losses, self.weights)
         ):
-            cur_loss_val = cur_loss(data, target)
+            cur_loss_val = cur_loss(data, target, vec_GT=vec_GT)
 
             # Zero out losses for excluded cases
             for batch_idx, ds_lab in enumerate(ds_label):
