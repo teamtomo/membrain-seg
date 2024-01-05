@@ -13,6 +13,7 @@ from ..training.optim_utils import (
     DeepSuperVisionLoss,
     DynUNetDirectDeepSupervision,
     IgnoreLabelDiceCELoss,
+    MaskedNormalMSELoss,
 )
 from ..training.surface_dice import IgnoreLabelSurfaceDiceLoss, masked_surface_dice
 
@@ -69,9 +70,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
     def __init__(
         self,
-        spatial_dims: int = 3,
-        in_channels: int = 1,
-        out_channels: int = 1,
         channels: Tuple[int, ...] = [32, 64, 128, 256, 512, 1024],
         strides: Tuple[int, ...] = (1, 2, 2, 2, 2, 2),
         learning_rate: float = 1e-2,
@@ -81,14 +79,23 @@ class SemanticSegmentationUnet(pl.LightningModule):
         label_key: str = "label",
         roi_size: Tuple[int, ...] = (160, 160, 160),
         max_epochs: int = 1000,
-        use_deep_supervision: bool = False,
+        use_deep_supervision: bool = True,
         use_surf_dice: bool = False,
         surf_dice_weight: float = 1.0,
         surf_dice_tokens: list = None,
+        compute_normal_vectors: bool = False,
+        normals_loss_weight: float = 1.0,
+        normal_loss_tokens: list = None,
+        dropout=None,
     ):
         super().__init__()
 
         # store parameters
+        self.spatial_dims = 3
+        self.in_channels = 1
+        self.out_channels = 1 if not compute_normal_vectors else 4
+        self.channels = channels
+        self.strides = strides
         self.learning_rate = learning_rate
         self.min_learning_rate = min_learning_rate
         self.batch_size = batch_size
@@ -96,60 +103,97 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.label_key = label_key
         self.roi_size = roi_size
         self.max_epochs = max_epochs
+        self.use_deep_supervision = use_deep_supervision
+        self.use_surf_dice = use_surf_dice
+        self.surf_dice_weight = surf_dice_weight
+        self.surf_dice_tokens = surf_dice_tokens
+        self.compute_normal_vectors = compute_normal_vectors
+        self.normals_loss_weight = normals_loss_weight
+        self.normal_loss_tokens = normal_loss_tokens
 
-        # make the network
+        self.build_model()
+        self.configure_losses()
+        self.setup_metrics()
+        self.setup_post_transforms()
+        self.init_metrics_storage()
+
+    def build_model(self):
+        """Builds the model architecture."""
         self._model = DynUNetDirectDeepSupervision(
-            spatial_dims=spatial_dims,
-            in_channels=in_channels,
-            out_channels=out_channels,
+            spatial_dims=self.spatial_dims,
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
             kernel_size=(3, 3, 3, 3, 3, 3),
-            strides=strides,
+            strides=self.strides,
             upsample_kernel_size=(1, 2, 2, 2, 2, 2),
-            filters=channels,
+            filters=self.channels,
             res_block=True,
             deep_supervision=True,
             deep_supr_num=2,
         )
 
+    def configure_losses(self):
+        """Configures the loss function."""
         ### Build up loss function
         losses = []
         weights = []
         loss_inclusion_tokens = []
+
+        # Dice loss (always used)
         ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="none")
         losses.append(ignore_dice_loss)
         weights.append(1.0)
-        loss_inclusion_tokens.append(["all"])  # Apply to every element
+        loss_inclusion_tokens.append(["all"])
 
-        if use_surf_dice:
-            if surf_dice_tokens is None:
-                surf_dice_tokens = ["all"]
+        # Surface dice loss (optional)
+        if self.use_surf_dice:
             ignore_surf_dice_loss = IgnoreLabelSurfaceDiceLoss(
                 ignore_label=2, soft_skel_iterations=5
             )
             losses.append(ignore_surf_dice_loss)
-            weights.append(surf_dice_weight)
+            weights.append(self.surf_dice_weight)
+            if self.surf_dice_tokens is None:
+                surf_dice_tokens = ["all"]
             loss_inclusion_tokens.append(surf_dice_tokens)
 
+        # Normal vectors loss (optional)
+        if self.compute_normal_vectors:
+            normal_vectors_loss = MaskedNormalMSELoss(
+                ignore_label=2,
+            )
+            losses.append(normal_vectors_loss)
+            weights.append(self.normals_loss_weight)
+            if self.normal_loss_tokens is None:
+                normal_loss_tokens = ["all"]
+            loss_inclusion_tokens.append(normal_loss_tokens)
+
+        # Scale weights to sum to 1
         scaled_weights = [entry / sum(weights) for entry in weights]
 
+        # Combine losses
         loss_function = CombinedLoss(
             losses=losses,
             weights=scaled_weights,
             loss_inclusion_tokens=loss_inclusion_tokens,
         )
 
+        # Apply deep supervision if desired
         self.loss_function = DeepSuperVisionLoss(
             loss_function,
             weights=[1.0, 0.5, 0.25, 0.125, 0.0675]
-            if use_deep_supervision
+            if self.use_deep_supervision
             else [1.0, 0.0, 0.0, 0.0, 0.0],
         )
 
+    def setup_metrics(self):
+        """Set up the metrics for validation."""
         # validation metric
         self.dice_metric = DiceMetric(
             include_background=False, reduction="mean", get_not_nans=False
         )
 
+    def setup_post_transforms(self):
+        """Set up post-processing transforms for validation metric calculation."""
         # transforms for val metric calculation
         threshold_function_partial = partial(threshold_function, threshold_value=0.0)
         self.post_pred = Compose(
@@ -168,6 +212,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
             ]
         )
 
+    def init_metrics_storage(self):
+        """Initialize storage for outputs and running metrics."""
         self.training_step_outputs = []
         self.validation_step_outputs = []
         self.running_train_acc = 0.0
@@ -180,14 +226,14 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         See the pytorch-lightning module documentation for details.
         """
-        return self._model(x)
+        out = self._model(x)
+        return out
 
     def configure_optimizers(self):
         """Set up the Adam optimzier.
 
         See the pytorch-lightning module documentation for details.
         """
-        # optimizer = torch.optim.Adam(self._model.parameters(), self.learning_rate)
         optimizer = torch.optim.SGD(
             self._model.parameters(),
             lr=self.learning_rate,
@@ -206,16 +252,28 @@ class SemanticSegmentationUnet(pl.LightningModule):
     def training_step(
         self, batch: Dict[str, torch.Tensor], batch_idx: int
     ) -> Dict[str, float]:
-        """Implementation of one training step.
+        """Perform a single training step."""
+        # Extracting images, labels, and dataset labels from the batch
+        images, labels, ds_label, vec_GTs = (
+            batch["image"],
+            batch["label"],
+            batch["dataset"],
+            None,
+        )
+        if self.compute_normal_vectors:
+            vec_GTs = batch["vectors"]
 
-        See the pytorch-lightning module documentation for details.
-        """
-        images, labels, ds_label = batch["image"], batch["label"], batch["dataset"]
+        # Forward pass through the model
         output = self.forward(images)
-        loss = self.loss_function(output, labels, ds_label)
 
+        # Compute loss
+        loss = self.loss_function(output, labels, ds_label, vec_GTs=vec_GTs)
+
+        # Update statistics for training
         stats_dict = {"train_loss": loss, "train_number": output[0].shape[0]}
         self.training_step_outputs.append(stats_dict)
+
+        # Update running metrics for accuracy and surface dice
         self.running_train_acc += (
             masked_accuracy(output[0], labels[0], ignore_label=2.0, threshold_value=0.0)
             * output[0].shape[0]
@@ -231,8 +289,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
             )
             * output[0].shape[0]
         )
-
-        return {"loss": loss}
+        return {"loss": loss}  # Returning loss as part of a dictionary
 
     def on_train_epoch_end(self):
         """What happens after each training epoch?.
@@ -269,14 +326,22 @@ class SemanticSegmentationUnet(pl.LightningModule):
         using a sliding window. See the pytorch-lightning
         module documentation for details.
         """
-        images, labels, ds_label = batch["image"], batch["label"], batch["dataset"]
+        images, labels, ds_label, vec_GTs = (
+            batch["image"],
+            batch["label"],
+            batch["dataset"],
+            None,
+        )
+        if self.compute_normal_vectors:
+            vec_GTs = batch["vectors"]
         outputs = self.forward(images)
-        loss = self.loss_function(outputs, labels, ds_label)
+        loss = self.loss_function(outputs, labels, ds_label, vec_GTs=vec_GTs)
+        print(loss, "in validation_step")
 
         # Cloning and adjusting preds & labels for Dice.
         # Could also use the same labels, but maybe we want to
         # compute more stats?
-        outputs4dice = outputs[0].clone()
+        outputs4dice = outputs[0][:, :1, ...].clone()
         labels4dice = labels[0].clone()
         outputs4dice[
             labels4dice == 2
