@@ -8,6 +8,7 @@ def masked_accuracy(
     y_gt: torch.Tensor,
     ignore_label: Optional[int] = None,
     threshold_value: float = 0.0,
+    data_channel: int = 0,
 ) -> torch.Tensor:
     """
     Computes fraction of correctly predicted voxels after thresholding.
@@ -25,12 +26,15 @@ def masked_accuracy(
         The label to ignore when calculating accuracy, by default None
     threshold_value : float, optional
         The threshold value to convert predictions into binary values, by default 0.0
+    data_channel : int, optional
+        The channel of the data to use for computing accuracy, by default 0
 
     Returns
     -------
     torch.Tensor
         The computed accuracy of the model's predictions.
     """
+    y_pred = y_pred[:, data_channel : data_channel + 1, ...]
     mask = (
         y_gt == ignore_label
         if ignore_label is not None
