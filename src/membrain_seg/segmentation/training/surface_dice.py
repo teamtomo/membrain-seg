@@ -342,6 +342,7 @@ def masked_surface_dice(
     smooth: float = 3.0,
     binary_prediction: bool = False,
     reduction: str = "none",
+    data_channel: int = 0,
 ) -> torch.Tensor:
     """
     Compute the surface Dice loss with masking for ignore labels.
@@ -366,6 +367,8 @@ def masked_surface_dice(
         If True, the predicted segmentation is assumed to be binary. Default is False.
     reduction : str
         Specifies the reduction to apply to the output. Default is "none".
+    data_channel : int
+        The channel of the data to use for computing the loss. Default is 0.
 
     Returns
     -------
@@ -373,6 +376,7 @@ def masked_surface_dice(
         The calculated surface Dice loss.
     """
     # Create a mask to ignore the specified label in the target
+    data = data[:, data_channel : data_channel + 1, ...]
     data = sigmoid(data)
     mask = target != ignore_label
 
@@ -427,7 +431,9 @@ class IgnoreLabelSurfaceDiceLoss(_Loss):
         self.soft_skel_iterations = soft_skel_iterations
         self.smooth = smooth
 
-    def forward(self, data: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, data: torch.Tensor, target: torch.Tensor, **kwargs
+    ) -> torch.Tensor:
         """
         Compute the loss.
 
@@ -437,6 +443,8 @@ class IgnoreLabelSurfaceDiceLoss(_Loss):
             Tensor of model outputs.
         target : torch.Tensor
             Tensor of target labels.
+        **kwargs : dict
+            Additional keyword arguments.
 
         Returns
         -------
