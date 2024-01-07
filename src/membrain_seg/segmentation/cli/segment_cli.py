@@ -27,6 +27,9 @@ def segment(
     out_folder: str = Option(  # noqa: B008
         "./predictions", help="Path to the folder where segmentations should be stored."
     ),
+    store_normals: bool = Option(  # noqa: B008
+        False, help="Should normals be output in addition to segmentations?"
+    ),
     store_probabilities: bool = Option(  # noqa: B008
         False, help="Should probability maps be output in addition to segmentations?"
     ),
@@ -66,6 +69,7 @@ def segment(
         tomogram_path=tomogram_path,
         ckpt_path=ckpt_path,
         out_folder=out_folder,
+        store_normals=store_normals,
         store_probabilities=store_probabilities,
         store_connected_components=store_connected_components,
         connected_component_thres=connected_component_thres,
