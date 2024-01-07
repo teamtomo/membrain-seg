@@ -6,7 +6,9 @@ from skimage import measure
 from membrain_seg.segmentation.dataloading.data_utils import load_tomogram, read_nifti
 
 
-def convert_seg_to_mesh(seg: np.ndarray, smoothing: int) -> pv.PolyData:
+def convert_seg_to_mesh(
+    seg: np.ndarray, smoothing: int, voxel_size: float = 1.0
+) -> pv.PolyData:
     """
     Convert a segmentation array to a mesh using marching cubes.
 
@@ -16,7 +18,8 @@ def convert_seg_to_mesh(seg: np.ndarray, smoothing: int) -> pv.PolyData:
         The segmentation array.
     smoothing : int
         The number of smoothing iterations to apply to the mesh.
-
+    voxel_size : float, optional
+        The voxel size of the segmentation array. Default is 1.0.
 
     Returns
     -------
@@ -26,6 +29,7 @@ def convert_seg_to_mesh(seg: np.ndarray, smoothing: int) -> pv.PolyData:
     verts, faces, _, _ = measure.marching_cubes(
         seg, 0.5, step_size=1.5, method="lewiner"
     )
+    verts = verts * voxel_size
     all_col = np.ones((faces.shape[0], 1), dtype=int) * 3  # Prepend 3 for vtk format
     faces = np.concatenate((all_col, faces), axis=1)
     surf = pv.PolyData(verts, faces)
@@ -102,6 +106,7 @@ def convert_file_to_mesh(
     out_file: str = None,
     smoothing: int = 2000,
     decimation_degree: float = 0.90,
+    angstrom_verts: bool = False,
 ) -> tuple:
     """
     Convert an .nii.gz segmentation file to a mesh file.
@@ -119,6 +124,9 @@ def convert_file_to_mesh(
     decimation_degree : float, optional
         The degree of decimation to reduce the mesh size. Value should
         be between 0 and 1. Default is 0.90.
+    angstrom_verts : bool, optional
+        If True, the mesh vertices are converted from voxels to angstroms.
+        Default is False.
 
     Returns
     -------
@@ -137,8 +145,11 @@ def convert_file_to_mesh(
         if seg_file.endswith(".nii.gz"):
             seg = read_nifti(seg_file)  # Assuming read_nifti is defined elsewhere
             seg = np.transpose(seg, (1, 2, 0))
+            voxel_size = 1.0
         else:
-            seg = load_tomogram(seg_file).data
+            seg = load_tomogram(seg_file)
+            voxel_size = seg.voxel_size if angstrom_verts else 1.0
+            seg = seg.data
         seg = (seg == 1.0) * 1.0  # Binary segmentation for membrane
 
         if 1.0 not in np.unique(seg):
@@ -148,7 +159,7 @@ def convert_file_to_mesh(
         print(f"Error processing segmentation file: {e}")
         return False
 
-    surf = convert_seg_to_mesh(seg, smoothing)
+    surf = convert_seg_to_mesh(seg, smoothing, voxel_size=voxel_size)
 
     if decimation_degree is not None:
         surf = surf.decimate(decimation_degree)
