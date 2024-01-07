@@ -103,8 +103,28 @@ def train_advanced(
             --surface_dice_tokens "ds2"'
         ),
     ] = None,
+    use_normals: bool = Option(  # noqa: B008
+        False,
+        help='Whether to use normals as an additional target. Pass "True" or "False".',
+    ),
+    normals_loss_weight: float = Option(  # noqa: B008
+        1.0, help="Scaling factor for the normals loss."
+    ),
+    normals_loss_tokens: Annotated[
+        Optional[List[str]],
+        Option(
+            help='List of tokens to \
+            use for the normals loss. \
+            Pass tokens separately:\
+            For example, train_advanced --normals_loss_tokens "ds1" \
+            --normals_loss_tokens "ds2"'
+        ),
+    ] = None,
     use_deep_supervision: bool = Option(  # noqa: B008
         True, help='Whether to use deep supervision. Pass "True" or "False".'
+    ),
+    use_dropout: bool = Option(  # noqa: B008
+        False, help='Whether to use dropout. Pass "True" or "False".'
     ),
     project_name: str = Option(  # noqa: B008
         "membrain-seg_v0",
@@ -144,8 +164,16 @@ def train_advanced(
         Scaling factor for the Surface-Dice loss, by default 1.0.
     surface_dice_tokens : list
         List of tokens to use for the Surface-Dice loss, by default ["all"].
+    use_normals : bool
+        Determines whether to use normals as an additional target, by default False.
+    normals_loss_weight : float
+        Scaling factor for the normals loss, by default 1.0.
+    normals_loss_tokens : list
+        List of tokens to use for the normals loss, by default ["all"].
     use_deep_supervision : bool
         Determines whether to use deep supervision, by default True.
+    use_dropout : bool
+        Determines whether to use dropout, by default False.
     project_name : str
         Name of the project for logging purposes, by default 'membrain-seg_v0'.
     sub_name : str
@@ -168,8 +196,12 @@ def train_advanced(
         use_surf_dice=use_surface_dice,
         surf_dice_weight=surface_dice_weight,
         surf_dice_tokens=surface_dice_tokens,
+        use_normals=use_normals,
+        normals_loss_weight=normals_loss_weight,
+        normals_loss_tokens=normals_loss_tokens,
         project_name=project_name,
         sub_name=sub_name,
+        dropout=use_dropout,
     )
 
 
