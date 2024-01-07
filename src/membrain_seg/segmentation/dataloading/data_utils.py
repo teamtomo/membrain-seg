@@ -207,6 +207,8 @@ def store_segmented_tomograms(
     ckpt_token: str,
     normals_output: Tensor = None,
     store_normals: bool = False,
+    uncertainty_output: Tensor = None,
+    store_uncertainty: bool = False,
     store_probabilities: bool = False,
     store_connected_components: bool = False,
     connected_component_thres: int = None,
@@ -235,6 +237,10 @@ def store_segmented_tomograms(
         The output from the network for the normals.
     store_normals : bool, optional
         If True, normals are stored along with the segmentations.
+    uncertainty_output : torch.Tensor, optional
+        The output from the network for the uncertainty.
+    store_uncertainty : bool, optional
+        If True, uncertainty is stored along with the segmentations.
     store_probabilities : bool, optional
         If True, probabilities are stored before thresholding.
     store_connected_components : bool, optional
@@ -306,6 +312,20 @@ def store_segmented_tomograms(
                 data=normals_np[i], header=mrc_header, voxel_size=voxel_size
             )
             store_tomogram(out_file_normals, out_tomo)
+    if store_uncertainty:
+        assert uncertainty_output is not None
+        out_file_uncertainty = os.path.join(
+            out_folder,
+            os.path.splitext(os.path.basename(orig_data_path))[0]
+            + "_"
+            + ckpt_token
+            + "_uncertainty.mrc",
+        )
+        out_tomo = Tomogram(
+            data=uncertainty_output, header=mrc_header, voxel_size=voxel_size
+        )
+        store_tomogram(out_file_uncertainty, out_tomo)
+
     print("MemBrain has finished segmenting your tomogram.")
     return out_file_thres
 
