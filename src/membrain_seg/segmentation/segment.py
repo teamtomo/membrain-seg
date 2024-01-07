@@ -1,7 +1,9 @@
 import os
 
+import numpy as np
 import torch
 from monai.inferers import SlidingWindowInferer
+from torch.nn import functional as F
 
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
 
@@ -27,6 +29,8 @@ def segment(
     connected_component_thres=None,
     test_time_augmentation=True,
     segmentation_threshold=0.0,
+    uncertainty_quantification=False,
+    dropout=0.0,
 ):
     """
     Segment tomograms using a trained model.
@@ -66,6 +70,12 @@ def segment(
     segmentation_threshold: float, optional
         Threshold for the membrane segmentation. Only voxels with a membrane
         score higher than this threshold will be segmented. (default: 0.0)
+    uncertainty_quantification: bool, optional
+        If True, uncertainty quantification is performed and the uncertainty
+        is stored along with the segmentation.
+    dropout: float, optional
+        Dropout rate to use for uncertainty quantification. (default: 0.0)
+
 
     Returns
     -------
@@ -77,6 +87,8 @@ def segment(
     FileNotFoundError
         If `tomogram_path` or `ckpt_path` does not point to a file.
     """
+    if uncertainty_quantification:
+        test_time_augmentation = True
     model_checkpoint = ckpt_path
     ckpt_token = os.path.basename(model_checkpoint).split("-val_loss")[
         0
@@ -92,6 +104,7 @@ def segment(
             map_location=device,
             strict=False,
             compute_normal_vectors=False,
+            dropout=(dropout if uncertainty_quantification else None),
         )
     except RuntimeError:
         # If an error occurs, try loading the model with compute_normal_vectors=True
@@ -101,9 +114,9 @@ def segment(
             map_location=device,
             strict=False,
             compute_normal_vectors=True,
+            dropout=(dropout if uncertainty_quantification else None),
         )
     pl_model.to(device)
-
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
@@ -114,6 +127,10 @@ def segment(
 
     # Put the model into evaluation mode
     pl_model.eval()
+    # Put the model into training mode if uncertainty quantification is enabled
+    # to enable dropout
+    if uncertainty_quantification:
+        pl_model.train()
 
     # Perform sliding window inference on the new data
     if sw_roi_size % 32 != 0:
@@ -128,36 +145,62 @@ def segment(
         mode="gaussian",
         device=torch.device("cpu"),
     )
-
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     normal_predictions = torch.zeros([new_data.shape[0], 3, *new_data.shape[2:]])
-    print("Performing 8-fold test-time augmentation.")
+    mc_uncertainty = torch.zeros((new_data.shape[0], 8, *new_data.shape[2:]))
+    if test_time_augmentation:
+        print("Performing 8-fold test-time augmentation.")
     for m in range(8 if test_time_augmentation else 1):
         with torch.no_grad():
             with torch.cuda.amp.autocast():
-                mirrored_output = (
-                    inferer(get_mirrored_img(new_data.clone(), m).to(device), pl_model)[
-                        0
-                    ]
-                    .detach()
-                    .cpu()
-                )
-                predictions += get_mirrored_img(mirrored_output[:, :1, ...], m)
-                if store_normals:
-                    assert (
-                        mirrored_output.shape[1] == 4
-                    ), "Model does not output normal vectors!"
-                    normals_output_mirrored_back = get_mirrored_img(
-                        mirrored_output[:, 1:, ...], m
+                if not uncertainty_quantification:
+                    mirrored_output = (
+                        inferer(
+                            get_mirrored_img(new_data.clone(), m).to(device), pl_model
+                        )[0]
+                        .detach()
+                        .cpu()
                     )
-                    normals_output_mirrored_back = adjust_mirrored_vectors(
-                        normals_output_mirrored_back, m
-                    )
-                    normal_predictions += normals_output_mirrored_back
+                    predictions += get_mirrored_img(mirrored_output[:, :1, ...], m)
+                    if store_normals:
+                        assert (
+                            mirrored_output.shape[1] == 4
+                        ), "Model does not output normal vectors!"
+                        normals_output_mirrored_back = get_mirrored_img(
+                            mirrored_output[:, 1:, ...], m
+                        )
+                        normals_output_mirrored_back = adjust_mirrored_vectors(
+                            normals_output_mirrored_back, m
+                        )
+                        normal_predictions += normals_output_mirrored_back
+                else:
+                    output = inferer(new_data.to(device), pl_model)[0].detach().cpu()
+                    predictions += output[:, :1, ...]
+                    if store_normals:
+                        assert (
+                            output.shape[1] == 4
+                        ), "Model does not output normal vectors!"
+                        normal_predictions += output[:, 1:, ...]
+                    mc_uncertainty[:, m : m + 1, :, :, :] = F.sigmoid(predictions)
 
     if test_time_augmentation:
         predictions /= 8.0
+        normal_predictions /= 8.0
+
+    if uncertainty_quantification:
+        mc_uncertainty = mc_uncertainty.detach().cpu().numpy()
+        # Use only voxels where at least one of the 8 predictions is above 0.5
+        mask = np.squeeze(np.any(mc_uncertainty > 0.5, axis=1))
+        # Use only voxels where at least one of the 8 predictions is below 0.5
+        mask2 = np.squeeze(np.any(mc_uncertainty < 0.5, axis=1))
+        # Compute the standard deviation of the 8 predictions
+        mc_uncertainty = np.squeeze(np.std(mc_uncertainty, axis=1))
+        # Set the uncertainty to 0 for all voxels where none of the 8 predictions
+        # is above 0.5 or below 0.5
+        mc_uncertainty[~mask] = 0.0
+        mc_uncertainty[~mask2] = 0.0
+        print(mc_uncertainty.shape)
 
     # Extract segmentations and store them in an output file.
     segmentation_file = store_segmented_tomograms(
@@ -167,6 +210,8 @@ def segment(
         ckpt_token=ckpt_token,
         normals_output=normal_predictions,
         store_normals=store_normals,
+        uncertainty_output=mc_uncertainty,
+        store_uncertainty=uncertainty_quantification,
         store_probabilities=store_probabilities,
         store_connected_components=store_connected_components,
         connected_component_thres=connected_component_thres,
