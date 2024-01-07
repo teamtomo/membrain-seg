@@ -30,6 +30,9 @@ def segment(
     store_normals: bool = Option(  # noqa: B008
         False, help="Should normals be output in addition to segmentations?"
     ),
+    store_uncertainty: bool = Option(  # noqa: B008
+        False, help="Should uncertainty maps be output in addition to segmentations?"
+    ),
     store_probabilities: bool = Option(  # noqa: B008
         False, help="Should probability maps be output in addition to segmentations?"
     ),
@@ -57,6 +60,11 @@ def segment(
         help="Sliding window size used for inference. Smaller values than 160 \
             consume less GPU, but also lead to worse segmentation results!",
     ),
+    dropout: float = Option(  # noqa: B008
+        0.0,
+        help="Dropout rate used during inference. Only used if \
+            uncertainty quantification is enabled.",
+    ),
 ):
     """Segment tomograms using a trained model.
 
@@ -71,11 +79,13 @@ def segment(
         out_folder=out_folder,
         store_normals=store_normals,
         store_probabilities=store_probabilities,
+        uncertainty_quantification=store_uncertainty,
         store_connected_components=store_connected_components,
         connected_component_thres=connected_component_thres,
         sw_roi_size=sliding_window_size,
         test_time_augmentation=test_time_augmentation,
         segmentation_threshold=segmentation_threshold,
+        dropout=dropout,
     )
 
 
