@@ -65,6 +65,14 @@ class SemanticSegmentationUnet(pl.LightningModule):
         The weight for the surface dice loss.
     surf_dice_tokens : list, default=[]
         The tokens for which to compute the surface dice loss.
+    compute_normal_vectors : bool, default=False
+        Whether to compute normal vectors.
+    normals_loss_weight : float, default=1.0
+        The weight for the normals loss.
+    normal_loss_tokens : list, default=[]
+        The tokens for which to compute the normals loss.
+    dropout : float, default=None
+        The dropout probability. If None, no dropout is used.
 
     """
 
@@ -110,6 +118,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.compute_normal_vectors = compute_normal_vectors
         self.normals_loss_weight = normals_loss_weight
         self.normal_loss_tokens = normal_loss_tokens
+        self.dropout = dropout
 
         self.build_model()
         self.configure_losses()
@@ -130,6 +139,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
             res_block=True,
             deep_supervision=True,
             deep_supr_num=2,
+            dropout=self.dropout,
         )
 
     def configure_losses(self):
