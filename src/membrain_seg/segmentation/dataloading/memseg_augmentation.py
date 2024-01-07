@@ -114,6 +114,66 @@ def get_mirrored_img(img: torch.Tensor, mirror_idx: int) -> torch.Tensor:
         return torch.flip(img, (4, 3, 2))
 
 
+def adjust_mirrored_vectors(img: torch.Tensor, mirror_idx: int) -> torch.Tensor:
+    """
+    Adjust the vectors for test time augmentation.
+
+    There are 8 possible cases, enumerated from 0 to 7.
+    The function supports mirroring across three axes,
+    and combinations thereof.
+
+    Parameters
+    ----------
+    img : torch.Tensor
+        Input tensor to be mirrored.
+    mirror_idx : int
+        Integer index to select mirror case.
+        Should be within the range [0, 7].
+
+    Returns
+    -------
+    torch.Tensor
+        The mirrored image tensor.
+    """
+    img = img.clone()
+    assert mirror_idx < 8 and mirror_idx >= 0
+    if mirror_idx == 0:
+        return img
+
+    if mirror_idx == 1 and (2 in mirror_axes):
+        img[:, 2, :, :, :] *= -1
+
+    if mirror_idx == 2 and (1 in mirror_axes):
+        img[:, 1, :, :, :] *= -1
+
+    if mirror_idx == 3 and (2 in mirror_axes) and (1 in mirror_axes):
+        img[:, 1, :, :, :] *= -1
+        img[:, 2, :, :, :] *= -1
+
+    if mirror_idx == 4 and (0 in mirror_axes):
+        img[:, 0, :, :, :] *= -1
+
+    if mirror_idx == 5 and (0 in mirror_axes) and (2 in mirror_axes):
+        img[:, 0, :, :, :] *= -1
+        img[:, 2, :, :, :] *= -1
+
+    if mirror_idx == 6 and (0 in mirror_axes) and (1 in mirror_axes):
+        img[:, 0, :, :, :] *= -1
+        img[:, 1, :, :, :] *= -1
+
+    if (
+        mirror_idx == 7
+        and (0 in mirror_axes)
+        and (1 in mirror_axes)
+        and (2 in mirror_axes)
+    ):
+        img[:, 0, :, :, :] *= -1
+        img[:, 1, :, :, :] *= -1
+        img[:, 2, :, :, :] *= -1
+
+    return img
+
+
 def get_training_transforms(
     prob_to_one: bool = False,
     use_vectors: bool = False,
