@@ -3,9 +3,7 @@ import pyvista as pv
 from scipy.spatial import cKDTree
 from skimage import measure
 
-from membrain_seg.segmentation.dataloading.data_utils import (
-    read_nifti,
-)
+from membrain_seg.segmentation.dataloading.data_utils import load_tomogram, read_nifti
 
 
 def convert_seg_to_mesh(seg: np.ndarray, smoothing: int) -> pv.PolyData:
@@ -35,7 +33,11 @@ def convert_seg_to_mesh(seg: np.ndarray, smoothing: int) -> pv.PolyData:
 
 
 def find_nearest_normals(
-    coords: np.ndarray, normals: np.ndarray, points: np.ndarray, threshold: float
+    coords: np.ndarray,
+    normals: np.ndarray,
+    points: np.ndarray,
+    threshold: float,
+    remove_masked: bool = False,
 ) -> np.ndarray:
     """
     Find nearest normals for each point in a set, under a distance threshold.
@@ -43,13 +45,16 @@ def find_nearest_normals(
     Parameters
     ----------
     coords : np.ndarray
-        The array of coordinates.
+        The array of coordinates associated with normals.
     normals : np.ndarray
         The array of normals associated with coordinates.
     points : np.ndarray
         The array of points to find nearest normals for.
     threshold : float
         The distance threshold for considering nearest normals.
+    remove_masked : bool, optional
+        If True, remove masked points from the output array.
+        Default is False.
 
     Returns
     -------
@@ -67,6 +72,8 @@ def find_nearest_normals(
     mask = (indices != len(coords)) & (distances < threshold)
     normal_labels = np.zeros(points.shape)
     normal_labels[mask] = nearest_normals[mask]
+    if remove_masked:
+        normal_labels = normal_labels[mask]
     return normal_labels
 
 
@@ -127,8 +134,11 @@ def convert_file_to_mesh(
         If no membrane (value 1.0) is found in the segmentation file.
     """
     try:
-        seg = read_nifti(seg_file)  # Assuming read_nifti is defined elsewhere
-        seg = np.transpose(seg, (1, 2, 0))
+        if seg_file.endswith(".nii.gz"):
+            seg = read_nifti(seg_file)  # Assuming read_nifti is defined elsewhere
+            seg = np.transpose(seg, (1, 2, 0))
+        else:
+            seg = load_tomogram(seg_file).data
         seg = (seg == 1.0) * 1.0  # Binary segmentation for membrane
 
         if 1.0 not in np.unique(seg):
