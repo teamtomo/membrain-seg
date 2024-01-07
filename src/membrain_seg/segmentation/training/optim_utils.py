@@ -1,5 +1,6 @@
 import torch
 from monai.losses import DiceLoss, MaskedLoss
+from monai.networks.blocks.dynunet_block import UnetOutBlock
 from monai.networks.nets import DynUNet
 from monai.utils import LossReduction
 from torch.nn.functional import (
@@ -9,7 +10,33 @@ from torch.nn.functional import (
 from torch.nn.modules.loss import _Loss
 
 
-class DynUNetDirectDeepSupervision(DynUNet):
+class DynUNet4Dropout(DynUNet):
+    """U-Net adjusted to utilize Dropout.
+
+    Dropout should not be used in the output block of the first layer,
+    so we need to overwrite the original implementation.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.output_block = self.get_output_block(0)
+        # initialize the typed list of supervision head outputs so that Torchscript
+        # can recognize what's going on
+        if self.deep_supervision:
+            self.deep_supervision_heads = self.get_deep_supervision_heads()
+            self.check_deep_supr_num()
+
+        self.apply(self.initialize_weights)
+        self.check_kernel_stride()
+
+    def get_output_block(self, idx: int):
+        """Get U-Net output block."""
+        return UnetOutBlock(
+            self.spatial_dims, self.filters[idx], self.out_channels, dropout=None
+        )
+
+
+class DynUNetDirectDeepSupervision(DynUNet4Dropout):
     """Adjusted DynUNet outputting low-resolution deep supervision images.
 
     This is in contrast to the original DynUNet implementation: Here, images
