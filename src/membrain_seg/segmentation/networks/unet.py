@@ -7,7 +7,7 @@ from monai.data import decollate_batch
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete, Compose, EnsureType, Lambda
 
-from ..training.metric_utils import masked_accuracy, threshold_function
+from ..training.metric_utils import masked_accuracy, masked_mse, threshold_function
 from ..training.optim_utils import (
     CombinedLoss,
     DeepSuperVisionLoss,
@@ -220,6 +220,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.running_train_surf_dice = 0.0
         self.running_val_acc = 0.0
         self.running_val_surf_dice = 0.0
+        self.running_train_normals_mse = 0.0
+        self.running_val_normals_mse = 0.0
 
     def forward(self, x) -> torch.Tensor:
         """Implementation of the forward pass.
@@ -289,6 +291,19 @@ class SemanticSegmentationUnet(pl.LightningModule):
             )
             * output[0].shape[0]
         )
+
+        if self.compute_normal_vectors:
+            self.running_train_normals_mse += (
+                masked_mse(
+                    y_pred=output[0].detach(),
+                    y_gt=labels[0].detach(),
+                    y_normals_gt=vec_GTs[0],
+                    ignore_label=2.0,
+                    data_channels=(1, 2, 3),
+                )
+                * output[0].shape[0]
+            )
+
         return {"loss": loss}  # Returning loss as part of a dictionary
 
     def on_train_epoch_end(self):
@@ -316,7 +331,13 @@ class SemanticSegmentationUnet(pl.LightningModule):
         print("EPOCH Training loss", mean_train_loss.item())
         print("EPOCH Training acc", mean_train_acc.item())
         print("EPOCH Training surface dice", mean_train_surf_dice.item())
-        # Accuracy not the most informative metric, but a good sanity check
+
+        if self.compute_normal_vectors:
+            mean_train_normals_mse = self.running_train_normals_mse / num_items
+            self.running_train_normals_mse = 0.0
+            self.log("train_normals_mse", mean_train_normals_mse)
+            print("EPOCH Training normals mse", mean_train_normals_mse.item())
+
         return {"train_loss": mean_train_loss}
 
     def validation_step(self, batch, batch_idx):
@@ -372,6 +393,18 @@ class SemanticSegmentationUnet(pl.LightningModule):
             )
             * outputs[0].shape[0]
         )
+
+        if self.compute_normal_vectors:
+            self.running_val_normals_mse += (
+                masked_mse(
+                    y_pred=outputs[0].detach(),
+                    y_gt=labels[0].detach(),
+                    y_normals_gt=vec_GTs[0],
+                    ignore_label=2.0,
+                    data_channels=(1, 2, 3),
+                )
+                * outputs[0].shape[0]
+            )
         return stats_dict
 
     def on_validation_epoch_end(self):
@@ -401,4 +434,10 @@ class SemanticSegmentationUnet(pl.LightningModule):
         print("EPOCH Validation dice", mean_val_dice)
         print("EPOCH Validation surface dice", mean_val_surf_dice.item())
         print("EPOCH Validation acc", mean_val_acc.item())
+
+        if self.compute_normal_vectors:
+            mean_val_normals_mse = self.running_val_normals_mse / num_items
+            self.running_val_normals_mse = 0.0
+            self.log("val_normals_mse", mean_val_normals_mse)
+            print("EPOCH Validation normals mse", mean_val_normals_mse.item())
         return {"val_loss": mean_val_loss, "val_metric": mean_val_dice}
