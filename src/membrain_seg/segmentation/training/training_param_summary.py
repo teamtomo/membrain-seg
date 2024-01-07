@@ -11,6 +11,10 @@ def print_training_parameters(
     use_surf_dice: bool = False,
     surf_dice_weight: float = 1.0,
     surf_dice_tokens: list = None,
+    use_normals: bool = False,
+    normals_loss_weight: float = 1.0,
+    normals_loss_tokens: list = None,
+    dropout: float = 0.0,
 ):
     """
     Print a formatted overview of the training parameters with explanations.
@@ -41,6 +45,16 @@ def print_training_parameters(
         Weight for the Surface-Dice loss.
     surf_dice_tokens : list, optional
         List of tokens to use for the Surface-Dice loss.
+    use_normals : bool, optional
+        If True, enables normal vectors as additional
+        target to the model.
+    normals_loss_weight : float, optional
+        Weight for the normals loss.
+    normals_loss_tokens : list, optional
+        List of tokens to use for the normals loss.
+    dropout : float, optional
+        Dropout probability for the model.
+
 
     Returns
     -------
@@ -114,4 +128,29 @@ def print_training_parameters(
             "Surface Dice Tokens:\n None \n No specific tokens are used for "
             "Surface-Dice loss."
         )
+    print("————————————————————————————————————————————————————————")
+    normals_status = "Enabled" if use_normals else "Disabled"
+    print(
+        "Use Normals:\n   {} \n   If enabled, includes normal vectors in the loss "
+        "calculation.".format(normals_status)
+    )
+    print("————————————————————————————————————————————————————————")
+    print(
+        "Normals Loss Weight:\n   {} \n   Weighting of the normals"
+        " loss, if enabled.".format(normals_loss_weight)
+    )
+    print("————————————————————————————————————————————————————————")
+    if normals_loss_tokens:
+        tokens = ", ".join(normals_loss_tokens)
+        print(
+            "Normals Loss Tokens:\n   [{}] \n   Specific tokens used for "
+            "normals loss. Other tokens will be neglected.".format(tokens)
+        )
+    else:
+        print(
+            "Normals Loss Tokens:\n None \n No specific tokens are used for "
+            "normals loss."
+        )
+    print("————————————————————————————————————————————————————————")
+    print(f"Dropout:\n   {dropout} \n   Dropout probability for the model.")
     print("\n")
