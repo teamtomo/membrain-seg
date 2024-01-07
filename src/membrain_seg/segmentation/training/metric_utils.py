@@ -43,8 +43,54 @@ def masked_accuracy(
     acc = (threshold_function(y_pred, threshold_value=threshold_value) == y_gt).float()
     acc[mask] = 0.0
     acc = acc.sum()
-    acc /= (~mask).sum()
+    acc /= (~mask).sum() + 1e-3
     return acc
+
+
+def masked_mse(
+    y_pred: torch.Tensor,
+    y_gt: torch.Tensor,
+    y_normals_gt: torch.Tensor,
+    ignore_label: Optional[int] = None,
+    data_channels: tuple = (1, 2, 3),
+) -> torch.Tensor:
+    """
+    Computes the mean squared error between the model's predictions and ground truth.
+
+    If an ignore label is provided, MSE is only computed for voxels
+    where the GT label is NOT equal to the ignore label.
+
+    Parameters
+    ----------
+    y_pred : torch.Tensor
+        Tensor representing the model's predictions.
+    y_gt : torch.Tensor
+        Tensor representing the ground truth labels.
+    y_normals_gt : torch.Tensor
+        Tensor representing the ground truth normals.
+    ignore_label : Optional[int], optional
+        The label to ignore when calculating MSE, by default None
+    data_channels : int, optional
+        The channel of the data to use for computing MSE, by default 0
+
+    Returns
+    -------
+    torch.Tensor
+        The computed MSE of the model's predictions.
+    """
+    y_pred = y_pred[:, data_channels, ...]
+    mask = (
+        y_gt == ignore_label
+        if ignore_label is not None
+        else torch.zeros_like(y_gt).bool()
+    )
+    mask = torch.cat([mask, mask, mask], dim=1)
+
+    mse = (y_pred - y_normals_gt) ** 2
+    mse[mask] = 0.0
+    mse = mse.sum()
+    mse /= (~mask).sum() + 1e-3
+    return mse
 
 
 def threshold_function(
