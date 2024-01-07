@@ -31,6 +31,9 @@ def train(
     surf_dice_weight: float = 1.0,
     surf_dice_tokens: list = None,
     use_normals: bool = False,
+    normals_loss_weight: float = 1.0,
+    normals_loss_tokens: list = None,
+    dropout: float = None,
 ):
     """
     Train the model on the specified data.
@@ -68,6 +71,12 @@ def train(
     use_normals : bool, optional
         If True, enables normal vectors as additional
         target to the model.
+    normals_loss_weight : float, optional
+        Weight for the normals loss.
+    normals_loss_tokens : list, optional
+        List of tokens to use for the normals loss.
+    dropout : float, optional
+        Dropout probability to use in the model.
 
     Returns
     -------
@@ -86,6 +95,10 @@ def train(
         use_surf_dice=use_surf_dice,
         surf_dice_weight=surf_dice_weight,
         surf_dice_tokens=surf_dice_tokens,
+        use_normals=use_normals,
+        normals_loss_weight=normals_loss_weight,
+        normals_loss_tokens=normals_loss_tokens,
+        dropout=dropout,
     )
     # Set up the data module
     data_module = MemBrainSegDataModule(
@@ -104,6 +117,9 @@ def train(
         surf_dice_weight=surf_dice_weight,
         surf_dice_tokens=surf_dice_tokens,
         compute_normal_vectors=use_normals,
+        normals_loss_weight=normals_loss_weight,
+        normals_loss_tokens=normals_loss_tokens,
+        dropout=dropout,
     )
 
     project_name = project_name
