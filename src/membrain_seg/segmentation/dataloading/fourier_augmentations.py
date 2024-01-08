@@ -58,8 +58,8 @@ def wedge_mask(shape: Tuple[int, int, int], angle: float) -> np.ndarray:
 
     x_above_wedge = np.concatenate((x_left_above_wedge, x_right_above_wedge), axis=0)
     x_below_wedge = np.concatenate((x_left_below_wedge, x_right_below_wedge), axis=0)
-    above_wedge_mask = x_above_wedge < z_coords - 1.5
-    below_wedge_mask = x_below_wedge > z_coords + 1.5
+    above_wedge_mask = x_above_wedge < z_coords  # - 1.5
+    below_wedge_mask = x_below_wedge > z_coords  # + 1.5
 
     wedge_mask = above_wedge_mask + below_wedge_mask
     wedge_mask = wedge_mask > 0
@@ -287,7 +287,6 @@ class MissingWedgeMaskAndFourierAmplitudeMatchingCombined(Randomizable, Transfor
                 real_patch /= real_patch.std()
 
                 data[key][c] = torch.from_numpy(real_patch)
-        data["kernel"] = kernel
         return data
 
     def _generate_kernel(self, img_shape):
