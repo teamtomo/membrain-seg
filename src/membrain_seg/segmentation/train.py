@@ -36,6 +36,7 @@ def train(
     normals_loss_weight: float = 1.0,
     normals_loss_tokens: list = None,
     dropout: float = None,
+    cosine_annealing_interval: int = None,
 ):
     """
     Train the model on the specified data.
@@ -83,6 +84,8 @@ def train(
         List of tokens to use for the normals loss.
     dropout : float, optional
         Dropout probability to use in the model.
+    cosine_annealing_interval: int, optional
+        Number of epochs between cosine annealing of the learning rate.
 
     Returns
     -------
@@ -105,6 +108,7 @@ def train(
         normals_loss_weight=normals_loss_weight,
         normals_loss_tokens=normals_loss_tokens,
         dropout=dropout,
+        cosine_annealing_interval=cosine_annealing_interval,
     )
     # Set up the data module
     data_module = MemBrainSegDataModule(

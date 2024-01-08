@@ -73,7 +73,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         The tokens for which to compute the normals loss.
     dropout : float, default=None
         The dropout probability. If None, no dropout is used.
-
+    cosine_annealing_interval : int, default=None
+        The interval for cosine annealing warm restarts.
+        If None, no cosine annealing is used.
     """
 
     def __init__(
@@ -95,6 +97,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         normals_loss_weight: float = 1.0,
         normal_loss_tokens: list = None,
         dropout=None,
+        cosine_annealing_interval=None,
     ):
         super().__init__()
 
@@ -119,6 +122,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.normals_loss_weight = normals_loss_weight
         self.normal_loss_tokens = normal_loss_tokens
         self.dropout = dropout
+        self.cosine_annealing_interval = cosine_annealing_interval
 
         self.build_model()
         self.configure_losses()
@@ -259,6 +263,20 @@ class SemanticSegmentationUnet(pl.LightningModule):
         scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lr_lambda=lambda epoch: (1 - epoch / self.max_epochs) ** 0.9
         )  # PolyLR from nnUNet
+
+        if self.cosine_annealing_interval is not None:
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                optimizer,
+                self.cosine_annealing_interval,
+                T_mult=1,
+                eta_min=0,
+                last_epoch=-1,
+                verbose=False,
+            )
+        else:
+            scheduler = torch.optim.lr_scheduler.LambdaLR(
+                optimizer, lr_lambda=lambda epoch: (1 - epoch / self.max_epochs) ** 0.9
+            )  # PolyLR from nnUNet
         return [optimizer], [scheduler]
 
     def training_step(

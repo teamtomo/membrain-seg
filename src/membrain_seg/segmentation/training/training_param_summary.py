@@ -5,6 +5,8 @@ def print_training_parameters(
     num_workers: int = 8,
     max_epochs: int = 1000,
     aug_prob_to_one: bool = False,
+    use_mw_aug: bool = False,
+    use_fourier_aug: bool = False,
     use_deep_supervision: bool = False,
     project_name: str = "membrain-seg_v0",
     sub_name: str = "1",
@@ -15,6 +17,7 @@ def print_training_parameters(
     normals_loss_weight: float = 1.0,
     normals_loss_tokens: list = None,
     dropout: float = 0.0,
+    cosine_annealing_interval: int = None,
 ):
     """
     Print a formatted overview of the training parameters with explanations.
@@ -33,6 +36,10 @@ def print_training_parameters(
         Maximum number of epochs to train for.
     aug_prob_to_one : bool, optional
         If True, all augmentation probabilities are set to 1.
+    use_mw_aug : bool, optional
+        If True, enables MW augmentation.
+    use_fourier_aug : bool, optional
+        If True, enables Fourier augmentation.
     use_deep_supervision : bool, optional
         If True, enables deep supervision in the U-Net model.
     project_name : str, optional
@@ -54,6 +61,9 @@ def print_training_parameters(
         List of tokens to use for the normals loss.
     dropout : float, optional
         Dropout probability for the model.
+    cosine_annealing_interval: int, optional
+        Number of epochs between cosine annealing of the learning rate.
+
 
 
     Returns
@@ -88,6 +98,18 @@ def print_training_parameters(
     print(
         "Augmentation Probability to One:\n   {} \n   If enabled, sets all "
         "augmentation probabilities to 1. (strong augmentation)".format(aug_status)
+    )
+    print("————————————————————————————————————————————————————————")
+    mw_aug_status = "Enabled" if use_mw_aug else "Disabled"
+    print(
+        "Use MW Augmentation:\n   {} \n   If enabled, enables MW "
+        "augmentation.".format(mw_aug_status)
+    )
+    print("————————————————————————————————————————————————————————")
+    fourier_aug_status = "Enabled" if use_fourier_aug else "Disabled"
+    print(
+        "Use Fourier Augmentation:\n   {} \n   If enabled, enables Fourier "
+        "augmentation.".format(fourier_aug_status)
     )
     print("————————————————————————————————————————————————————————")
     deep_sup_status = "Enabled" if use_deep_supervision else "Disabled"
@@ -153,4 +175,16 @@ def print_training_parameters(
         )
     print("————————————————————————————————————————————————————————")
     print(f"Dropout:\n   {dropout} \n   Dropout probability for the model.")
+    print("————————————————————————————————————————————————————————")
+    if cosine_annealing_interval:
+        print(
+            "Cosine Annealing Interval:\n   {} \n   Number of epochs between "
+            "cosine annealing of the learning rate.".format(cosine_annealing_interval)
+        )
+    else:
+        print(
+            "Cosine Annealing Interval:\n None \n No cosine annealing of the "
+            "learning rate is performed."
+        )
+
     print("\n")

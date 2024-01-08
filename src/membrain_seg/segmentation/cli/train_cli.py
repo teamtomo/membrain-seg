@@ -131,6 +131,10 @@ def train_advanced(
         True, help="Whether to use deep supervision."
     ),
     use_dropout: bool = Option(False, help="Whether to use dropout."),  # noqa: B008
+    cosine_annealing_interval: int = Option(  # noqa: B008
+        None,
+        help="Number of epochs between cosine annealing of the learning rate.",
+    ),
     project_name: str = Option(  # noqa: B008
         "membrain-seg_v0",
         help="Project name. This helps to find your model again.",
@@ -183,10 +187,13 @@ def train_advanced(
         Determines whether to use deep supervision, by default True.
     use_dropout : bool
         Determines whether to use dropout, by default False.
+    cosine_annealing_interval : int
+        Determines the interval for cosine annealing, by default None.
     project_name : str
         Name of the project for logging purposes, by default 'membrain-seg_v0'.
     sub_name : str
         Sub-name for the project, by default '1'.
+
 
     Note
 
@@ -213,6 +220,7 @@ def train_advanced(
         project_name=project_name,
         sub_name=sub_name,
         dropout=use_dropout,
+        cosine_annealing_interval=cosine_annealing_interval,
     )
 
 
