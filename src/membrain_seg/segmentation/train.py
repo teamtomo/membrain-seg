@@ -126,7 +126,7 @@ def train(
         surf_dice_tokens=surf_dice_tokens,
         compute_normal_vectors=use_normals,
         normals_loss_weight=normals_loss_weight,
-        normals_loss_tokens=normals_loss_tokens,
+        normal_loss_tokens=normals_loss_tokens,
         dropout=dropout,
     )
 
