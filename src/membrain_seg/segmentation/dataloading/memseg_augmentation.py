@@ -11,6 +11,9 @@ from monai.transforms import (
     ToTensord,
 )
 
+from membrain_seg.segmentation.dataloading.fourier_augmentations import (
+    MissingWedgeMaskAndFourierAmplitudeMatchingCombined,
+)
 from membrain_seg.segmentation.dataloading.transforms import (
     BlankCuboidTransform,
     BrightnessGradientAdditiveTransform,
@@ -177,6 +180,8 @@ def adjust_mirrored_vectors(img: torch.Tensor, mirror_idx: int) -> torch.Tensor:
 def get_training_transforms(
     prob_to_one: bool = False,
     use_vectors: bool = False,
+    use_mw_aug: bool = False,
+    use_fourier_aug: bool = False,
     return_as_list: bool = False,
     track_time: bool = False,
 ) -> Union[List[Callable], Compose]:
@@ -198,6 +203,10 @@ def get_training_transforms(
     use_vectors : bool, optional
         If True, the sequence of transformations is set up to work with
             vector data as well. Can be used to use also normal vectors as GT.
+    use_mw_aug : bool, optional
+        If True, Missing Wedge augmentation is applied.
+    use_fourier_aug : bool, optional
+        If True, Fourier amplitude matching is applied.
     return_as_list : bool, optional
         If True, the sequence of transformations is returned as a list.
         If False, the sequence is returned as a Compose object. Default is False.
@@ -270,6 +279,22 @@ def get_training_transforms(
             vector_key=("vectors" if use_vectors else None),
         ),
         create_axes_shuffle_with_vectors(vector_key="vectors" if use_vectors else None),
+        MissingWedgeMaskAndFourierAmplitudeMatchingCombined(
+            keys=["image"],
+            amplitude_aug=use_fourier_aug,
+            missing_wedge_aug=use_mw_aug,
+            smooth_sigma_range=(2, 4),
+            step_sigma_range=(0.1, 4),
+            offset_range=(2, 10),
+            missing_angle_range=(45, 45),
+            missing_wedge_prob=0.5,
+            amplitude_prob=0.5,
+            sample_kernel_prob=0.5,
+            scale=lambda x, y: np.exp(
+                np.random.uniform(np.log(x[y]) * 0.75, np.log(x[y]) * 1.5)
+            ),
+            loc=(-0.5, 1.5),
+        ),
         OneOf(
             [
                 RandApplyTransform(
