@@ -379,6 +379,7 @@ class BrightnessGradientAdditiveTransform(Randomizable, MapTransform):
         img_shape = img_shape[2:]
         scale = [sample_scalar(self.scale, img_shape, i) for i in range(len(img_shape))]
         loc = [sample_scalar(self.loc, img_shape, i) for i in range(len(img_shape))]
+        loc = np.array(loc) * np.array(img_shape)
         coords = [
             np.linspace(-loc[i], img_shape[i] - loc[i], img_shape[i])
             for i in range(len(img_shape))
@@ -429,6 +430,7 @@ class LocalGammaTransform(Randomizable, MapTransform):
         img_shape = img_shape[2:]
         scale = [sample_scalar(self.scale, img_shape, i) for i in range(len(img_shape))]
         loc = [sample_scalar(self.loc, img_shape, i) for i in range(len(img_shape))]
+        loc = np.array(loc) * np.array(img_shape)
         coords = [
             np.linspace(-loc[i], img_shape[i] - loc[i], img_shape[i])
             for i in range(len(img_shape))
