@@ -55,6 +55,8 @@ class CryoETMemSegDataset(Dataset):
         vec_folder: str = None,
         train: bool = False,
         return_normals: bool = False,
+        use_fourier_aug: bool = False,
+        use_mw_aug: bool = False,
         aug_prob_to_one: bool = False,
     ) -> None:
         """
@@ -72,6 +74,10 @@ class CryoETMemSegDataset(Dataset):
             A flag indicating whether the dataset is used for training or validation.
         return_normals : bool, default False
             A flag indicating whether the normals should be returned or not.
+        use_fourier_aug : bool, default False
+            A flag indicating whether the Fourier augmentation should be used or not.
+        use_mw_aug : bool, default False
+            A flag indicating whether the MW augmentation should be used or not.
         aug_prob_to_one : bool, default False
             A flag indicating whether the probability of augmentation should be set
             to one or not.
@@ -87,7 +93,10 @@ class CryoETMemSegDataset(Dataset):
         self.load_data()
         self.transforms = (
             get_training_transforms(
-                prob_to_one=aug_prob_to_one, use_vectors=return_normals
+                prob_to_one=aug_prob_to_one,
+                use_vectors=return_normals,
+                use_fourier_aug=use_fourier_aug,
+                use_mw_aug=use_mw_aug,
             )
             if self.train
             else get_validation_transforms(use_vectors=return_normals)

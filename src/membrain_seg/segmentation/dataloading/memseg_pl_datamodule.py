@@ -50,6 +50,8 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         num_workers,
         aug_prob_to_one=False,
         use_normals=False,
+        use_fourier_aug=False,
+        use_mw_aug=False,
     ):
         """Initialization of data paths and data loaders.
 
@@ -85,6 +87,8 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.aug_prob_to_one = aug_prob_to_one
+        self.use_fourier_aug = use_fourier_aug
+        self.use_mw_aug = use_mw_aug
 
     def setup(self, stage: Optional[str] = None):
         """
@@ -106,6 +110,8 @@ class MemBrainSegDataModule(pl.LightningDataModule):
                 aug_prob_to_one=self.aug_prob_to_one,
                 vec_folder=self.train_vec_dir if self.use_normals else None,
                 return_normals=self.use_normals,
+                use_fourier_aug=self.use_fourier_aug,
+                use_mw_aug=self.use_mw_aug,
             )
             self.val_dataset = CryoETMemSegDataset(
                 img_folder=self.val_img_dir,

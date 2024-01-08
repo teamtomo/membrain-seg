@@ -24,6 +24,8 @@ def train(
     num_workers: int = 8,
     max_epochs: int = 1000,
     aug_prob_to_one: bool = False,
+    use_mw_aug: bool = False,
+    use_fourier_aug: bool = False,
     use_deep_supervision: bool = True,
     project_name: str = "membrain-seg_v0",
     sub_name: str = "1",
@@ -56,6 +58,10 @@ def train(
         Maximum number of epochs to train for.
     aug_prob_to_one : bool, optional
         If True, all augmentation probabilities are set to 1.
+    use_mw_aug : bool, optional
+        If True, enables MW augmentation.
+    use_fourier_aug : bool, optional
+        If True, enables Fourier augmentation.
     use_deep_supervision : bool, optional
         If True, enables deep supervision in the U-Net model.
     project_name : str, optional
@@ -107,6 +113,8 @@ def train(
         num_workers=num_workers,
         aug_prob_to_one=aug_prob_to_one,
         use_normals=use_normals,
+        use_mw_aug=use_mw_aug,
+        use_fourier_aug=use_fourier_aug,
     )
 
     # Set up the model

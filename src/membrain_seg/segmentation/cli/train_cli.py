@@ -82,13 +82,20 @@ def train_advanced(
     ),
     aug_prob_to_one: bool = Option(  # noqa: B008
         True,
-        help='Whether to augment with a probability of one. This helps with the \
-            model\'s generalization,\
-            but also severely increases training time.\
-                Pass "True" or "False".',
+        help="Whether to augment with a probability of one. This helps with the \
+            model's generalization,\
+            but also severely increases training time.",
+    ),
+    use_mw_aug: bool = Option(  # noqa: B008
+        False,
+        help="Whether to use MW augmentation.",
+    ),
+    use_fourier_aug: bool = Option(  # noqa: B008
+        False,
+        help="Whether to use Fourier amplitude augmentation.",
     ),
     use_surface_dice: bool = Option(  # noqa: B008
-        False, help='Whether to use Surface-Dice as a loss. Pass "True" or "False".'
+        False, help="Whether to use Surface-Dice as a loss"
     ),
     surface_dice_weight: float = Option(  # noqa: B008
         1.0, help="Scaling factor for the Surface-Dice loss. "
@@ -105,7 +112,7 @@ def train_advanced(
     ] = None,
     use_normals: bool = Option(  # noqa: B008
         False,
-        help='Whether to use normals as an additional target. Pass "True" or "False".',
+        help="Whether to use normals as an additional target.",
     ),
     normals_loss_weight: float = Option(  # noqa: B008
         1.0, help="Scaling factor for the normals loss."
@@ -121,11 +128,9 @@ def train_advanced(
         ),
     ] = None,
     use_deep_supervision: bool = Option(  # noqa: B008
-        True, help='Whether to use deep supervision. Pass "True" or "False".'
+        True, help="Whether to use deep supervision."
     ),
-    use_dropout: bool = Option(  # noqa: B008
-        False, help='Whether to use dropout. Pass "True" or "False".'
-    ),
+    use_dropout: bool = Option(False, help="Whether to use dropout."),  # noqa: B008
     project_name: str = Option(  # noqa: B008
         "membrain-seg_v0",
         help="Project name. This helps to find your model again.",
@@ -158,6 +163,10 @@ def train_advanced(
         If set to False, data augmentation still happens, but not as frequently.
         More data augmentation can lead to a better performance, but also increases the
         training time substantially.
+    use_mw_aug : bool
+        Determines whether to use MW augmentation, by default False.
+    use_fourier_aug : bool
+        Determines whether to use Fourier amplitude augmentation, by default False.
     use_surface_dice : bool
         Determines whether to use Surface-Dice loss, by default True.
     surface_dice_weight : float
@@ -192,6 +201,8 @@ def train_advanced(
         num_workers=num_workers,
         max_epochs=max_epochs,
         aug_prob_to_one=aug_prob_to_one,
+        use_mw_aug=use_mw_aug,
+        use_fourier_aug=use_fourier_aug,
         use_deep_supervision=use_deep_supervision,
         use_surf_dice=use_surface_dice,
         surf_dice_weight=surface_dice_weight,
