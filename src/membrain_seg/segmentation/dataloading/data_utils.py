@@ -531,7 +531,9 @@ def store_tomogram(
             out_mrc.voxel_size = voxel_size
 
 
-def normalize_tomogram(tomogram: np.ndarray) -> np.ndarray:
+def normalize_tomogram(
+    tomogram: np.ndarray, cut_extreme_values: bool = False
+) -> np.ndarray:
     """
     Normalize a tomogram to zero mean and unit standard deviation.
 
@@ -539,6 +541,9 @@ def normalize_tomogram(tomogram: np.ndarray) -> np.ndarray:
     ----------
     tomogram : np.ndarray
         Input tomogram to normalize.
+    cut_extreme_values : bool, optional
+        If True, values outside of the range [-5*std, 5*std] are cut to these values.
+        Default is False.
 
     Returns
     -------
@@ -546,6 +551,10 @@ def normalize_tomogram(tomogram: np.ndarray) -> np.ndarray:
         Normalized tomogram with zero mean and unit standard deviation.
     """
     tomogram = img_as_float32(tomogram)
+    if cut_extreme_values:
+        temp_std = np.std(tomogram)
+        tomogram[tomogram < -5 * temp_std] = -5 * temp_std
+        tomogram[tomogram > 5 * temp_std] = 5 * temp_std
     tomogram -= np.mean(tomogram)
     tomogram /= np.std(tomogram)
     return tomogram
