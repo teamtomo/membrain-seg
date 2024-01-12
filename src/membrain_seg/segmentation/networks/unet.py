@@ -167,8 +167,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
             losses.append(ignore_surf_dice_loss)
             weights.append(self.surf_dice_weight)
             if self.surf_dice_tokens is None:
-                surf_dice_tokens = ["all"]
-            loss_inclusion_tokens.append(surf_dice_tokens)
+                self.surf_dice_tokens = ["all"]
+            loss_inclusion_tokens.append(self.surf_dice_tokens)
 
         # Normal vectors loss (optional)
         if self.compute_normal_vectors:
