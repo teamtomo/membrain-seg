@@ -4,3 +4,4 @@ from .extract_normals import (  # noqa: F401
     extract_normals_GT,
     match_coords_to_membrane_normals,
 )
+from .extract_normals_cli import extract_normals  # noqa: F401
