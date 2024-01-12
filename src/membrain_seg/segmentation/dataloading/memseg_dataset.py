@@ -5,7 +5,10 @@ import imageio as io
 import numpy as np
 from torch.utils.data import Dataset
 
-from membrain_seg.segmentation.dataloading.data_utils import read_nifti
+from membrain_seg.segmentation.dataloading.data_utils import (
+    normalize_tomogram,
+    read_nifti,
+)
 from membrain_seg.segmentation.dataloading.memseg_augmentation import (
     get_training_transforms,
     get_validation_transforms,
@@ -169,6 +172,8 @@ class CryoETMemSegDataset(Dataset):
                 label, (1, 2, 0)
             )  # TODO: Needed? Probably no? z-axis should not matter
             img = np.transpose(img, (1, 2, 0))
+            img = normalize_tomogram(img, cut_extreme_values=True)
+
             self.imgs.append(img)
             self.labels.append(label)
             self.dataset_labels.append(get_dataset_token(entry[0]))

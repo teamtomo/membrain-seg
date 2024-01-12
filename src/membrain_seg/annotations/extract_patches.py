@@ -5,6 +5,7 @@ import numpy as np
 from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     make_directory_if_not_exists,
+    normalize_tomogram,
     write_nifti,
 )
 
@@ -211,6 +212,8 @@ def extract_patches(
 
             cur_patch = np.transpose(cur_patch, (2, 1, 0))
             cur_patch_labels = np.transpose(cur_patch_labels, (2, 1, 0))
+
+            cur_patch = normalize_tomogram(cur_patch, cut_extreme_values=True)
             write_nifti(out_file_patch, cur_patch)
             write_nifti(out_file_patch_label, cur_patch_labels)
 
