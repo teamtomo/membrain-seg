@@ -101,6 +101,8 @@ jobs:
 
       - name: 🚢 Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TWINE_API_KEY }}
 
       - uses: softprops/action-gh-release@v1
         with:
