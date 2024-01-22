@@ -21,6 +21,11 @@ def extract_patches(
         help="Path to the folder where extracted patches should be stored. \
             (subdirectories will be created)",
     ),
+    ds_token: str = Option(  # noqa: B008
+        "other",
+        help="Dataset token. Important for distinguishing between different \
+            datasets. Should NOT contain underscores!",
+    ),
     coords_file: str = Option(  # noqa: B008
         None,
         help="Path to a file containing coordinates for patch extraction. The file \
@@ -93,6 +98,7 @@ def extract_patches(
         coords=coords,
         out_dir=out_folder,
         idx_add=idx_add,
+        ds_token=ds_token,
         token=token,
         pad_value=pad_value,
     )
