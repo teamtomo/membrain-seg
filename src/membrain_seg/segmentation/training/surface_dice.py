@@ -271,7 +271,6 @@ def apply_gaussian_filter(
     it performs the operation separately for each channel of each batch item.
     """
     # Create the Gaussian kernel or load it from the dictionary
-    global gaussian_kernel_dict
     if (kernel_size, sigma) not in gaussian_kernel_dict.keys():
         gaussian_kernel_dict[(kernel_size, sigma)] = gaussian_kernel(
             kernel_size, sigma
@@ -354,8 +353,10 @@ def masked_surface_dice(
     ----------
     data : torch.Tensor
         Tensor of model outputs representing the predicted segmentation.
+        Expected shape: (B, C, D, H, W)
     target : torch.Tensor
         Tensor of target labels representing the ground truth segmentation.
+        Expected shape: (B, 1, D, H, W)
     ignore_label : int
         The label value to be ignored when computing the loss.
     soft_skel_iterations : int
@@ -435,8 +436,10 @@ class IgnoreLabelSurfaceDiceLoss(_Loss):
         ----------
         data : torch.Tensor
             Tensor of model outputs.
+            Expected shape: (B, C, D, H, W)
         target : torch.Tensor
             Tensor of target labels.
+            Expected shape: (B, 1, D, H, W)
 
         Returns
         -------
