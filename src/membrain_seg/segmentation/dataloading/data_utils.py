@@ -131,6 +131,7 @@ def store_segmented_tomograms(
     connected_component_thres: int = None,
     mrc_header: np.recarray = None,
     voxel_size: float = None,
+    segmentation_threshold: float = 0.0,
 ) -> None:
     """
     Helper function for storing output segmentations.
@@ -163,6 +164,8 @@ def store_segmented_tomograms(
     voxel_size: float, optional
         If given, this will be the voxel size stored in the header of the
         output segmentation.
+    segmentation_threshold : float, optional
+        Threshold for the segmentation. Default is 0.0.
     """
     # Create out directory if it doesn't exist yet
     make_directory_if_not_exists(out_folder)
@@ -172,16 +175,22 @@ def store_segmented_tomograms(
     out_folder = out_folder
     if store_probabilities:
         out_file = os.path.join(
-            out_folder, os.path.basename(orig_data_path)[:-4] + "_scores.mrc"
+            out_folder,
+            os.path.splitext(os.path.basename(orig_data_path))[0] + "_scores.mrc",
         )
         out_tomo = Tomogram(
             data=predictions_np, header=mrc_header, voxel_size=voxel_size
         )
         store_tomogram(out_file, out_tomo)
-    predictions_np_thres = predictions.squeeze(0).squeeze(0).cpu().numpy() > 0.0
+    predictions_np_thres = (
+        predictions.squeeze(0).squeeze(0).cpu().numpy() > segmentation_threshold
+    )
     out_file_thres = os.path.join(
         out_folder,
-        os.path.basename(orig_data_path)[:-4] + "_" + ckpt_token + "_segmented.mrc",
+        os.path.splitext(os.path.basename(orig_data_path))[0]
+        + "_"
+        + ckpt_token
+        + "_segmented.mrc",
     )
     if store_connected_components:
         predictions_np_thres = connected_components(

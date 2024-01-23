@@ -51,7 +51,7 @@ def pad_labels(patch, padding, pad_value=2.0):
 
 
 def get_out_files_and_patch_number(
-    token, out_folder_raw, out_folder_lab, patch_nr, idx_add
+    ds_token, token, out_folder_raw, out_folder_lab, patch_nr, idx_add
 ):
     """
     Create filenames and corrected patch numbers.
@@ -62,8 +62,10 @@ def get_out_files_and_patch_number(
 
     Parameters
     ----------
+    ds_token : str
+        The dataset identifier used as a part of the filename.
     token : str
-        The unique identifier used as a part of the filename.
+        The tomogram identifier used as a part of the filename.
     out_folder_raw : str
         The directory path where raw data patches are stored.
     out_folder_lab : str
@@ -96,27 +98,34 @@ def get_out_files_and_patch_number(
     """
     patch_nr += idx_add
     out_file_patch = os.path.join(
-        out_folder_raw, token + "_patch" + str(patch_nr) + "_raw.nii.gz"
+        out_folder_raw, ds_token + "_" + token + "_patch" + str(patch_nr) + ".nii.gz"
     )
     out_file_patch_label = os.path.join(
-        out_folder_lab, token + "_patch" + str(patch_nr) + "_labels.nii.gz"
+        out_folder_lab, ds_token + "_" + token + "_patch" + str(patch_nr) + ".nii.gz"
     )
     exist_add = 0
     while os.path.isfile(out_file_patch):
         exist_add += 1
         out_file_patch = os.path.join(
             out_folder_raw,
-            token + "_patch" + str(patch_nr + exist_add) + "_raw.nii.gz",
+            ds_token + "_" + token + "_patch" + str(patch_nr + exist_add) + ".nii.gz",
         )
         out_file_patch_label = os.path.join(
             out_folder_lab,
-            token + "_patch" + str(patch_nr + exist_add) + "_labels.nii.gz",
+            ds_token + "_" + token + "_patch" + str(patch_nr + exist_add) + ".nii.gz",
         )
     return patch_nr + exist_add, out_file_patch, out_file_patch_label
 
 
 def extract_patches(
-    tomo_path, seg_path, coords, out_dir, idx_add=0, token=None, pad_value=2.0
+    tomo_path,
+    seg_path,
+    coords,
+    out_dir,
+    ds_token="other",
+    token=None,
+    idx_add=0,
+    pad_value=2.0,
 ):
     """
     Extracts 3D patches from a given tomogram and corresponding segmentation.
@@ -133,11 +142,13 @@ def extract_patches(
         List of tuples where each tuple represents the 3D coordinates of a patch center.
     out_dir : str
         The output directory where the extracted patches will be saved.
-    idx_add : int, optional
-        The index addition for patch numbering, default is 0.
+    ds_token : str, optional
+        Dataset token to uniquely identify the dataset, default is 'other'.
     token : str, optional
         Token to uniquely identify the tomogram, default is None. If None,
         the base name of the tomogram file path is used.
+    idx_add : int, optional
+        The index addition for patch numbering, default is 0.
     pad_value: float, optional
         Borders of extracted patch are padded with this value ("ignore" label)
 
@@ -170,7 +181,7 @@ def extract_patches(
 
     for patch_nr, cur_coords in enumerate(coords):
         patch_nr, out_file_patch, out_file_patch_label = get_out_files_and_patch_number(
-            token, out_folder_raw, out_folder_lab, patch_nr, idx_add
+            ds_token, token, out_folder_raw, out_folder_lab, patch_nr, idx_add
         )
         print("Extracting patch nr", patch_nr, "from tomo", token)
         try:
@@ -193,7 +204,7 @@ def extract_patches(
                 min_coords[0] : min_coords[0] + 160,
                 min_coords[1] : min_coords[1] + 160,
                 min_coords[2] : min_coords[2] + 160,
-            ]
+            ].copy()
             cur_patch_labels = pad_labels(
                 cur_patch_labels, padding, pad_value=pad_value
             )

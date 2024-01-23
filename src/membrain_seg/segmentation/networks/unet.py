@@ -8,17 +8,13 @@ from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete, Compose, EnsureType, Lambda
 
 from ..training.metric_utils import masked_accuracy, threshold_function
-
-# from monai.networks.nets import UNet as MonaiUnet
-# The normal Monai DynUNet upsamples low-resolution layers to compare directly to GT
-# My implementation leaves them in low resolution and compares to down-sampled GT
-# Not sure which implementation is better
-# To be discussed with Alister & Kevin
 from ..training.optim_utils import (
+    CombinedLoss,
     DeepSuperVisionLoss,
-    DynUNetDirectDeepSupervision,  # I like to use deep supervision
+    DynUNetDirectDeepSupervision,
     IgnoreLabelDiceCELoss,
 )
+from ..training.surface_dice import IgnoreLabelSurfaceDiceLoss, masked_surface_dice
 
 
 class SemanticSegmentationUnet(pl.LightningModule):
@@ -62,6 +58,12 @@ class SemanticSegmentationUnet(pl.LightningModule):
         The maximum number of epochs for training.
     use_deep_supervision : bool, default=False
         Whether to use deep supervision.
+    use_surf_dice : bool, default=False
+        Whether to use surface dice loss.
+    surf_dice_weight : float, default=1.0
+        The weight for the surface dice loss.
+    surf_dice_tokens : list, default=[]
+        The tokens for which to compute the surface dice loss.
 
     """
 
@@ -80,6 +82,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         roi_size: Tuple[int, ...] = (160, 160, 160),
         max_epochs: int = 1000,
         use_deep_supervision: bool = False,
+        use_surf_dice: bool = False,
+        surf_dice_weight: float = 1.0,
+        surf_dice_tokens: list = None,
     ):
         super().__init__()
 
@@ -102,16 +107,39 @@ class SemanticSegmentationUnet(pl.LightningModule):
             upsample_kernel_size=(1, 2, 2, 2, 2, 2),
             filters=channels,
             res_block=True,
-            # norm_name="INSTANCE",
-            # norm=Norm.INSTANCE,  # I like the instance normalization better than
-            # batchnorm in this case, as we will probably have
-            # only small batch sizes, making BN more noisy
             deep_supervision=True,
             deep_supr_num=2,
         )
-        ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
+
+        ### Build up loss function
+        losses = []
+        weights = []
+        loss_inclusion_tokens = []
+        ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="none")
+        losses.append(ignore_dice_loss)
+        weights.append(1.0)
+        loss_inclusion_tokens.append(["all"])  # Apply to every element
+
+        if use_surf_dice:
+            if surf_dice_tokens is None:
+                surf_dice_tokens = ["all"]
+            ignore_surf_dice_loss = IgnoreLabelSurfaceDiceLoss(
+                ignore_label=2, soft_skel_iterations=5
+            )
+            losses.append(ignore_surf_dice_loss)
+            weights.append(surf_dice_weight)
+            loss_inclusion_tokens.append(surf_dice_tokens)
+
+        scaled_weights = [entry / sum(weights) for entry in weights]
+
+        loss_function = CombinedLoss(
+            losses=losses,
+            weights=scaled_weights,
+            loss_inclusion_tokens=loss_inclusion_tokens,
+        )
+
         self.loss_function = DeepSuperVisionLoss(
-            ignore_dice_loss,
+            loss_function,
             weights=[1.0, 0.5, 0.25, 0.125, 0.0675]
             if use_deep_supervision
             else [1.0, 0.0, 0.0, 0.0, 0.0],
@@ -143,7 +171,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.training_step_outputs = []
         self.validation_step_outputs = []
         self.running_train_acc = 0.0
+        self.running_train_surf_dice = 0.0
         self.running_val_acc = 0.0
+        self.running_val_surf_dice = 0.0
 
     def forward(self, x) -> torch.Tensor:
         """Implementation of the forward pass.
@@ -180,14 +210,25 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         See the pytorch-lightning module documentation for details.
         """
-        images, labels = batch["image"], batch["label"]
+        images, labels, ds_label = batch["image"], batch["label"], batch["dataset"]
         output = self.forward(images)
-        loss = self.loss_function(output, labels)
+        loss = self.loss_function(output, labels, ds_label)
 
         stats_dict = {"train_loss": loss, "train_number": output[0].shape[0]}
         self.training_step_outputs.append(stats_dict)
         self.running_train_acc += (
             masked_accuracy(output[0], labels[0], ignore_label=2.0, threshold_value=0.0)
+            * output[0].shape[0]
+        )
+        self.running_train_surf_dice += (
+            masked_surface_dice(
+                data=output[0].detach(),
+                target=labels[0].detach(),
+                ignore_label=2.0,
+                soft_skel_iterations=5,
+                smooth=1.0,
+                reduction="mean",
+            )
             * output[0].shape[0]
         )
 
@@ -207,13 +248,17 @@ class SemanticSegmentationUnet(pl.LightningModule):
         mean_train_loss = torch.tensor(train_loss / num_items)
 
         mean_train_acc = self.running_train_acc / num_items
+        mean_train_surf_dice = self.running_train_surf_dice / num_items
         self.running_train_acc = 0.0
-        self.log("train_loss", mean_train_loss)  # , batch_size=num_items)
-        self.log("train_acc", mean_train_acc)  # , batch_size=num_items)
+        self.running_train_surf_dice = 0.0
+        self.log("train_loss", mean_train_loss)
+        self.log("train_acc", mean_train_acc)
+        self.log("train_surf_dice", mean_train_surf_dice)
 
         self.training_step_outputs = []
         print("EPOCH Training loss", mean_train_loss.item())
         print("EPOCH Training acc", mean_train_acc.item())
+        print("EPOCH Training surface dice", mean_train_surf_dice.item())
         # Accuracy not the most informative metric, but a good sanity check
         return {"train_loss": mean_train_loss}
 
@@ -224,13 +269,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         using a sliding window. See the pytorch-lightning
         module documentation for details.
         """
-        images, labels = batch[self.image_key], batch[self.label_key]
-        # sw_batch_size = 4
-        # outputs = sliding_window_inference(
-        #     images, self.roi_size, sw_batch_size, self.forward
-        # )
+        images, labels, ds_label = batch["image"], batch["label"], batch["dataset"]
         outputs = self.forward(images)
-        loss = self.loss_function(outputs, labels)
+        loss = self.loss_function(outputs, labels, ds_label)
 
         # Cloning and adjusting preds & labels for Dice.
         # Could also use the same labels, but maybe we want to
@@ -254,6 +295,18 @@ class SemanticSegmentationUnet(pl.LightningModule):
             )
             * outputs[0].shape[0]
         )
+
+        self.running_val_surf_dice += (
+            masked_surface_dice(
+                data=outputs[0].detach(),
+                target=labels[0].detach(),
+                ignore_label=2.0,
+                soft_skel_iterations=5,
+                smooth=1.0,
+                reduction="mean",
+            )
+            * outputs[0].shape[0]
+        )
         return stats_dict
 
     def on_validation_epoch_end(self):
@@ -270,13 +323,17 @@ class SemanticSegmentationUnet(pl.LightningModule):
         mean_val_loss = torch.tensor(val_loss / num_items)
 
         mean_val_acc = self.running_val_acc / num_items
+        mean_val_surf_dice = self.running_val_surf_dice / num_items
         self.running_val_acc = 0.0
-        self.log("val_loss", mean_val_loss),  # batch_size=num_items)
-        self.log("val_dice", mean_val_dice)  # , batch_size=num_items)
+        self.running_val_surf_dice = 0.0
+        self.log("val_loss", mean_val_loss),
+        self.log("val_dice", mean_val_dice)
+        self.log("val_surf_dice", mean_val_surf_dice)
         self.log("val_accuracy", mean_val_acc)
 
         self.validation_step_outputs = []
         print("EPOCH Validation loss", mean_val_loss.item())
         print("EPOCH Validation dice", mean_val_dice)
+        print("EPOCH Validation surface dice", mean_val_surf_dice.item())
         print("EPOCH Validation acc", mean_val_acc.item())
         return {"val_loss": mean_val_loss, "val_metric": mean_val_dice}

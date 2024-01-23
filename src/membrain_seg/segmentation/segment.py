@@ -21,6 +21,7 @@ def segment(
     store_connected_components=False,
     connected_component_thres=None,
     test_time_augmentation=True,
+    segmentation_threshold=0.0,
 ):
     """
     Segment tomograms using a trained model.
@@ -55,6 +56,9 @@ def segment(
     test_time_augmentation: bool, optional
         If True, test-time augmentation is performed, i.e. data is rotated
         into eight different orientations and predictions are averaged.
+    segmentation_threshold: float, optional
+        Threshold for the membrane segmentation. Only voxels with a membrane
+        score higher than this threshold will be segmented. (default: 0.0)
 
     Returns
     -------
@@ -74,8 +78,9 @@ def segment(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Initialize the model and load trained weights from checkpoint
-    pl_model = SemanticSegmentationUnet()
-    pl_model = pl_model.load_from_checkpoint(model_checkpoint, map_location=device)
+    pl_model = SemanticSegmentationUnet.load_from_checkpoint(
+        model_checkpoint, map_location=device, strict=False
+    )
     pl_model.to(device)
 
     # Preprocess the new data
@@ -133,5 +138,6 @@ def segment(
         connected_component_thres=connected_component_thres,
         mrc_header=mrc_header,
         voxel_size=voxel_size,
+        segmentation_threshold=segmentation_threshold,
     )
     return segmentation_file
