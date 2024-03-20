@@ -30,9 +30,7 @@ class PreprocessedSemanticSegmentationUnet(SemanticSegmentationUnet):
                 if sample.shape[0] > self.target_shape[0]:
                     sample = fourier_cropping(sample, self.target_shape, smoothing=False)
                 elif sample.shape[0] < self.target_shape[0]:
-                    print("Entering")
                     sample = fourier_extend(sample, self.target_shape, smoothing=False)
-                    print("Exiting")
                 sample = torch.from_numpy(sample)
             rescaled_samples.append(sample.unsqueeze(0))
         rescaled_samples = torch.stack(rescaled_samples, dim=0)
