@@ -4,6 +4,11 @@ import torch
 from monai.inferers import SlidingWindowInferer
 
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
+from membrain_seg.segmentation.networks.inference_unet import PreprocessedSemanticSegmentationUnet
+
+from membrain_seg.tomo_preprocessing.matching_utils.px_matching_utils import (
+    determine_output_shape
+)
 
 from .dataloading.data_utils import (
     load_data_for_inference,
@@ -16,6 +21,8 @@ def segment(
     tomogram_path,
     ckpt_path,
     out_folder,
+    in_pixel_size=10.,
+    out_pixel_size=10.,
     store_probabilities=False,
     sw_roi_size=160,
     store_connected_components=False,
@@ -78,11 +85,22 @@ def segment(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Initialize the model and load trained weights from checkpoint
-    pl_model = SemanticSegmentationUnet.load_from_checkpoint(
+    pl_model = PreprocessedSemanticSegmentationUnet.load_from_checkpoint(
         model_checkpoint, map_location=device, strict=False
     )
     pl_model.to(device)
+    if sw_roi_size % 32 != 0:
+        raise OSError("Sliding window size must be multiple of 32°!")
+    pl_model.target_shape = (sw_roi_size, sw_roi_size, sw_roi_size)
 
+    # Rescale patches if necessary
+    pl_model.rescale_patches = in_pixel_size != out_pixel_size
+    sw_roi_size = determine_output_shape(
+        pixel_size_in=out_pixel_size, # switched in and out pixel size to get the input shape
+        pixel_size_out=in_pixel_size,
+        orig_shape=(sw_roi_size, sw_roi_size, sw_roi_size),
+    )
+    sw_roi_size = sw_roi_size[0]
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
@@ -94,9 +112,10 @@ def segment(
     # Put the model into evaluation mode
     pl_model.eval()
 
+
+
     # Perform sliding window inference on the new data
-    if sw_roi_size % 32 != 0:
-        raise OSError("Sliding window size must be multiple of 32°!")
+    
     roi_size = (sw_roi_size, sw_roi_size, sw_roi_size)
     sw_batch_size = 1
     inferer = SlidingWindowInferer(

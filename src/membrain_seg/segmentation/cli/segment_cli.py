@@ -27,6 +27,16 @@ def segment(
     out_folder: str = Option(  # noqa: B008
         "./predictions", help="Path to the folder where segmentations should be stored."
     ),
+    in_pixel_size: float = Option(  # noqa: B008
+        10.,
+        help="Pixel size of the input tomogram in Angstrom. \
+            (default: 10 Angstrom)",
+    ),
+    out_pixel_size: float = Option(  # noqa: B008
+        10.,
+        help="Pixel size of the output segmentation in Angstrom. \
+            (default: 10 Angstrom; should normally stay at 10 Angstrom)",
+    ),
     store_probabilities: bool = Option(  # noqa: B008
         False, help="Should probability maps be output in addition to segmentations?"
     ),
@@ -66,6 +76,8 @@ def segment(
         tomogram_path=tomogram_path,
         ckpt_path=ckpt_path,
         out_folder=out_folder,
+        in_pixel_size=in_pixel_size,
+        out_pixel_size=out_pixel_size,
         store_probabilities=store_probabilities,
         store_connected_components=store_connected_components,
         connected_component_thres=connected_component_thres,
