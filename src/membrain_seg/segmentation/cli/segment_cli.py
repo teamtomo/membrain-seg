@@ -27,6 +27,9 @@ def segment(
     out_folder: str = Option(  # noqa: B008
         "./predictions", help="Path to the folder where segmentations should be stored."
     ),
+    rescale_patches: bool = Option( # noqa: B008
+        False, help="Should patches be rescaled on-the-fly during inference?"
+    ),
     in_pixel_size: float = Option(  # noqa: B008
         None,
         help="Pixel size of the input tomogram in Angstrom. \
@@ -76,6 +79,7 @@ def segment(
         tomogram_path=tomogram_path,
         ckpt_path=ckpt_path,
         out_folder=out_folder,
+        rescale_patches=rescale_patches,
         in_pixel_size=in_pixel_size,
         out_pixel_size=out_pixel_size,
         store_probabilities=store_probabilities,
