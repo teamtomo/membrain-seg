@@ -21,7 +21,8 @@ def segment(
     tomogram_path,
     ckpt_path,
     out_folder,
-    in_pixel_size=10.,
+    rescale_patches=False,
+    in_pixel_size=None,
     out_pixel_size=10.,
     store_probabilities=False,
     sw_roi_size=160,
@@ -93,14 +94,7 @@ def segment(
         raise OSError("Sliding window size must be multiple of 32°!")
     pl_model.target_shape = (sw_roi_size, sw_roi_size, sw_roi_size)
 
-    # Rescale patches if necessary
-    pl_model.rescale_patches = in_pixel_size != out_pixel_size
-    sw_roi_size = determine_output_shape(
-        pixel_size_in=out_pixel_size, # switched in and out pixel size to get the input shape
-        pixel_size_out=in_pixel_size,
-        orig_shape=(sw_roi_size, sw_roi_size, sw_roi_size),
-    )
-    sw_roi_size = sw_roi_size[0]
+    
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
@@ -109,13 +103,26 @@ def segment(
     )
     new_data = new_data.to(torch.float32)
 
+    if rescale_patches:
+        # Rescale patches if necessary
+        if in_pixel_size is None:
+            in_pixel_size = voxel_size
+        if in_pixel_size == 1.0:
+            print("WARNING: Input pixel size is 1.0. Looks like a corrupt header. Please specify the pixel size manually.")
+        pl_model.rescale_patches = in_pixel_size != out_pixel_size
+        
+        # Determine the sliding window size according to the input and output pixel size
+        sw_roi_size = determine_output_shape(
+            pixel_size_in=out_pixel_size, # switched in and out pixel size to get the input shape
+            pixel_size_out=in_pixel_size,
+            orig_shape=(sw_roi_size, sw_roi_size, sw_roi_size),
+        )
+        sw_roi_size = sw_roi_size[0]
+
     # Put the model into evaluation mode
     pl_model.eval()
 
-
-
     # Perform sliding window inference on the new data
-    
     roi_size = (sw_roi_size, sw_roi_size, sw_roi_size)
     sw_batch_size = 1
     inferer = SlidingWindowInferer(

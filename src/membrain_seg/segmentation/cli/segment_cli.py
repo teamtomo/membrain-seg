@@ -28,7 +28,7 @@ def segment(
         "./predictions", help="Path to the folder where segmentations should be stored."
     ),
     in_pixel_size: float = Option(  # noqa: B008
-        10.,
+        None,
         help="Pixel size of the input tomogram in Angstrom. \
             (default: 10 Angstrom)",
     ),
