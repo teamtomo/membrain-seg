@@ -106,7 +106,9 @@ def segment(
     if rescale_patches:
         # Rescale patches if necessary
         if in_pixel_size is None:
-            in_pixel_size = voxel_size
+            in_pixel_size = voxel_size.x
+        if in_pixel_size == 0.0:
+            raise ValueError("Input pixel size is 0.0. Please specify the pixel size manually.")
         if in_pixel_size == 1.0:
             print("WARNING: Input pixel size is 1.0. Looks like a corrupt header. Please specify the pixel size manually.")
         pl_model.rescale_patches = in_pixel_size != out_pixel_size
@@ -136,7 +138,8 @@ def segment(
 
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
-    print("Performing 8-fold test-time augmentation.")
+    if test_time_augmentation:
+        print("Performing 8-fold test-time augmentation. I.e. the following bar will run 8 times.")
     for m in range(8 if test_time_augmentation else 1):
         with torch.no_grad():
             with torch.cuda.amp.autocast():
