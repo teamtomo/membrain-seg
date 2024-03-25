@@ -31,8 +31,8 @@ def rescale_tensor(
     torch.Tensor
         The rescaled tensor.
     """
-    # Ensure the sample is on the GPU
-    sample = sample.to("cuda").unsqueeze(0).unsqueeze(0)
+    # Add batch and channel dimensions
+    sample = sample.unsqueeze(0).unsqueeze(0)
 
     # Apply interpolation
     rescaled_sample = F.interpolate(
@@ -71,7 +71,7 @@ class PreprocessedSemanticSegmentationUnet(SemanticSegmentationUnet):
         """
         rescaled_samples = []
         for sample in x:
-            sample = sample[0]  # only take the first channel
+            sample = sample[0]  # only use the first channel
             if self.rescale_patches:
                 if sample.shape[0] > self.target_shape[0]:
                     sample = fourier_cropping_torch(sample, self.target_shape)
@@ -88,7 +88,7 @@ class PreprocessedSemanticSegmentationUnet(SemanticSegmentationUnet):
         """
         rescaled_samples = []
         for sample in x:
-            sample = sample[0]
+            sample = sample[0]  # only use first channel
             if self.rescale_patches:
                 sample = rescale_tensor(sample, orig_shape, mode="trilinear")
             rescaled_samples.append(sample.unsqueeze(0))
