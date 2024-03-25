@@ -3,11 +3,11 @@ import os
 import torch
 from monai.inferers import SlidingWindowInferer
 
-from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
-from membrain_seg.segmentation.networks.inference_unet import PreprocessedSemanticSegmentationUnet
-
+from membrain_seg.segmentation.networks.inference_unet import (
+    PreprocessedSemanticSegmentationUnet,
+)
 from membrain_seg.tomo_preprocessing.matching_utils.px_matching_utils import (
-    determine_output_shape
+    determine_output_shape,
 )
 
 from .dataloading.data_utils import (
@@ -23,7 +23,7 @@ def segment(
     out_folder,
     rescale_patches=False,
     in_pixel_size=None,
-    out_pixel_size=10.,
+    out_pixel_size=10.0,
     store_probabilities=False,
     sw_roi_size=160,
     store_connected_components=False,
@@ -48,6 +48,12 @@ def segment(
         Path to the trained model checkpoint file.
     out_folder : str
         Path to the folder where the output segmentations should be stored.
+    rescale_patches : bool, optional
+        If True, rescale the patches to the output pixel size (default is False).
+    in_pixel_size : float, optional
+        Pixel size of the input tomogram in Angstrom (default is None).
+    out_pixel_size : float, optional
+        Pixel size of the output segmentation in Angstrom (default is 10.0).
     store_probabilities : bool, optional
         If True, store the predicted probabilities along with the segmentations
         (default is False).
@@ -94,7 +100,6 @@ def segment(
         raise OSError("Sliding window size must be multiple of 32°!")
     pl_model.target_shape = (sw_roi_size, sw_roi_size, sw_roi_size)
 
-    
     # Preprocess the new data
     new_data_path = tomogram_path
     transforms = get_prediction_transforms()
@@ -108,14 +113,20 @@ def segment(
         if in_pixel_size is None:
             in_pixel_size = voxel_size.x
         if in_pixel_size == 0.0:
-            raise ValueError("Input pixel size is 0.0. Please specify the pixel size manually.")
+            raise ValueError(
+                "Input pixel size is 0.0. Please specify the pixel size manually."
+            )
         if in_pixel_size == 1.0:
-            print("WARNING: Input pixel size is 1.0. Looks like a corrupt header. Please specify the pixel size manually.")
+            print(
+                "WARNING: Input pixel size is 1.0. Looks like a corrupt header.",
+                "Please specify the pixel size manually.",
+            )
         pl_model.rescale_patches = in_pixel_size != out_pixel_size
-        
+
         # Determine the sliding window size according to the input and output pixel size
         sw_roi_size = determine_output_shape(
-            pixel_size_in=out_pixel_size, # switched in and out pixel size to get the input shape
+            # switch in and out pixel size to get SW shape
+            pixel_size_in=out_pixel_size,
             pixel_size_out=in_pixel_size,
             orig_shape=(sw_roi_size, sw_roi_size, sw_roi_size),
         )
@@ -139,20 +150,19 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     if test_time_augmentation:
-        print("Performing 8-fold test-time augmentation. I.e. the following bar will run 8 times.")
+        print(
+            "Performing 8-fold test-time augmentation.",
+            "I.e. the following bar will run 8 times.",
+        )
     for m in range(8 if test_time_augmentation else 1):
         with torch.no_grad():
             with torch.cuda.amp.autocast():
-                predictions += (
-                    get_mirrored_img(
-                        inferer(
-                            get_mirrored_img(new_data.clone(), m).to(device), pl_model
-                        )[0],
-                        m,
-                    )
-                    .detach()
-                    .cpu()
-                )
+                mirrored_input = get_mirrored_img(new_data.clone(), m).to(device)
+                mirrored_pred = inferer(mirrored_input, pl_model)
+                if not isinstance(mirrored_pred, list):
+                    mirrored_pred = [mirrored_pred]
+                correct_pred = get_mirrored_img(mirrored_pred[0], m)
+                predictions += correct_pred.detach().cpu()
     if test_time_augmentation:
         predictions /= 8.0
 
