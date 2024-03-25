@@ -1,8 +1,93 @@
 from typing import Tuple, Union
 
 import numpy as np
+import torch
+import torch.fft
 from scipy.fft import fftn, ifftn
 from scipy.ndimage import distance_transform_edt
+
+
+def fourier_cropping_torch(data: torch.Tensor, new_shape: tuple) -> torch.Tensor:
+    """
+    Fourier cropping adapted for PyTorch and GPU, without smoothing functionality.
+
+    Parameters
+    ----------
+    data : torch.Tensor
+        The input data as a 3D torch tensor on GPU.
+    new_shape : tuple
+        The target shape for the cropped data as a tuple (x, y, z).
+
+    Returns
+    -------
+    torch.Tensor
+        The resized data as a 3D torch tensor.
+    """
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    data = data.to(device)
+
+    # Calculate the FFT of the input data
+    data_fft = torch.fft.fftn(data)
+    data_fft = torch.fft.fftshift(data_fft)
+
+    # Calculate the cropping indices
+    original_shape = torch.tensor(data.shape, device=device)
+    new_shape = torch.tensor(new_shape, device=device)
+    start_indices = (original_shape - new_shape) // 2
+    end_indices = start_indices + new_shape
+
+    # Crop the filtered FFT data
+    cropped_fft = data_fft[
+        start_indices[0] : end_indices[0],
+        start_indices[1] : end_indices[1],
+        start_indices[2] : end_indices[2],
+    ]
+
+    unshifted_cropped_fft = torch.fft.ifftshift(cropped_fft)
+
+    # Calculate the inverse FFT of the cropped data
+    resized_data = torch.real(torch.fft.ifftn(unshifted_cropped_fft))
+
+    return resized_data
+
+
+def fourier_extend_torch(data: torch.Tensor, new_shape: tuple) -> torch.Tensor:
+    """
+    Fourier padding adapted for PyTorch and GPU, without smoothing functionality.
+
+    Parameters
+    ----------
+    data : torch.Tensor
+        The input data as a 3D torch tensor on GPU.
+    new_shape : tuple
+        The target shape for the extended data as a tuple (x, y, z).
+
+    Returns
+    -------
+    torch.Tensor
+        The resized data as a 3D torch tensor.
+    """
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    data = data.to(device)
+
+    data_fft = torch.fft.fftn(data)
+    data_fft = torch.fft.fftshift(data_fft)
+
+    padding = [
+        (new_dim - old_dim) // 2 for old_dim, new_dim in zip(data.shape, new_shape)
+    ]
+    padded_fft = torch.nn.functional.pad(
+        data_fft,
+        pad=[pad for pair in zip(padding, padding) for pad in pair],
+        mode="constant",
+    )
+
+    unshifted_padded_fft = torch.fft.ifftshift(padded_fft)
+
+    # Calculate the inverse FFT of the cropped data
+    resized_data = torch.real(torch.fft.ifftn(unshifted_padded_fft))
+
+    return resized_data
 
 
 def smooth_cosine_dropoff(mask: np.ndarray, decay_width: float) -> np.ndarray:
