@@ -12,11 +12,11 @@ def nonmaxsup_kernel(
     interpolation_factor: float,
 ) -> np.ndarray:
     """
-    Apply non-maximum suppression based on trilinear interpolation
-    to enhance ridge structures in a 3D image.
+    Apply non-maximum suppression based on trilinear interpolation to
+    enhance ridge structures in a 3D image.
 
-    This function adjusts the influence of eigenvectors
-    at each voxel using a given interpolation factor, and marks local maxima
+    This function adjusts the influence of eigenvectors at each voxel
+    using a given interpolation factor, and marks local maxima
     in the output array indicating significant ridge features.
 
     Parameters
@@ -25,18 +25,18 @@ def nonmaxsup_kernel(
         The 3D image data array from which ridges are to be enhanced.
         Dimension: (Nx, Ny, Nz).
     vector_x : np.ndarray
-        The x-component of the eigenvector associated with
-        the largest eigenvalue at each voxel.
+        The x-component of the eigenvector associated with the largest
+        eigenvalue at each voxel.
     vector_y : np.ndarray
         The y-component of the eigenvector.
     vector_z : np.ndarray
         The z-component of the eigenvector.
     mask_coords : List[Tuple[int, int, int]]
-        A list of coordinates where the non-maximum suppression
-        is to be applied.
+        A list of coordinates where the non-maximum suppression is to
+        be applied.
     interpolation_factor : float
-        A factor used in the trilinear interpolation
-        for calculating the adjacent values.
+        A factor used in the trilinear interpolation for calculating
+        the adjacent values.
 
     Returns
     -------

@@ -14,9 +14,9 @@ def eigendecomposition(
     Solves the eigenproblem for a set of 3x3 symmetric matrices,
     representing Hessian matrices at each voxel.
 
-    This function computes the largest eigenvalue and
-    corresponding eigenvector for each matrix, which are used
-    for further analysis such as in structure analysis in image processing.
+    This function computes the largest eigenvalue and corresponding
+    eigenvector for each matrix, which are used for further analysis
+    such as in structure analysis in image processing.
 
     Parameters
     ----------
@@ -34,9 +34,9 @@ def eigendecomposition(
 
     Notes
     -----
-    The function is designed to process a large number of
-    small matrices (3x3) typically found in voxel-wise
-    computations in 3D imaging studies.
+    The function is designed to process a large number of small
+    matrices (3x3) typically found in voxel-wise computations
+    in 3D imaging studies.
     The eigenvalues and eigenvectors are sorted by the eigenvalues' magnitudes.
     """
     m = len(hessianXX)
@@ -92,10 +92,10 @@ def eig3d(
     first_eigenvalue : np.ndarray
         The first (largest) eigenvalue at each point in the 3D grid.
     first_eigenvector : np.ndarray
-        The corresponding eigenvector of the first eigenvalue
-        at each point in the 3D grid.
-        This is returned as a 4D array where the last dimension has size 3, representing
-        the vector components.
+        The corresponding eigenvector of the first eigenvalue at each point
+        in the 3D grid.
+        This is returned as a 4D array where the last dimension has size 3,
+        representing the vector components.
 
     Notes
     -----
