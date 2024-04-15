@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def diff3d(T: np.ndarray, k: int) -> np.ndarray:
     """
     Calculate the partial derivative of a 3D tomogram along a specified dimension.
@@ -7,22 +8,26 @@ def diff3d(T: np.ndarray, k: int) -> np.ndarray:
     Parameters
     ----------
     T : np.ndarray
-        The input 3D tomogram as a numpy array, where each dimension corresponds to spatial dimensions.
+        The input 3D tomogram as a numpy array, where each dimension
+        corresponds to spatial dimensions.
     k : int
-        The axis along which to compute the derivative. 
-        Set k=0 for the x-dimension, k=1 for the y-dimension, and any other value for the z-dimension.
+        The axis along which to compute the derivative.
+        Set k=0 for the x-dimension, k=1 for the y-dimension,
+        and any other value for the z-dimension.
 
     Returns
     -------
     np.ndarray
-        The output tomogram, which represents the partial derivatives along the specified axis.
+        The output tomogram,
+        which represents the partial derivatives along the specified axis.
         This output has the same shape as the input array.
 
     Notes
     -----
-    The function computes the centered difference in the specified dimension. The boundaries are handled 
-    by padding the last slice with the value from the second to last slice, ensuring smooth derivative 
-    values at the edges of the tomogram.
+    The function computes the centered difference in the specified dimension.
+    The boundaries are handled by padding the last slice with the value from
+    the second to last slice, ensuring smooth derivative values at the edges
+    of the tomogram.
 
     Examples
     --------

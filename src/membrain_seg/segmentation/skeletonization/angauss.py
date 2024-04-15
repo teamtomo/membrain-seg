@@ -1,13 +1,14 @@
 import numpy as np
 from scipy.fftpack import fftn, fftshift, ifftn
 
+
 def angauss(T: np.ndarray, std: float, r: float) -> np.ndarray:
     """
     Apply anisotropic Gaussian filtering to a 3D tomogram.
 
-    This function performs a convolution of the input 3D tomogram with an anisotropic 
-    Gaussian kernel. The anisotropy is defined by the aspect ratio 'r' in the Z-axis, 
-    allowing different standard deviations in the XY-plane and Z-axis. The Gaussian 
+    This function performs a convolution of the input 3D tomogram with an anisotropic
+    Gaussian kernel. The anisotropy is defined by the aspect ratio 'r' in the Z-axis,
+    allowing different standard deviations in the XY-plane and Z-axis. The Gaussian
     kernel used for filtering has the formula:
 
         G(x, y, z) = A * exp(-(a*(x^2 + y^2) + b*z^2))
@@ -24,7 +25,7 @@ def angauss(T: np.ndarray, std: float, r: float) -> np.ndarray:
     std : float
         The Gaussian standard deviation in the XY-plane.
     r : float
-        The aspect ratio for the Gaussian standard deviation in the Z-axis. If `r` is 1, 
+        The aspect ratio for the Gaussian standard deviation in the Z-axis. If `r` is 1,
         the filtering is isotropic.
 
     Returns
@@ -35,17 +36,21 @@ def angauss(T: np.ndarray, std: float, r: float) -> np.ndarray:
     Notes
     -----
     The function uses the Fourier domain for convolution, which involves:
-    1. Creating a Gaussian kernel that is anisotropic, with standard deviations determined by 'std' and 'r'.
-    2. Computing the Fourier transform of both the input tomogram and the Gaussian kernel.
+    1. Creating a Gaussian kernel that is anisotropic, with standard deviations
+       determined by 'std' and 'r'.
+    2. Computing the Fourier transform of both the input tomogram
+       and the Gaussian kernel.
     3. Multiplying these transforms to apply the convolution.
-    4. Computing the inverse Fourier transform of the result to retrieve the filtered tomogram.
+    4. Computing the inverse Fourier transform of the result
+       to retrieve the filtered tomogram.
 
     Examples
     --------
     Create a sample 3D array and apply anisotropic Gaussian filtering:
 
     >>> T = np.random.rand(10, 10, 10)  # Example input tomogram
-    >>> filtered_tomogram = angauss(T, std=1.0, r=0.5)  # Anisotropic filtering with half aspect ratio in Z
+        # Anisotropic filtering with half aspect ratio in Z
+    >>> filtered_tomogram = angauss(T, std=1.0, r=0.5)
     """
     # Initialization of variables and computation of grid indices
     Nx, Ny, Nz = T.shape
@@ -57,7 +62,7 @@ def angauss(T: np.ndarray, std: float, r: float) -> np.ndarray:
     Vnz = np.arange(-Nz2, Nz2 + 1) if Nz % 2 != 0 else np.arange(-Nz2, Nz2)
 
     # Create meshgrid for kernel calculation: X, Y, Z correspond to axes Y, X, Z
-    X, Y, Z = np.meshgrid(Vny, Vnx, Vnz, indexing='ij')
+    X, Y, Z = np.meshgrid(Vny, Vnx, Vnz, indexing="ij")
     # Compute Gaussian normalization factor and exponents for the kernel
     A = 1 / (std**2 * np.sqrt(r * (2 * np.pi) ** 3))
     a = 1 / (2 * std**2)
