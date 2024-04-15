@@ -87,33 +87,33 @@ def skeletonization(label_path: str):
 
     # Calculates partial derivative along 3 dimensions.
     print("Computing partial derivative.")
-    Ix = diff3d(labels_dt, 0)
-    Iy = diff3d(labels_dt, 1)
-    Iz = diff3d(labels_dt, 2)
+    gradX = diff3d(labels_dt, 0)
+    gradY = diff3d(labels_dt, 1)
+    gradZ = diff3d(labels_dt, 2)
 
     # Calculates Hessian tensor
     print("Computing Hessian tensor.")
-    Ixx = diff3d(Ix, 0)
-    Iyy = diff3d(Iy, 1)
-    Izz = diff3d(Iz, 2)
-    Ixy = diff3d(Ix, 1)
-    Ixz = diff3d(Ix, 2)
-    Iyz = diff3d(Iy, 2)
+    hessianXX = diff3d(gradX, 0)
+    hessianYY = diff3d(gradY, 1)
+    hessianZZ = diff3d(gradZ, 2)
+    hessianXY = diff3d(gradX, 1)
+    hessianXZ = diff3d(gradX, 2)
+    hessianYZ = diff3d(gradY, 2)
 
     # Smoothing
     print("Gaussian filtering.")
     std = 0.75 # Gaussian standard deviation
-    Ixx = angauss(Ixx, std, 1)
-    Iyy = angauss(Iyy, std, 1)
-    Izz = angauss(Izz, std, 1)
-    Ixy = angauss(Ixy, std, 1)
-    Ixz = angauss(Ixz, std, 1)
-    Iyz = angauss(Iyz, std, 1)
+    hessianXX = angauss(hessianXX, std, 1)
+    hessianYY = angauss(hessianYY, std, 1)
+    hessianZZ = angauss(hessianZZ, std, 1)
+    hessianXY = angauss(hessianXY, std, 1)
+    hessianXZ = angauss(hessianXZ, std, 1)
+    hessianYZ = angauss(hessianYZ, std, 1)
 
     # Solve Eigen problem
     print("Computing Eigenvalues and Eigenvectors, this step can take a few minutes.")
     print("In case the execution of the program is terminated unexpectedly, attempt to rerun it using smaller data segments or patches.")
-    first_eigenvalue, first_eigenvector = eig3d(Ixx, Iyy, Izz, Ixy, Ixz, Iyz)
+    first_eigenvalue, first_eigenvector = eig3d(hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ)
 
     # Non-maximum suppression
     print("Genration of skeleton based on non-maximum suppression algorithm.")

@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.linalg import eigh
 
-def eigendecomposition(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray, 
-                       Ixy: np.ndarray, Ixz: np.ndarray, Iyz: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def eigendecomposition(hessianXX: np.ndarray, hessianYY: np.ndarray, hessianZZ: np.ndarray, 
+                       hessianXY: np.ndarray, hessianXZ: np.ndarray, hessianYZ: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Solves the eigenproblem for a set of 3x3 symmetric matrices, representing Hessian matrices at each voxel.
 
@@ -11,9 +11,9 @@ def eigendecomposition(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray,
 
     Parameters
     ----------
-    Ixx, Iyy, Izz : np.ndarray
+    hessianXX, hessianYY, hessianZZ : np.ndarray
         Diagonal components of the Hessian matrices.
-    Ixy, Ixz, Iyz : np.ndarray
+    hessianXY, hessianXZ, hessianYZ : np.ndarray
         Off-diagonal components of the Hessian matrices.
 
     Returns
@@ -28,15 +28,15 @@ def eigendecomposition(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray,
     The function is designed to process a large number of small matrices (3x3) typically found in voxel-wise
     computations in 3D imaging studies. The eigenvalues and eigenvectors are sorted by the eigenvalues' magnitudes.
     """
-    m = len(Ixx)
+    m = len(hessianXX)
     Qo = np.zeros((m, 3, 3), dtype=complex)
     w = np.zeros((m, 3), dtype=complex)
 
     for i in range(m):
         A = np.array([
-            [Ixx[i], Ixy[i], Ixz[i]],
-            [Ixy[i], Iyy[i], Iyz[i]],
-            [Ixz[i], Iyz[i], Izz[i]],
+            [hessianXX[i], hessianXY[i], hessianXZ[i]],
+            [hessianXY[i], hessianYY[i], hessianYZ[i]],
+            [hessianXZ[i], hessianYZ[i], hessianZZ[i]],
         ])
 
         # Use Python package scipy.linalg to compute the eigenvalues and eigenvectors of the symmetric matrix A
@@ -47,8 +47,8 @@ def eigendecomposition(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray,
 
     return w[:, 0], Qo[:, 0, 0], Qo[:, 1, 0], Qo[:, 2, 0]
 
-def eig3d(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray, 
-          Ixy: np.ndarray, Ixz: np.ndarray, Iyz: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def eig3d(hessianXX: np.ndarray, hessianYY: np.ndarray, hessianZZ: np.ndarray, 
+          hessianXY: np.ndarray, hessianXZ: np.ndarray, hessianYZ: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute the first eigenvalue and corresponding eigenvector of the Hessian matrix at each voxel.
 
@@ -58,9 +58,9 @@ def eig3d(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray,
 
     Parameters
     ----------
-    Ixx, Iyy, Izz : np.ndarray
+    hessianXX, hessianYY, hessianZZ : np.ndarray
         Diagonal components of the Hessian matrix.
-    Ixy, Ixz, Iyz : np.ndarray
+    hessianXY, hessianXZ, hessianYZ : np.ndarray
         Off-diagonal components of the Hessian matrix.
 
     Returns
@@ -79,10 +79,10 @@ def eig3d(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray,
     image data. The computation is vectorized over the entire 3D grid for efficiency.
     """
     # Get the size of input
-    Nx, Ny, Nz = Ixx.shape
+    Nx, Ny, Nz = hessianXX.shape
     # Flatten the input matrices for bulk processing
     first_eigenvalue, first_eigen_x, first_eigen_y, first_eigen_z = eigendecomposition(
-        Ixx.flatten(), Iyy.flatten(), Izz.flatten(), Ixy.flatten(), Ixz.flatten(), Iyz.flatten()
+        hessianXX.flatten(), hessianYY.flatten(), hessianZZ.flatten(), hessianXY.flatten(), hessianXZ.flatten(), hessianYZ.flatten()
     )
 
     # Reshape the first eigenvalue to 3D
