@@ -1,200 +1,85 @@
 import numpy as np
+from typing import List, Tuple
 
+def nonmaxsup_kernel(
+    image: np.ndarray,
+    vector_x: np.ndarray,
+    vector_y: np.ndarray,
+    vector_z: np.ndarray,
+    mask_coords: List[Tuple[int, int, int]],
+    interpolation_factor: float
+) -> np.ndarray:
+    """
+    Apply non-maximum suppression based on trilinear interpolation to enhance ridge structures in a 3D image.
+    This function adjusts the influence of eigenvectors at each voxel using a given interpolation factor,
+    and marks local maxima in the output array indicating significant ridge features.
 
-def nonmaxsup_kernel(I, Vx, Vy, Vz, M, inter_factor):
-    """Initialize F as all-zero matrix."""
-    ld = len(M)
-    Nx, Ny, Nz = I.shape
-    F = np.zeros((Nx, Ny, Nz))
-    look_neighborhood(ld, I, Vx, Vy, Vz, M, F, inter_factor)
-    return F
+    Parameters
+    ----------
+    image : np.ndarray
+        The 3D image data array from which ridges are to be enhanced. Dimension: (Nx, Ny, Nz).
+    vector_x : np.ndarray
+        The x-component of the eigenvector associated with the largest eigenvalue at each voxel.
+    vector_y : np.ndarray
+        The y-component of the eigenvector.
+    vector_z : np.ndarray
+        The z-component of the eigenvector.
+    mask_coords : List[Tuple[int, int, int]]
+        A list of coordinates where the non-maximum suppression is to be applied.
+    interpolation_factor : float
+        A factor used in the trilinear interpolation for calculating the adjacent values.
 
+    Returns
+    -------
+    np.ndarray
+        A 3D binary array the same size as `image`, containing 1s at voxels identified as local maxima and 0s elsewhere.
+    """
+    # Initialize the output suppression matrix
+    result = np.zeros_like(image)
 
-def look_neighborhood(ld, I, Vx, Vy, Vz, M, F, inter_factor):
-    """Looking 8 adjacent points for trilinear interpolation."""
-    # Buffers initialization
-    A = np.zeros((8, ld))
-    B = np.zeros((8, ld))
-    Va = np.zeros(ld)
-    Vb = np.zeros(ld)
+    # Convert mask_coords to a structured NumPy array for efficient indexing
+    coords = np.array(mask_coords, dtype=[('x', int), ('y', int), ('z', int)])
+    x, y, z = coords['x'], coords['y'], coords['z']
 
-    # Prepare data for every coordinate
-    for j in range(ld):
-        x, y, z = M[j]
-        lv = I[x, y, z]
-        A[0][j] = lv
-        B[0][j] = lv
+    # Compute normalized interpolation coefficients based on the eigenvector components and interpolation factor
+    dx = np.abs(vector_x[x, y, z] * interpolation_factor)
+    dy = np.abs(vector_y[x, y, z] * interpolation_factor)
+    dz = np.abs(vector_z[x, y, z] * interpolation_factor)
 
-        kx = np.abs(Vx[x, y, z] * inter_factor)
-        ky = np.abs(Vy[x, y, z] * inter_factor)
-        kz = np.abs(Vz[x, y, z] * inter_factor)
+    # Calculate indices for forward and backward interpolation based on the directionality of the eigenvector components
+    next_x = x + np.sign(dx).astype(int)
+    next_y = y + np.sign(dy).astype(int)
+    next_z = z + np.sign(dz).astype(int)
+    prev_x = x - np.sign(dx).astype(int)
+    prev_y = y - np.sign(dy).astype(int)
+    prev_z = z - np.sign(dz).astype(int)
 
-        if Vx[x, y, z] >= 0:
-            if Vy[x, y, z] >= 0 and Vz[x, y, z] >= 0:
-                A[1][j] = I[x, y, z + 1]
-                A[2][j] = I[x, y + 1, z]
-                A[3][j] = I[x, y + 1, z + 1]
-                A[4][j] = I[x + 1, y, z]
-                A[5][j] = I[x + 1, y, z + 1]
-                A[6][j] = I[x + 1, y + 1, z]
-                A[7][j] = I[x + 1, y + 1, z + 1]
+    # Calculate trilinear interpolated values for forward (+ve) and backward (-ve) directions
+    interpolated_values_forward = (
+        image[x, y, z] * (1 - dx) * (1 - dy) * (1 - dz) +
+        image[next_x, y, z] * dx * (1 - dy) * (1 - dz) +
+        image[x, next_y, z] * (1 - dx) * dy * (1 - dz) +
+        image[x, y, next_z] * (1 - dx) * (1 - dy) * dz +
+        image[next_x, next_y, z] * dx * dy * (1 - dz) +
+        image[next_x, y, next_z] * dx * (1 - dy) * dz +
+        image[x, next_y, next_z] * (1 - dx) * dy * dz +
+        image[next_x, next_y, next_z] * dx * dy * dz
+    )
 
-                B[1][j] = I[x, y, z - 1]
-                B[2][j] = I[x, y - 1, z]
-                B[3][j] = I[x, y - 1, z - 1]
-                B[4][j] = I[x - 1, y, z]
-                B[5][j] = I[x - 1, y, z - 1]
-                B[6][j] = I[x - 1, y - 1, z]
-                B[7][j] = I[x - 1, y - 1, z - 1]
+    interpolated_values_backward = (
+        image[x, y, z] * (1 - dx) * (1 - dy) * (1 - dz) +
+        image[prev_x, y, z] * dx * (1 - dy) * (1 - dz) +
+        image[x, prev_y, z] * (1 - dx) * dy * (1 - dz) +
+        image[x, y, prev_z] * (1 - dx) * (1 - dy) * dz +
+        image[prev_x, prev_y, z] * dx * dy * (1 - dz) +
+        image[prev_x, y, prev_z] * dx * (1 - dy) * dz +
+        image[x, prev_y, prev_z] * (1 - dx) * dy * dz +
+        image[prev_x, prev_y, prev_z] * dx * dy * dz
+    )
 
-            elif Vy[x, y, z] < 0 and Vz[x, y, z] >= 0:
-                A[1][j] = I[x, y, z + 1]
-                A[2][j] = I[x, y - 1, z]
-                A[3][j] = I[x, y - 1, z + 1]
-                A[4][j] = I[x + 1, y, z]
-                A[5][j] = I[x + 1, y, z + 1]
-                A[6][j] = I[x + 1, y - 1, z]
-                A[7][j] = I[x + 1, y - 1, z + 1]
+    # Local values from image at specified coordinates
+    local_values = image[x, y, z]
 
-                B[1][j] = I[x, y, z - 1]
-                B[2][j] = I[x, y + 1, z]
-                B[3][j] = I[x, y + 1, z - 1]
-                B[4][j] = I[x - 1, y, z]
-                B[5][j] = I[x - 1, y, z - 1]
-                B[6][j] = I[x - 1, y + 1, z]
-                B[7][j] = I[x - 1, y + 1, z - 1]
-
-            elif Vy[x, y, z] >= 0 and Vz[x, y, z] < 0:
-                A[1][j] = I[x, y, z - 1]
-                A[2][j] = I[x, y + 1, z]
-                A[3][j] = I[x, y + 1, z - 1]
-                A[4][j] = I[x + 1, y, z]
-                A[5][j] = I[x + 1, y, z - 1]
-                A[6][j] = I[x + 1, y + 1, z]
-                A[7][j] = I[x + 1, y + 1, z - 1]
-
-                B[1][j] = I[x, y, z + 1]
-                B[2][j] = I[x, y - 1, z]
-                B[3][j] = I[x, y - 1, z + 1]
-                B[4][j] = I[x - 1, y, z]
-                B[5][j] = I[x - 1, y, z + 1]
-                B[6][j] = I[x - 1, y - 1, z]
-                B[7][j] = I[x - 1, y - 1, z + 1]
-
-            else:
-                A[1][j] = I[x, y, z - 1]
-                A[2][j] = I[x, y - 1, z]
-                A[3][j] = I[x, y - 1, z - 1]
-                A[4][j] = I[x + 1, y, z]
-                A[5][j] = I[x + 1, y, z - 1]
-                A[6][j] = I[x + 1, y - 1, z]
-                A[7][j] = I[x + 1, y - 1, z - 1]
-
-                B[1][j] = I[x, y, z + 1]
-                B[2][j] = I[x, y + 1, z]
-                B[3][j] = I[x, y + 1, z + 1]
-                B[4][j] = I[x - 1, y, z]
-                B[5][j] = I[x - 1, y, z + 1]
-                B[6][j] = I[x - 1, y + 1, z]
-                B[7][j] = I[x - 1, y + 1, z + 1]
-
-        else:
-            if Vy[x, y, z] >= 0 and Vz[x, y, z] >= 0:
-                A[1][j] = I[x, y, z + 1]
-                A[2][j] = I[x, y + 1, z]
-                A[3][j] = I[x, y + 1, z + 1]
-                A[4][j] = I[x - 1, y, z]
-                A[5][j] = I[x - 1, y, z + 1]
-                A[6][j] = I[x - 1, y + 1, z]
-                A[7][j] = I[x - 1, y + 1, z + 1]
-
-                B[1][j] = I[x, y, z - 1]
-                B[2][j] = I[x, y - 1, z]
-                B[3][j] = I[x, y - 1, z - 1]
-                B[4][j] = I[x + 1, y, z]
-                B[5][j] = I[x + 1, y, z - 1]
-                B[6][j] = I[x + 1, y - 1, z]
-                B[7][j] = I[x + 1, y - 1, z - 1]
-
-            elif Vy[x, y, z] < 0 and Vz[x, y, z] >= 0:
-                A[1][j] = I[x, y, z + 1]
-                A[2][j] = I[x, y - 1, z]
-                A[3][j] = I[x, y - 1, z + 1]
-                A[4][j] = I[x - 1, y, z]
-                A[5][j] = I[x - 1, y, z + 1]
-                A[6][j] = I[x - 1, y - 1, z]
-                A[7][j] = I[x - 1, y - 1, z + 1]
-
-                B[1][j] = I[x, y, z - 1]
-                B[2][j] = I[x, y + 1, z]
-                B[3][j] = I[x, y + 1, z - 1]
-                B[4][j] = I[x + 1, y, z]
-                B[5][j] = I[x + 1, y, z - 1]
-                B[6][j] = I[x + 1, y + 1, z]
-                B[7][j] = I[x + 1, y + 1, z - 1]
-
-            elif Vy[x, y, z] >= 0 and Vz[x, y, z] < 0:
-                A[1][j] = I[x, y, z - 1]
-                A[2][j] = I[x, y + 1, z]
-                A[3][j] = I[x, y + 1, z - 1]
-                A[4][j] = I[x - 1, y, z]
-                A[5][j] = I[x - 1, y, z - 1]
-                A[6][j] = I[x - 1, y + 1, z]
-                A[7][j] = I[x - 1, y + 1, z - 1]
-
-                B[1][j] = I[x, y, z + 1]
-                B[2][j] = I[x, y - 1, z]
-                B[3][j] = I[x, y - 1, z + 1]
-                B[4][j] = I[x + 1, y, z]
-                B[5][j] = I[x + 1, y, z + 1]
-                B[6][j] = I[x + 1, y - 1, z]
-                B[7][j] = I[x + 1, y - 1, z + 1]
-
-            else:
-                A[1][j] = I[x, y, z - 1]
-                A[2][j] = I[x, y - 1, z]
-                A[3][j] = I[x, y - 1, z - 1]
-                A[4][j] = I[x - 1, y, z]
-                A[5][j] = I[x - 1, y, z - 1]
-                A[6][j] = I[x - 1, y - 1, z]
-                A[7][j] = I[x - 1, y - 1, z - 1]
-
-                B[1][j] = I[x, y, z + 1]
-                B[2][j] = I[x, y + 1, z]
-                B[3][j] = I[x, y + 1, z + 1]
-                B[4][j] = I[x + 1, y, z]
-                B[5][j] = I[x + 1, y, z + 1]
-                B[6][j] = I[x + 1, y + 1, z]
-                B[7][j] = I[x + 1, y + 1, z + 1]
-
-    # Trilinear interpolation
-    for j in range(ld):
-        Va[j] = (
-            A[0][j] * (1 - kx) * (1 - ky) * (1 - kz)
-            + A[4][j] * kx * (1 - ky) * (1 - kz)
-            + A[2][j] * (1 - kx) * ky * (1 - kz)
-            + A[1][j] * (1 - kx) * (1 - ky) * kz
-            + A[5][j] * kx * (1 - ky) * kz
-            + A[3][j] * (1 - kx) * ky * kz
-            + A[6][j] * kx * ky * (1 - kz)
-            + A[7][j] * kx * ky * kz
-        )
-
-        Vb[j] = (
-            B[0][j] * (1 - kx) * (1 - ky) * (1 - kz)
-            + B[4][j] * kx * (1 - ky) * (1 - kz)
-            + B[2][j] * (1 - kx) * ky * (1 - kz)
-            + B[1][j] * (1 - kx) * (1 - ky) * kz
-            + B[5][j] * kx * (1 - ky) * kz
-            + B[3][j] * (1 - kx) * ky * kz
-            + B[6][j] * kx * ky * (1 - kz)
-            + B[7][j] * kx * ky * kz
-        )
-
-    # Mark local maxima
-    for j in range(ld):
-        x, y, z = M[j]
-        lv = I[x, y, z]
-        if lv > Va[j] and lv > Vb[j]:
-            F[x, y, z] = 1
-    return F
+    # Determine local maxima by comparing local values to interpolated values
+    result[x, y, z] = (local_values > interpolated_values_forward) & (local_values > interpolated_values_backward)
+    return result

@@ -1,6 +1,6 @@
 from typer import Option
 
-from ..NMS import skeletonization as _skeletonization
+from ..skeletonize import skeletonization as _skeletonization
 from .cli import OPTION_PROMPT_KWARGS as PKWARGS
 from .cli import cli
 

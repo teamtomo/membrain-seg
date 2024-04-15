@@ -1,32 +1,97 @@
 import numpy as np
-from membrain_seg.segmentation.skeletonization.eigendecomposition import (
-    eigendecomposition,
-)
+from scipy.linalg import eigh
 
+def eigendecomposition(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray, 
+                       Ixy: np.ndarray, Ixz: np.ndarray, Iyz: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Solves the eigenproblem for a set of 3x3 symmetric matrices, representing Hessian matrices at each voxel.
 
-def eig3d(Ixx, Iyy, Izz, Ixy, Ixz, Iyz):
-    """Get the first eigenvalues and eigenvectors."""
-    # Preparing input data
+    This function computes the largest eigenvalue and corresponding eigenvector for each matrix, which are used
+    for further analysis such as in structure analysis in image processing.
+
+    Parameters
+    ----------
+    Ixx, Iyy, Izz : np.ndarray
+        Diagonal components of the Hessian matrices.
+    Ixy, Ixz, Iyz : np.ndarray
+        Off-diagonal components of the Hessian matrices.
+
+    Returns
+    -------
+    np.ndarray
+        The largest eigenvalues of the Hessian matrices.
+    np.ndarray, np.ndarray, np.ndarray
+        The components of the eigenvectors corresponding to the largest eigenvalues.
+
+    Notes
+    -----
+    The function is designed to process a large number of small matrices (3x3) typically found in voxel-wise
+    computations in 3D imaging studies. The eigenvalues and eigenvectors are sorted by the eigenvalues' magnitudes.
+    """
+    m = len(Ixx)
+    Qo = np.zeros((m, 3, 3), dtype=complex)
+    w = np.zeros((m, 3), dtype=complex)
+
+    for i in range(m):
+        A = np.array([
+            [Ixx[i], Ixy[i], Ixz[i]],
+            [Ixy[i], Iyy[i], Iyz[i]],
+            [Ixz[i], Iyz[i], Izz[i]],
+        ])
+
+        # Use Python package scipy.linalg to compute the eigenvalues and eigenvectors of the symmetric matrix A
+        w_i, Qo_i = eigh(A)
+        w[i] = w_i[::-1]  # Reversing to get the largest eigenvalue first
+        Qo_i[:, [0, 2]] = Qo_i[:, [2, 0]]  # Swapping to correct the order of eigenvectors
+        Qo[i] = Qo_i
+
+    return w[:, 0], Qo[:, 0, 0], Qo[:, 1, 0], Qo[:, 2, 0]
+
+def eig3d(Ixx: np.ndarray, Iyy: np.ndarray, Izz: np.ndarray, 
+          Ixy: np.ndarray, Ixz: np.ndarray, Iyz: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Compute the first eigenvalue and corresponding eigenvector of the Hessian matrix at each voxel.
+
+    This function takes the components of the Hessian matrix at each point in a 3D grid
+    and computes the eigenvalue and eigenvector corresponding to the largest absolute 
+    eigenvalue at each point.
+
+    Parameters
+    ----------
+    Ixx, Iyy, Izz : np.ndarray
+        Diagonal components of the Hessian matrix.
+    Ixy, Ixz, Iyz : np.ndarray
+        Off-diagonal components of the Hessian matrix.
+
+    Returns
+    -------
+    first_eigenvalue : np.ndarray
+        The first (largest) eigenvalue at each point in the 3D grid.
+    first_eigenvector : np.ndarray
+        The corresponding eigenvector of the first eigenvalue at each point in the 3D grid.
+        This is returned as a 4D array where the last dimension has size 3, representing
+        the vector components.
+
+    Notes
+    -----
+    The eigenvalue and eigenvector are computed using an eigendecomposition function
+    tailored to symmetric 3x3 matrices, typical for Hessian matrices derived from
+    image data. The computation is vectorized over the entire 3D grid for efficiency.
+    """
+    # Get the size of input
     Nx, Ny, Nz = Ixx.shape
-    N = Nx * Ny * Nz
-
-    L1 = Ixx.reshape(N)
-    L2 = Iyy.reshape(N)
-    L3 = Izz.reshape(N)
-    V1h = Ixy.reshape(N)
-    V2h = Ixz.reshape(N)
-    V3h = Iyz.reshape(N)
-
-    L1, L2, L3, V1xm, V1ym, V1zm, V2xm, V2ym, V2zm, V3xm, V3ym, V3zm = (
-        eigendecomposition(L1, L2, L3, V1h, V2h, V3h)
+    # Flatten the input matrices for bulk processing
+    first_eigenvalue, first_eigen_x, first_eigen_y, first_eigen_z = eigendecomposition(
+        Ixx.flatten(), Iyy.flatten(), Izz.flatten(), Ixy.flatten(), Ixz.flatten(), Iyz.flatten()
     )
 
-    # Preparing output data
-    L1 = L1.reshape((Nx, Ny, Nz))
+    # Reshape the first eigenvalue to 3D
+    first_eigenvalue = first_eigenvalue.reshape((Nx, Ny, Nz))
 
-    V1 = np.zeros((Nx, Ny, Nz, 3), dtype=complex)
-    V1[:, :, :, 0] = V1xm.reshape((Nx, Ny, Nz))
-    V1[:, :, :, 1] = V1ym.reshape((Nx, Ny, Nz))
-    V1[:, :, :, 2] = V1zm.reshape((Nx, Ny, Nz))
+    # Prepare the first eigenvector array
+    first_eigenvector = np.zeros((Nx, Ny, Nz, 3), dtype=complex)
+    first_eigenvector[:, :, :, 0] = first_eigen_x.reshape((Nx, Ny, Nz))
+    first_eigenvector[:, :, :, 1] = first_eigen_y.reshape((Nx, Ny, Nz))
+    first_eigenvector[:, :, :, 2] = first_eigen_z.reshape((Nx, Ny, Nz))
 
-    return L1, V1
+    return first_eigenvalue, first_eigenvector
