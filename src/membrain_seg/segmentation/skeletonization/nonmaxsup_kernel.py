@@ -1,3 +1,13 @@
+# ---------------------------------------------------------------------------------
+# DISCLAIMER: This code is adapted from the MATLAB and C++ implementations provided
+# in the paper titled "Robust membrane detection based on tensor voting for electron
+# tomography" by Antonio Martinez-Sanchez, Inmaculada Garcia, Shoh Asano, Vladan Lucic,
+# and Jose-Jesus Fernandez, published in the Journal of Structural Biology,
+# Volume 186, Issue 1, 2014, Pages 49-61. The original work can be accessed via
+# https://doi.org/10.1016/j.jsb.2014.02.015 and is used under conditions that adhere
+# to the original licensing agreements. For details on the original license, refer to
+# the publication: https://www.sciencedirect.com/science/article/pii/S1047847714000495.
+# ---------------------------------------------------------------------------------
 from typing import List, Tuple
 
 import numpy as np

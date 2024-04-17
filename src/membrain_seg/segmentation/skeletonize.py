@@ -11,15 +11,17 @@
 import numpy as np
 import scipy.ndimage as ndimage
 
-from membrain_seg.segmentation.skeletonization.angauss import angauss
-from membrain_seg.segmentation.skeletonization.diff3d import diff3d
-from membrain_seg.segmentation.skeletonization.eig3d import eig3d
-from membrain_seg.segmentation.skeletonization.load_save_file import (
+from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
-    read_nifti,
-    write_nifti,
+    store_tomogram,
 )
+from membrain_seg.segmentation.skeletonization.diff3d import (
+    compute_gradients,
+    compute_hessian,
+)
+from membrain_seg.segmentation.skeletonization.eig3d import eig3d
 from membrain_seg.segmentation.skeletonization.nonmaxsup import nonmaxsup
+from membrain_seg.segmentation.skeletonization.smoothing import process_hessian_tensors
 
 
 # This function should only take label path as input.
@@ -28,93 +30,80 @@ def skeletonization(label_path: str):
     """
     Perform skeletonization on a tomogram segmentation.
 
-    This function reads a segmentation file (label_path) which can be in .nii, .nii.gz,
-    or .mrc format. It performs skeletonization on the segmentation where the label '1'
-    represents the structures of interest. The resultant skeleton is saved in the same
-    directory with '_skeleton' appended before the file extension.
+    This function reads a segmentation file (label_path). It performs skeletonization on
+    the segmentation where the non-zero labels represent the structures of interest.
+    The resultan skeleton is saved in the same directory with 'skeleton' appended
+    after the filename.
 
     Parameters
     ----------
     label_path : str
         The path to the input file.
-        This file should be a tomogram segmentation file in
-        either .nii, .nii.gz, or .mrc format.
-        The function will perform checks to confirm the file format.
+        This file should be a tomogram segmentation file.
 
     Returns
     -------
     None
         The function does not return any value.
-        It saves the skeletonized image in the same directory as the input file,
-        replacing the original extension with '_skeleton.nii'.
+        It saves the skeletonized image in the same directory as the input file.
+        The skeletonized image is saved with the original filename followed
+        by '.skeleton.mrc'.
 
-    Raises
-    ------
-    ValueError
-        If the input file format is not supported (.nii, .nii.gz, or .mrc),
-        a ValueError is raised.
 
     Notes
     -----
     The skeletonization is based on the computation of the distance transform
-    of the regions abeled as '1' (foreground), followed by an eigenvalue analysis
+    of the non-zero regions (foreground), followed by an eigenvalue analysis
     of the Hessian matrix of the distance transform to identify ridge-like
     structures corresponding to the centerlines of the segmented objects.
 
     Examples
     --------
-    >>> skeletonization("/path/to/your/datafile.nii")
-    Skeleton saved to: /path/to/your/datafile_skeleton.nii
-    >>> membrain skeletonize --label-path /path/to/your/datafile.nii
+    >>> skeletonization("/path/to/your/datafile.mrc")
+    Skeleton saved to: /path/to/your/datafile.skeleton.mrc
+    >>> membrain skeletonize --label-path /path/to/your/datafile.mrc
     This command runs the skeletonization process from the command line.
     """
-    # labels can be .nii files or mrc files
-    if label_path.endswith(".nii") or label_path.endswith(".nii.gz"):
-        # Load NIfTI files (.nii or .nii.gz)
-        segmentation = read_nifti(label_path)
-        save_path = label_path.replace(".nii", "_skeleton.nii")
-    elif label_path.endswith(".mrc"):
-        # Load MRC files
-        segmentation = load_tomogram(label_path)
-        segmentation = segmentation.data
-        save_path = label_path.replace(".mrc", "_skeleton.nii")
-    else:
-        # Error handling for unsupported file formats
-        print(
-            "Error: Label file format not supported. Please use .nii, .nii.gz, or .mrc."
-        )
+    # Read original segmentation
+    segmentation = load_tomogram(label_path)
+    segmentation = segmentation.data
+    save_path = label_path + ".skeleton.mrc"
 
-    # Segmentation consists of 0, 1 and 2 respectively
-    # for background, mask and labels to be ignored.
-    labels = (segmentation == 1) * 1.0
+    # Convert non-zero segmentation values to 1.0
+    labels = (segmentation > 0) * 1.0
 
     print("Distance transform on original labels.")
     labels_dt = ndimage.distance_transform_edt(labels) * (-1)
 
     # Calculates partial derivative along 3 dimensions.
     print("Computing partial derivative.")
-    gradX = diff3d(labels_dt, 0)
-    gradY = diff3d(labels_dt, 1)
-    gradZ = diff3d(labels_dt, 2)
+    gradients = compute_gradients(labels_dt)
+    gradX, gradY, gradZ = gradients
 
     # Calculates Hessian tensor
     print("Computing Hessian tensor.")
-    hessianXX = diff3d(gradX, 0)
-    hessianYY = diff3d(gradY, 1)
-    hessianZZ = diff3d(gradZ, 2)
-    hessianXY = diff3d(gradX, 1)
-    hessianXZ = diff3d(gradX, 2)
-    hessianYZ = diff3d(gradY, 2)
+    hessians = compute_hessian(gradX, gradY, gradZ)
+    hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ = hessians
 
-    # Smoothing
-    print("Gaussian filtering.")
-    std = 0.75  # Gaussian standard deviation
-    hessianXX = angauss(hessianXX, std, 1)
-    hessianYY = angauss(hessianYY, std, 1)
-    hessianZZ = angauss(hessianZZ, std, 1)
-    hessianXY = angauss(hessianXY, std, 1)
-    hessianXZ = angauss(hessianXZ, std, 1)
-    hessianYZ = angauss(hessianYZ, std, 1)
+    # Apply Gaussian filter with the same sigma value for all dimensions
+    print("Applying Gaussian filtering.")
+    hessian_components = [
+        hessianXX,
+        hessianYY,
+        hessianZZ,
+        hessianXY,
+        hessianXZ,
+        hessianYZ,
+    ]
+    filtered_hessian = process_hessian_tensors(hessian_components)
+    (
+        filtered_hessianXX,
+        filtered_hessianYY,
+        filtered_hessianZZ,
+        filtered_hessianXY,
+        filtered_hessianXZ,
+        filtered_hessianYZ,
+    ) = filtered_hessian
 
     # Solve Eigen problem
     print("Computing Eigenvalues and Eigenvectors, this step can take a few minutes.")
@@ -123,14 +112,19 @@ def skeletonization(label_path: str):
         "attempt to rerun it using smaller data segments or patches."
     )
     first_eigenvalue, first_eigenvector = eig3d(
-        hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ
+        filtered_hessianXX,
+        filtered_hessianYY,
+        filtered_hessianZZ,
+        filtered_hessianXY,
+        filtered_hessianXZ,
+        filtered_hessianYZ,
     )
 
     # Non-maximum suppression
     print("Genration of skeleton based on non-maximum suppression algorithm.")
     first_eigenvalue = ndimage.gaussian_filter(first_eigenvalue, sigma=1)
     first_eigenvalue = np.abs(first_eigenvalue)
-    Skeleton = nonmaxsup(
+    skeleton = nonmaxsup(
         first_eigenvalue,
         first_eigenvector[:, :, :, 0],
         first_eigenvector[:, :, :, 1],
@@ -139,5 +133,5 @@ def skeletonization(label_path: str):
     )
 
     # Save the skeleton
-    write_nifti(save_path, Skeleton)
+    store_tomogram(save_path, skeleton)
     print("Skeleton saved to: ", save_path)
