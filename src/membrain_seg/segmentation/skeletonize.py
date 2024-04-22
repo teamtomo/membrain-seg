@@ -17,13 +17,14 @@ from membrain_seg.segmentation.skeletonization.diff3d import (
     compute_gradients,
     compute_hessian,
 )
-from membrain_seg.segmentation.skeletonization.eig3d import batch_mask_eigendecomposition_3d
+from membrain_seg.segmentation.skeletonization.eig3d import (
+    batch_mask_eigendecomposition_3d,
+)
 from membrain_seg.segmentation.skeletonization.nonmaxsup import nonmaxsup
 from membrain_seg.segmentation.training.surface_dice import apply_gaussian_filter
 
 
 def skeletonization(label_path: str, batch_size: int) -> np.ndarray:
-    
     """
     Perform skeletonization on a tomogram segmentation.
 
@@ -53,7 +54,8 @@ def skeletonization(label_path: str, batch_size: int) -> np.ndarray:
 
     Examples
     --------
-    >>> membrain skeletonize --label-path <path> --out-folder <output-directory> --batch-size 1000000
+    >>> membrain skeletonize --label-path <path> --out-folder <output-directory>
+        --batch-size 1000000
     This command runs the skeletonization process from the command line.
     """
     # Read original segmentation
@@ -72,7 +74,9 @@ def skeletonization(label_path: str, batch_size: int) -> np.ndarray:
 
     # Calculates Hessian tensor
     print("Computing Hessian tensor.")
-    hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ = compute_hessian(gradX, gradY, gradZ)
+    hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ = compute_hessian(
+        gradX, gradY, gradZ
+    )
     hessians = [hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ]
     del gradX, gradY, gradZ
 
@@ -83,7 +87,13 @@ def skeletonization(label_path: str, batch_size: int) -> np.ndarray:
     print(f"Using device: {device}")
 
     filtered_hessian = [
-        apply_gaussian_filter(torch.from_numpy(comp).float().to(device).unsqueeze(0).unsqueeze(0), kernel_size=9, sigma=1.0).squeeze().to('cpu')
+        apply_gaussian_filter(
+            torch.from_numpy(comp).float().to(device).unsqueeze(0).unsqueeze(0),
+            kernel_size=9,
+            sigma=1.0,
+        )
+        .squeeze()
+        .to("cpu")
         for comp in hessians
     ]
 
@@ -91,9 +101,12 @@ def skeletonization(label_path: str, batch_size: int) -> np.ndarray:
     print("Computing Eigenvalues and Eigenvectors.")
     print(
         "In case the execution of the program is terminated unexpectedly, "
-        "attempt to rerun it using smaller segmentation patches or give a specified batch size as input, e.g. batch_size=1000000."
+        "attempt to rerun it using smaller segmentation patches"
+        "or give a specified batch size as input, e.g. batch_size=1000000."
     )
-    first_eigenvalue, first_eigenvector = batch_mask_eigendecomposition_3d(filtered_hessian, batch_size, labels)
+    first_eigenvalue, first_eigenvector = batch_mask_eigendecomposition_3d(
+        filtered_hessian, batch_size, labels
+    )
 
     # Non-maximum suppression
     print("Genration of skeleton based on non-maximum suppression algorithm.")
