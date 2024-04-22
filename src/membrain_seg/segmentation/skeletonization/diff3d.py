@@ -56,8 +56,8 @@ def calculate_derivative_3d(tomogram: np.ndarray, axis: int) -> np.ndarray:
     num_x, num_y, num_z = tomogram.shape
 
     # Initialize arrays for forward and backward differences
-    forward_difference = np.zeros((num_x, num_y, num_z), dtype="float64")
-    backward_difference = np.zeros((num_x, num_y, num_z), dtype="float64")
+    forward_difference = np.zeros((num_x, num_y, num_z), dtype="float16")
+    backward_difference = np.zeros((num_x, num_y, num_z), dtype="float16")
 
     # Calculate partial derivatives along the specified dimension (axis)
     if axis == 0:

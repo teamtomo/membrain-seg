@@ -8,130 +8,91 @@
 # to the original licensing agreements. For details on the original license, refer to
 # the publication: https://www.sciencedirect.com/science/article/pii/S1047847714000495.
 # ---------------------------------------------------------------------------------
+import torch
 import numpy as np
-from scipy.linalg import eigh
+from typing import List, Tuple
 
-
-def eigendecomposition(
-    hessianXX: np.ndarray,
-    hessianYY: np.ndarray,
-    hessianZZ: np.ndarray,
-    hessianXY: np.ndarray,
-    hessianXZ: np.ndarray,
-    hessianYZ: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def batch_mask_eigendecomposition_3d(filtered_hessian: List[torch.Tensor], 
+                                     batch_size: int, 
+                                     labels: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Solves the eigenproblem for a set of 3x3 symmetric matrices,
-    representing Hessian matrices at each voxel.
+    Perform batch eigendecomposition on a 3D Hessian matrix using a binary mask to select voxels.
 
-    This function computes the largest eigenvalue and corresponding
-    eigenvector for each matrix, which are used for further analysis
-    such as in structure analysis in image processing.
+    This function processes only those voxels where the label is set to 1, computing the largest eigenvalue
+    and its corresponding eigenvector for each selected voxel. It handles large 3D datasets efficiently by
+    performing computations in batches and leveraging GPU acceleration.
 
-    Parameters
-    ----------
-    hessianXX, hessianYY, hessianZZ : np.ndarray
-        Diagonal components of the Hessian matrices.
-    hessianXY, hessianXZ, hessianYZ : np.ndarray
-        Off-diagonal components of the Hessian matrices.
+    Parameters:
+    -----------
+    filtered_hessian : List[torch.Tensor]
+        A list of six torch.Tensors representing the Hessian matrix components:
+        [hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ]
+    batch_size : int
+        The number of matrices to include in each batch for processing.
+    labels : np.ndarray
+        A 3D numpy array representing the binary mask where 1 indicates a voxel to be processed.
 
-    Returns
-    -------
-    np.ndarray
-        The largest eigenvalues of the Hessian matrices.
-    np.ndarray, np.ndarray, np.ndarray
-        The components of the eigenvectors corresponding to the largest eigenvalues.
-
-    Notes
-    -----
-    The function is designed to process a large number of small
-    matrices (3x3) typically found in voxel-wise computations
-    in 3D imaging studies.
-    The eigenvalues and eigenvectors are sorted by the eigenvalues' magnitudes.
+    Returns:
+    --------
+    Tuple[np.ndarray, np.ndarray]
+        A tuple containing two numpy arrays:
+        - first_eigenvalues: A 3D array with the largest eigenvalues for the processed voxels.
+        - first_eigenvectors: A 4D array with the corresponding eigenvectors for these eigenvalues.
     """
-    m = len(hessianXX)
-    Qo = np.zeros((m, 3, 3), dtype=complex)
-    w = np.zeros((m, 3), dtype=complex)
-
-    for i in range(m):
-        A = np.array(
-            [
-                [hessianXX[i], hessianXY[i], hessianXZ[i]],
-                [hessianXY[i], hessianYY[i], hessianYZ[i]],
-                [hessianXZ[i], hessianYZ[i], hessianZZ[i]],
-            ]
-        )
-
-        # Use Python package scipy.linalg
-        # to compute the eigenvalues and eigenvectors of the symmetric matrix A
-        w_i, Qo_i = eigh(A)
-        w[i] = w_i[::-1]  # Reversing to get the largest eigenvalue first
-        Qo_i[:, [0, 2]] = Qo_i[
-            :, [2, 0]
-        ]  # Swapping to correct the order of eigenvectors
-        Qo[i] = Qo_i
-
-    return w[:, 0], Qo[:, 0, 0], Qo[:, 1, 0], Qo[:, 2, 0]
-
-
-def eig3d(
-    hessianXX: np.ndarray,
-    hessianYY: np.ndarray,
-    hessianZZ: np.ndarray,
-    hessianXY: np.ndarray,
-    hessianXZ: np.ndarray,
-    hessianYZ: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Compute the first eigenvalue and corresponding eigenvector
-    of the Hessian matrix at each voxel.
-
-    This function takes the components of the Hessian matrix at each point in a 3D grid
-    and computes the eigenvalue and eigenvector corresponding to the largest absolute
-    eigenvalue at each point.
-
-    Parameters
-    ----------
-    hessianXX, hessianYY, hessianZZ : np.ndarray
-        Diagonal components of the Hessian matrix.
-    hessianXY, hessianXZ, hessianYZ : np.ndarray
-        Off-diagonal components of the Hessian matrix.
-
-    Returns
-    -------
-    first_eigenvalue : np.ndarray
-        The first (largest) eigenvalue at each point in the 3D grid.
-    first_eigenvector : np.ndarray
-        The corresponding eigenvector of the first eigenvalue at each point
-        in the 3D grid.
-        This is returned as a 4D array where the last dimension has size 3,
-        representing the vector components.
-
-    Notes
-    -----
-    The eigenvalue and eigenvector are computed using an eigendecomposition function
-    tailored to symmetric 3x3 matrices, typical for Hessian matrices derived from
-    image data. The computation is vectorized over the entire 3D grid for efficiency.
-    """
-    # Get the size of input
+    
+    hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ = filtered_hessian
+    del filtered_hessian
     Nx, Ny, Nz = hessianXX.shape
-    # Flatten the input matrices for bulk processing
-    first_eigenvalue, first_eigen_x, first_eigen_y, first_eigen_z = eigendecomposition(
-        hessianXX.flatten(),
-        hessianYY.flatten(),
-        hessianZZ.flatten(),
-        hessianXY.flatten(),
-        hessianXZ.flatten(),
-        hessianYZ.flatten(),
-    )
 
-    # Reshape the first eigenvalue to 3D
-    first_eigenvalue = first_eigenvalue.reshape((Nx, Ny, Nz))
+    # Set the batch size to the total number of voxels if no specific batch size is provided
+    if batch_size is None:
+        batch_size = Nx * Ny * Nz  # Default to processing the entire volume at once if no batch size is specified
+    print('batch_size=', batch_size)
 
-    # Prepare the first eigenvector array
-    first_eigenvector = np.zeros((Nx, Ny, Nz, 3), dtype=complex)
-    first_eigenvector[:, :, :, 0] = first_eigen_x.reshape((Nx, Ny, Nz))
-    first_eigenvector[:, :, :, 1] = first_eigen_y.reshape((Nx, Ny, Nz))
-    first_eigenvector[:, :, :, 2] = first_eigen_z.reshape((Nx, Ny, Nz))
+    # Identify coordinates where computation is needed
+    active_voxel_coords = np.where(labels == 1)
+    x_indices, y_indices, z_indices = active_voxel_coords
+    num_active_voxels = x_indices.shape[0]
 
-    return first_eigenvalue, first_eigenvector
+    # Prepare a tensor stack for the selected Hessian matrix components
+    hessian_components = torch.stack([
+        hessianXX[x_indices, y_indices, z_indices],
+        hessianXY[x_indices, y_indices, z_indices],
+        hessianXZ[x_indices, y_indices, z_indices],
+        hessianXY[x_indices, y_indices, z_indices],
+        hessianYY[x_indices, y_indices, z_indices],
+        hessianYZ[x_indices, y_indices, z_indices],
+        hessianXZ[x_indices, y_indices, z_indices],
+        hessianYZ[x_indices, y_indices, z_indices],
+        hessianZZ[x_indices, y_indices, z_indices],
+    ], dim=-1).view(-1, 3, 3)
+    del hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ
+    print('Hessian component matrix shape:', hessian_components.shape)
+
+    # Initialize output arrays
+    first_eigenvalues = np.zeros((Nx, Ny, Nz), dtype=np.complex64)
+    first_eigenvectors = np.zeros((Nx, Ny, Nz, 3), dtype=np.complex64)
+
+    # Process in batches
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    for i in range(0, num_active_voxels, batch_size):
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        #print('i=', i)
+        #print(f"Allocated: {torch.cuda.memory_allocated(0)/1e9:.2f} GB")
+        #print(f"Cached:    {torch.cuda.memory_reserved(0)/1e9:.2f} GB")
+
+        i_end = min(i + batch_size, num_active_voxels)
+        batch_matrix = hessian_components[i:i_end, :, :]
+
+        # Compute eigenvalues and eigenvectors for this batch
+        eigenvalues, eigenvectors = torch.linalg.eig(batch_matrix.to(device))
+        max_eigenvalue_idx = torch.argmax(torch.abs(eigenvalues), dim=-1)
+        batch_first_eigenvalues = eigenvalues[torch.arange(len(max_eigenvalue_idx)), max_eigenvalue_idx]
+        batch_first_eigenvectors = eigenvectors[torch.arange(len(max_eigenvalue_idx)), :, max_eigenvalue_idx]
+
+        # Store results back to CPU memory
+        first_eigenvalues[x_indices[i:i_end], y_indices[i:i_end], z_indices[i:i_end]] = batch_first_eigenvalues.cpu().numpy()
+        first_eigenvectors[x_indices[i:i_end], y_indices[i:i_end], z_indices[i:i_end], :] = batch_first_eigenvectors.view(-1, 3).cpu().numpy()
+        
+    return first_eigenvalues, first_eigenvectors

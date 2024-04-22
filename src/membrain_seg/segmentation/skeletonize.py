@@ -10,45 +10,39 @@
 # ---------------------------------------------------------------------------------
 import numpy as np
 import scipy.ndimage as ndimage
+import torch
 
-from membrain_seg.segmentation.dataloading.data_utils import (
-    load_tomogram,
-    store_tomogram,
-)
+from membrain_seg.segmentation.dataloading.data_utils import load_tomogram
 from membrain_seg.segmentation.skeletonization.diff3d import (
     compute_gradients,
     compute_hessian,
 )
-from membrain_seg.segmentation.skeletonization.eig3d import eig3d
+from membrain_seg.segmentation.skeletonization.eig3d import batch_mask_eigendecomposition_3d
 from membrain_seg.segmentation.skeletonization.nonmaxsup import nonmaxsup
-from membrain_seg.segmentation.skeletonization.smoothing import process_hessian_tensors
+from membrain_seg.segmentation.training.surface_dice import apply_gaussian_filter
 
 
-# This function should only take label path as input.
-# The generated skeleton will be saved in the same folder.
-def skeletonization(label_path: str):
+def skeletonization(label_path: str, batch_size: int) -> np.ndarray:
+    
     """
     Perform skeletonization on a tomogram segmentation.
 
     This function reads a segmentation file (label_path). It performs skeletonization on
     the segmentation where the non-zero labels represent the structures of interest.
-    The resultan skeleton is saved in the same directory with 'skeleton' appended
-    after the filename.
+    The resultan skeleton is saved with '_skel' appended after the filename.
 
     Parameters
     ----------
     label_path : str
-        The path to the input file.
-        This file should be a tomogram segmentation file.
+        Path to the input tomogram segmentation file.
+    batch_size : int
+        The number of elements to process in one batch during eigen decomposition.
+        Useful for managing memory usage.
 
     Returns
     -------
-    None
-        The function does not return any value.
-        It saves the skeletonized image in the same directory as the input file.
-        The skeletonized image is saved with the original filename followed
-        by '.skeleton.mrc'.
-
+    ndarray
+        Returns the skeletonized image as a numpy array.
 
     Notes
     -----
@@ -59,15 +53,12 @@ def skeletonization(label_path: str):
 
     Examples
     --------
-    >>> skeletonization("/path/to/your/datafile.mrc")
-    Skeleton saved to: /path/to/your/datafile.skeleton.mrc
-    >>> membrain skeletonize --label-path /path/to/your/datafile.mrc
+    >>> membrain skeletonize --label-path <path> --out-folder <output-directory> --batch-size 1000000
     This command runs the skeletonization process from the command line.
     """
     # Read original segmentation
     segmentation = load_tomogram(label_path)
     segmentation = segmentation.data
-    save_path = label_path + ".skeleton.mrc"
 
     # Convert non-zero segmentation values to 1.0
     labels = (segmentation > 0) * 1.0
@@ -77,48 +68,32 @@ def skeletonization(label_path: str):
 
     # Calculates partial derivative along 3 dimensions.
     print("Computing partial derivative.")
-    gradients = compute_gradients(labels_dt)
-    gradX, gradY, gradZ = gradients
+    gradX, gradY, gradZ = compute_gradients(labels_dt)
 
     # Calculates Hessian tensor
     print("Computing Hessian tensor.")
-    hessians = compute_hessian(gradX, gradY, gradZ)
-    hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ = hessians
+    hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ = compute_hessian(gradX, gradY, gradZ)
+    hessians = [hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ]
+    del gradX, gradY, gradZ
 
     # Apply Gaussian filter with the same sigma value for all dimensions
     print("Applying Gaussian filtering.")
-    hessian_components = [
-        hessianXX,
-        hessianYY,
-        hessianZZ,
-        hessianXY,
-        hessianXZ,
-        hessianYZ,
+    # Load hessian tensors on GPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    filtered_hessian = [
+        apply_gaussian_filter(torch.from_numpy(comp).float().to(device).unsqueeze(0).unsqueeze(0), kernel_size=9, sigma=1.0).squeeze().to('cpu')
+        for comp in hessians
     ]
-    filtered_hessian = process_hessian_tensors(hessian_components)
-    (
-        filtered_hessianXX,
-        filtered_hessianYY,
-        filtered_hessianZZ,
-        filtered_hessianXY,
-        filtered_hessianXZ,
-        filtered_hessianYZ,
-    ) = filtered_hessian
 
     # Solve Eigen problem
-    print("Computing Eigenvalues and Eigenvectors, this step can take a few minutes.")
+    print("Computing Eigenvalues and Eigenvectors.")
     print(
         "In case the execution of the program is terminated unexpectedly, "
-        "attempt to rerun it using smaller data segments or patches."
+        "attempt to rerun it using smaller segmentation patches or give a specified batch size as input, e.g. batch_size=1000000."
     )
-    first_eigenvalue, first_eigenvector = eig3d(
-        filtered_hessianXX,
-        filtered_hessianYY,
-        filtered_hessianZZ,
-        filtered_hessianXY,
-        filtered_hessianXZ,
-        filtered_hessianYZ,
-    )
+    first_eigenvalue, first_eigenvector = batch_mask_eigendecomposition_3d(filtered_hessian, batch_size, labels)
 
     # Non-maximum suppression
     print("Genration of skeleton based on non-maximum suppression algorithm.")
@@ -131,7 +106,4 @@ def skeletonization(label_path: str):
         first_eigenvector[:, :, :, 2],
         labels,
     )
-
-    # Save the skeleton
-    store_tomogram(save_path, skeleton)
-    print("Skeleton saved to: ", save_path)
+    return skeleton
