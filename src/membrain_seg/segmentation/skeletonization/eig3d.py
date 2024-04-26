@@ -80,8 +80,8 @@ def batch_mask_eigendecomposition_3d(
     print("Hessian component matrix shape:", hessian_components.shape)
 
     # Initialize output arrays
-    first_eigenvalues = np.zeros((Nx, Ny, Nz), dtype=np.complex64)
-    first_eigenvectors = np.zeros((Nx, Ny, Nz, 3), dtype=np.complex64)
+    first_eigenvalues = np.zeros((Nx, Ny, Nz), dtype=np.float32)
+    first_eigenvectors = np.zeros((Nx, Ny, Nz, 3), dtype=np.float32)
 
     # Process in batches
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -108,9 +108,9 @@ def batch_mask_eigendecomposition_3d(
         # Store results back to CPU to save cuda memory
         first_eigenvalues[
             x_indices[i:i_end], y_indices[i:i_end], z_indices[i:i_end]
-        ] = batch_first_eigenvalues.cpu().numpy()
+        ] = batch_first_eigenvalues.cpu().numpy().real
         first_eigenvectors[
             x_indices[i:i_end], y_indices[i:i_end], z_indices[i:i_end], :
-        ] = (batch_first_eigenvectors.view(-1, 3).cpu().numpy())
+        ] = (batch_first_eigenvectors.view(-1, 3).cpu().numpy()).real
 
     return first_eigenvalues, first_eigenvectors

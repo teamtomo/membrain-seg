@@ -111,7 +111,6 @@ def skeletonization(label_path: str, batch_size: int) -> np.ndarray:
     # Non-maximum suppression
     print("Genration of skeleton based on non-maximum suppression algorithm.")
     first_eigenvalue = ndimage.gaussian_filter(first_eigenvalue, sigma=1)
-    first_eigenvalue = np.abs(first_eigenvalue)
     skeleton = nonmaxsup(
         first_eigenvalue,
         first_eigenvector[:, :, :, 0],
