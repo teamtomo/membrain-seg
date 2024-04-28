@@ -254,9 +254,11 @@ def get_training_transforms(
                     np.random.uniform(np.log(x[y] // 6), np.log(x[y]))
                 ),
                 loc=(-0.5, 1.5),
-                max_strength=lambda x, y: np.random.uniform(-5, -1)
-                if np.random.uniform() < 0.5
-                else np.random.uniform(1, 5),
+                max_strength=lambda x, y: (
+                    np.random.uniform(-5, -1)
+                    if np.random.uniform() < 0.5
+                    else np.random.uniform(1, 5)
+                ),
                 mean_centered=False,
             ),
             prob=(1.0 if prob_to_one else 0.3),
@@ -268,9 +270,11 @@ def get_training_transforms(
                     np.random.uniform(np.log(x[y] // 6), np.log(x[y]))
                 ),
                 loc=(-0.5, 1.5),
-                gamma=lambda: np.random.uniform(0.01, 0.8)
-                if np.random.uniform() < 0.5
-                else np.random.uniform(1.5, 4),
+                gamma=lambda: (
+                    np.random.uniform(0.01, 0.8)
+                    if np.random.uniform() < 0.5
+                    else np.random.uniform(1.5, 4)
+                ),
             ),
             prob=(1.0 if prob_to_one else 0.3),
         ),

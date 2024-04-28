@@ -140,9 +140,11 @@ class SemanticSegmentationUnet(pl.LightningModule):
 
         self.loss_function = DeepSuperVisionLoss(
             loss_function,
-            weights=[1.0, 0.5, 0.25, 0.125, 0.0675]
-            if use_deep_supervision
-            else [1.0, 0.0, 0.0, 0.0, 0.0],
+            weights=(
+                [1.0, 0.5, 0.25, 0.125, 0.0675]
+                if use_deep_supervision
+                else [1.0, 0.0, 0.0, 0.0, 0.0]
+            ),
         )
 
         # validation metric
@@ -278,9 +280,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         # compute more stats?
         outputs4dice = outputs[0].clone()
         labels4dice = labels[0].clone()
-        outputs4dice[
-            labels4dice == 2
-        ] = -1.0  # Setting to -1 here leads to 0-labels after thresholding
+        outputs4dice[labels4dice == 2] = (
+            -1.0
+        )  # Setting to -1 here leads to 0-labels after thresholding
         labels4dice[labels4dice == 2] = 0  # Need to set to zero before post_label
         # Otherwise we have 3 classes
         outputs4dice = [self.post_pred(i) for i in decollate_batch(outputs4dice)]

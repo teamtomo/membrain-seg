@@ -288,9 +288,9 @@ class BlankCuboidTransform(Randomizable, MapTransform):
                 y = self.R.randint(0, y_max - height)
                 x = self.R.randint(0, x_max - width)
                 if self.replace_with == "mean":
-                    image[
-                        ..., z : z + depth, y : y + height, x : x + width
-                    ] = torch.mean(torch.Tensor(image))
+                    image[..., z : z + depth, y : y + height, x : x + width] = (
+                        torch.mean(torch.Tensor(image))
+                    )
                 elif self.replace_with == 0.0:
                     image[..., z : z + depth, y : y + height, x : x + width] = 0.0
             d[key] = image
