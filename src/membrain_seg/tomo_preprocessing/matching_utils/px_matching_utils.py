@@ -7,7 +7,9 @@ from scipy.fft import fftn, ifftn
 from scipy.ndimage import distance_transform_edt
 
 
-def fourier_cropping_torch(data: torch.Tensor, new_shape: tuple) -> torch.Tensor:
+def fourier_cropping_torch(
+    data: torch.Tensor, new_shape: tuple, device: torch.device = None
+) -> torch.Tensor:
     """
     Fourier cropping adapted for PyTorch and GPU, without smoothing functionality.
 
@@ -17,13 +19,18 @@ def fourier_cropping_torch(data: torch.Tensor, new_shape: tuple) -> torch.Tensor
         The input data as a 3D torch tensor on GPU.
     new_shape : tuple
         The target shape for the cropped data as a tuple (x, y, z).
+    device : torch.device, optional
+        The device to use for the computation. If None, the device is set to "cuda" if
+        available; otherwise, it is set to "cpu".
 
     Returns
     -------
     torch.Tensor
         The resized data as a 3D torch tensor.
     """
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
     data = data.to(device)
 
     # Calculate the FFT of the input data
@@ -51,7 +58,9 @@ def fourier_cropping_torch(data: torch.Tensor, new_shape: tuple) -> torch.Tensor
     return resized_data
 
 
-def fourier_extend_torch(data: torch.Tensor, new_shape: tuple) -> torch.Tensor:
+def fourier_extend_torch(
+    data: torch.Tensor, new_shape: tuple, device: torch.device = None
+) -> torch.Tensor:
     """
     Fourier padding adapted for PyTorch and GPU, without smoothing functionality.
 
@@ -61,13 +70,18 @@ def fourier_extend_torch(data: torch.Tensor, new_shape: tuple) -> torch.Tensor:
         The input data as a 3D torch tensor on GPU.
     new_shape : tuple
         The target shape for the extended data as a tuple (x, y, z).
+    device : torch.device, optional
+        The device to use for the computation. If None, the device is set to "cuda" if
+        available; otherwise, it is set to "cpu".
 
     Returns
     -------
     torch.Tensor
         The resized data as a 3D torch tensor.
     """
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
     data = data.to(device)
 
     data_fft = torch.fft.fftn(data)

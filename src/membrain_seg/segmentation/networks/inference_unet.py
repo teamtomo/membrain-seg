@@ -74,9 +74,13 @@ class PreprocessedSemanticSegmentationUnet(SemanticSegmentationUnet):
             sample = sample[0]  # only use the first channel
             if self.rescale_patches:
                 if sample.shape[0] > self.target_shape[0]:
-                    sample = fourier_cropping_torch(sample, self.target_shape)
+                    sample = fourier_cropping_torch(
+                        data=sample, new_shape=self.target_shape, device=self.device
+                    )
                 elif sample.shape[0] < self.target_shape[0]:
-                    sample = fourier_extend_torch(sample, self.target_shape)
+                    sample = fourier_extend_torch(
+                        data=sample, new_shape=self.target_shape, device=self.device
+                    )
             rescaled_samples.append(sample.unsqueeze(0))
         rescaled_samples = torch.stack(rescaled_samples, dim=0)
         return rescaled_samples
