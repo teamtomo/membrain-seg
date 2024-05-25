@@ -115,6 +115,8 @@ class IgnoreLabelDiceCELoss(_Loss):
             combined_loss = combined_loss.mean()
         elif self.reduction == "sum":
             combined_loss = combined_loss.sum()
+        elif self.reduction == "none":
+            return combined_loss
         else:
             raise ValueError(
                 f"Invalid reduction type {self.reduction}. "
