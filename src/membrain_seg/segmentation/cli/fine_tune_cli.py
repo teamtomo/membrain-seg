@@ -23,6 +23,83 @@ def finetune(
             data structure, type "membrain data_structure_help"',
         **PKWARGS,
     ),
+):
+    """
+    Initiates fine-tuning of a pre-trained model on new datasets
+    and validation on original datasets.
+
+    This function fine-tunes a pre-trained model on new datasets provided by the user.
+    The directory specified by `finetune_data_dir` should be structured according to the
+    requirements for the training function.
+    For more details, use "membrain data_structure_help".
+
+    Parameters
+    ----------
+    pretrained_checkpoint_path : str
+        Path to the checkpoint file of the pre-trained model.
+    finetune_data_dir : str
+        Directory containing the new dataset for fine-tuning,
+        structured as per the MemBrain's requirement.
+        Use "membrain data_structure_help" for detailed information
+        on the required data structure.
+
+    Note
+
+    ----
+
+    This command configures and executes a fine-tuning session
+    using the provided model checkpoint.
+    The actual fine-tuning logic resides in the function '_fine_tune'.
+    """
+    finetune_learning_rate = 1e-5
+    log_dir = "logs_finetune/"
+    batch_size = 2
+    num_workers = 8
+    max_epochs = 100
+    early_stop_threshold = 0.05
+    aug_prob_to_one = True
+    use_deep_supervision = True
+    project_name = "membrain-seg_finetune"
+    sub_name = "1"
+
+    _fine_tune(
+        pretrained_checkpoint_path=pretrained_checkpoint_path,
+        finetune_data_dir=finetune_data_dir,
+        finetune_learning_rate=finetune_learning_rate,
+        log_dir=log_dir,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        max_epochs=max_epochs,
+        early_stop_threshold=early_stop_threshold,
+        aug_prob_to_one=aug_prob_to_one,
+        use_deep_supervision=use_deep_supervision,
+        project_name=project_name,
+        sub_name=sub_name,
+    )
+
+
+@cli.command(name="finetune_advanced", no_args_is_help=True)
+def finetune_advanced(
+    pretrained_checkpoint_path: str = Option(  # noqa: B008
+        ...,
+        help="Path to the checkpoint of the pre-trained model.",
+        **PKWARGS,
+    ),
+    finetune_data_dir: str = Option(  # noqa: B008
+        ...,
+        help='Path to the directory containing the new data for fine-tuning. \
+            Following the same required structure as the train function. \
+            To learn more about the required\
+            data structure, type "membrain data_structure_help"',
+        **PKWARGS,
+    ),
+    finetune_learning_rate: float = Option(  # noqa: B008
+        1e-5,
+        help="Learning rate for fine-tuning the model. This parameter controls the \
+          step size at each iteration while moving toward a minimum loss. \
+          A smaller learning rate can lead to a more precise convergence but may \
+          require more epochs. Adjust based on your dataset size and complexity.",
+    ),
     log_dir: str = Option(  # noqa: B008
         "logs_fine_tune/",
         help="Log directory path. Finetuning logs will be stored here.",
@@ -81,7 +158,7 @@ def finetune(
 ):
     """
     Initiates fine-tuning of a pre-trained model on new datasets
-    and validation on original datasets.
+    and validation on original datasets with more advanced options.
 
     This function finetunes a pre-trained U-Net model on new data provided by the user.
     The `finetune_data_dir` should contain the following directories:
@@ -100,6 +177,11 @@ def finetune(
         structured as per the MemBrain's requirement.
         Use "membrain data_structure_help" for detailed information
         on the required data structure.
+    finetune_learning_rate : float
+        Learning rate for fine-tuning the model. This parameter controls the step size
+        at each iteration while moving toward a minimum loss. A smaller learning rate
+        can lead to a more precise convergence but may require more epochs.
+        Adjust based on your dataset size and complexity.
     log_dir : str
         Path to the directory where logs will be stored, by default 'logs_fine_tune/'.
     batch_size : int
@@ -138,6 +220,7 @@ def finetune(
     _fine_tune(
         pretrained_checkpoint_path=pretrained_checkpoint_path,
         finetune_data_dir=finetune_data_dir,
+        finetune_learning_rate=finetune_learning_rate,
         log_dir=log_dir,
         batch_size=batch_size,
         num_workers=num_workers,

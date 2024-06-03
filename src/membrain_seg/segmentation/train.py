@@ -1,7 +1,6 @@
 import warnings
 
 import pytorch_lightning as pl
-from pytorch_lightning import Callback
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
@@ -9,6 +8,7 @@ from membrain_seg.segmentation.dataloading.memseg_pl_datamodule import (
     MemBrainSegDataModule,
 )
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
+from membrain_seg.segmentation.training.optim_utils import PrintLearningRate
 from membrain_seg.segmentation.training.training_param_summary import (
     print_training_parameters,
 )
@@ -124,12 +124,8 @@ def train(
 
     lr_monitor = LearningRateMonitor(logging_interval="epoch", log_momentum=True)
 
-    class PrintLearningRate(Callback):
-        def on_epoch_start(self, trainer, pl_module):
-            current_lr = trainer.optimizers[0].param_groups[0]["lr"]
-            print(f"Epoch {trainer.current_epoch}: Learning Rate = {current_lr}")
-
     print_lr_cb = PrintLearningRate()
+
     # Set up the trainer
     trainer = pl.Trainer(
         precision="16-mixed",

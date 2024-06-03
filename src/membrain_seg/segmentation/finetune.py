@@ -1,8 +1,4 @@
-from typing import Optional
-
 import pytorch_lightning as pl
-import torch
-from pytorch_lightning import Callback
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
@@ -10,6 +6,10 @@ from membrain_seg.segmentation.dataloading.memseg_pl_datamodule import (
     MemBrainSegDataModule,
 )
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
+from membrain_seg.segmentation.training.optim_utils import (
+    PrintLearningRate,
+    ToleranceCallback,
+)
 from membrain_seg.segmentation.training.training_param_summary import (
     print_training_parameters,
 )
@@ -151,60 +151,14 @@ def fine_tune(
         verbose=True,  # Print a message when a checkpoint is saved
     )
 
-    class ToleranceCallback(Callback):
-        """
-        Callback to stop training if the monitored metric deviates
-        beyond a certain threshold from the baseline value obtained
-        after the first epoch.
-        """
-
-        def __init__(self, metric_name: str, threshold: float):
-            super().__init__()
-            self.metric_name = metric_name
-            self.threshold = threshold
-            self.baseline_value: Optional[float] = (
-                None  # Baseline value will be set after the first epoch
-            )
-
-        def on_validation_epoch_end(
-            self, trainer: pl.Trainer, pl_module: pl.LightningModule
-        ):
-            # Access the metric value from the validation metrics
-            metric_value = trainer.callback_metrics.get(self.metric_name)
-
-            # If the metric value is a tensor, convert it to a float
-            if isinstance(metric_value, torch.Tensor):
-                metric_value = metric_value.item()
-
-            # Set the baseline value after the first validation epoch
-            if metric_value is not None:
-                if self.baseline_value is None:
-                    self.baseline_value = metric_value
-                    print(f"Baseline {self.metric_name} set to {self.baseline_value}")
-                    return []
-
-                # Check if the metric value deviates beyond the threshold
-                if abs(metric_value - self.baseline_value) > self.threshold:
-                    print(
-                        f"Stopping training as {self.metric_name} "
-                        f"deviates too far from the baseline value."
-                    )
-                    trainer.should_stop = True
-
+    # Set up ToleranceCallback by monitoring validation loss
     early_stop_metric = "val_loss"
-
     tolerance_callback = ToleranceCallback(early_stop_metric, early_stop_threshold)
 
     # Monitor learning rate changes
     lr_monitor = LearningRateMonitor(logging_interval="epoch", log_momentum=True)
 
-    class PrintLearningRate(Callback):
-        """Callback to print the current learning rate at the start of each epoch."""
-
-        def on_epoch_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
-            current_lr = trainer.optimizers[0].param_groups[0]["lr"]
-            print(f"Epoch {trainer.current_epoch}: Learning Rate = {current_lr}")
-
+    # Print the current learning rate at the start of each epoch
     print_lr_cb = PrintLearningRate()
 
     # Initialize the trainer with specified precision, logger, and callbacks

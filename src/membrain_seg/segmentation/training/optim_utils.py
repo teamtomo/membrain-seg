@@ -1,7 +1,11 @@
+from typing import Optional
+
+import pytorch_lightning as pl
 import torch
 from monai.losses import DiceLoss, MaskedLoss
 from monai.networks.nets import DynUNet
 from monai.utils import LossReduction
+from pytorch_lightning import Callback
 from torch.nn.functional import (
     binary_cross_entropy_with_logits,
     sigmoid,
@@ -268,3 +272,112 @@ class CombinedLoss(_Loss):
         # Normalize loss
         loss = loss / sum(self.weights)
         return loss
+
+
+class PrintLearningRate(Callback):
+    """
+    Callback to print the current learning rate at the start of each epoch.
+
+    Methods
+    -------
+    on_epoch_start(trainer, pl_module)
+        Prints the current learning rate at the start of each epoch.
+
+    Parameters
+    ----------
+    trainer : pl.Trainer
+        The trainer object that manages the training process.
+    pl_module : pl.LightningModule
+        The model being trained.
+
+    """
+
+    def on_epoch_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+        """
+        Prints the current learning rate at the start of each epoch.
+
+        Parameters
+        ----------
+        trainer : pl.Trainer
+            The trainer object that manages the training process.
+        pl_module : pl.LightningModule
+            The model being trained.
+        """
+        current_lr = trainer.optimizers[0].param_groups[0]["lr"]
+        print(f"Epoch {trainer.current_epoch}: Learning Rate = {current_lr}")
+
+
+class ToleranceCallback(Callback):
+    """
+    Callback to stop training if the monitored metric deviates
+    beyond a certain threshold from the baseline value obtained
+    after the first epoch.
+
+    Parameters
+    ----------
+    metric_name : str
+        The name of the metric to monitor.
+    threshold : float
+        The threshold value for deviation from the baseline.
+
+    Methods
+    -------
+    on_validation_epoch_end(trainer, pl_module)
+        Checks if the monitored metric deviates beyond the threshold
+        and stops training if it does.
+    """
+
+    def __init__(self, metric_name: str, threshold: float):
+        """
+        Initializes the ToleranceCallback with the metric
+        to monitor and the deviation threshold.
+
+        Parameters
+        ----------
+        metric_name : str
+            The name of the metric to monitor.
+        threshold : float
+            The threshold value for deviation from the baseline.
+        """
+        super().__init__()
+        self.metric_name = metric_name
+        self.threshold = threshold
+        self.baseline_value: Optional[float] = (
+            None  # Baseline value will be set after the first epoch
+        )
+
+    def on_validation_epoch_end(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ):
+        """
+        Checks if the monitored metric deviates beyond the threshold
+        and stops training if it does.
+
+        Parameters
+        ----------
+        trainer : pl.Trainer
+            The trainer object that manages the training process.
+        pl_module : pl.LightningModule
+            The model being trained.
+        """
+        # Access the metric value from the validation metrics
+        metric_value = trainer.callback_metrics.get(self.metric_name)
+
+        # If the metric value is a tensor, convert it to a float
+        if isinstance(metric_value, torch.Tensor):
+            metric_value = metric_value.item()
+
+        # Set the baseline value after the first validation epoch
+        if metric_value is not None:
+            if self.baseline_value is None:
+                self.baseline_value = metric_value
+                print(f"Baseline {self.metric_name} set to {self.baseline_value}")
+                return []
+
+            # Check if the metric value deviates beyond the threshold
+            if abs(metric_value - self.baseline_value) > self.threshold:
+                print(
+                    f"Stopping training as {self.metric_name} "
+                    f"deviates too far from the baseline value."
+                )
+                trainer.should_stop = True
