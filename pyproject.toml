@@ -25,16 +25,17 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "monai",
-    "pytorch-lightning",
-    "torch",
     "imageio",
-    "scipy",
-    "typer[all]",
-    "scikit-image",
-    "simpleitk",
-    "pandas",
     "mrcfile",
+    "monai",
+    "numpy<2.0.0",
+    "pandas",
+    "pytorch-lightning",
+    "scikit-image",
+    "scipy",
+    "simpleitk",
+    "torch",
+    "typer[all]",
 ]
 
 
