@@ -249,7 +249,7 @@
         
   
   <span class="md-ellipsis">
-    Membrain-Seg
+    MemBrain-seg
   </span>
   
 
@@ -311,45 +311,36 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#step-1-clone-repository" class="md-nav__link">
+  <a href="#step-1-create-a-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1: Clone repository
+      Step 1: Create a virtual environment
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-2-create-a-virtual-environment" class="md-nav__link">
+  <a href="#step-2-install-membrain-seg-via-pypi" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 2: Create a virtual environment
+      Step 2: Install membrain-seg via PyPI
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-3-install-membrain-seg-and-its-dependencies" class="md-nav__link">
+  <a href="#step-3-validate-installation" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 3: Install MemBrain-seg and its dependencies
+      Step 3: Validate installation
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-4-validate-installation" class="md-nav__link">
+  <a href="#step-4-download-pre-trained-segmentation-model-optional" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 4: Validate installation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-5-download-pre-trained-segmentation-model-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 5: Download pre-trained segmentation model (optional)
+      Step 4: Download pre-trained segmentation model (optional)
     </span>
   </a>
   
@@ -516,45 +507,36 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#step-1-clone-repository" class="md-nav__link">
+  <a href="#step-1-create-a-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1: Clone repository
+      Step 1: Create a virtual environment
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-2-create-a-virtual-environment" class="md-nav__link">
+  <a href="#step-2-install-membrain-seg-via-pypi" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 2: Create a virtual environment
+      Step 2: Install membrain-seg via PyPI
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-3-install-membrain-seg-and-its-dependencies" class="md-nav__link">
+  <a href="#step-3-validate-installation" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 3: Install MemBrain-seg and its dependencies
+      Step 3: Validate installation
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-4-validate-installation" class="md-nav__link">
+  <a href="#step-4-download-pre-trained-segmentation-model-optional" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 4: Validate installation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-5-download-pre-trained-segmentation-model-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 5: Download pre-trained segmentation model (optional)
+      Step 4: Download pre-trained segmentation model (optional)
     </span>
   </a>
   
@@ -581,11 +563,7 @@
 <h1 id="installation">Installation</h1>
 <p>These installation instructions are very preliminary, and surely will not work on all systems.
 But if any problems come up, do not hesitate to contact us (lorenz.lamm@helmholtz-munich.de).</p>
-<h2 id="step-1-clone-repository">Step 1: Clone repository</h2>
-<p>Make sure to have git installed, then run
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/teamtomo/membrain-seg.git
-</code></pre></div></p>
-<h2 id="step-2-create-a-virtual-environment">Step 2: Create a virtual environment</h2>
+<h2 id="step-1-create-a-virtual-environment">Step 1: Create a virtual environment</h2>
 <p>Before running any scripts, you should create a virtual Python environment.
 In these instructions, we use Miniconda for managing your virtual environments,
 but any alternative like Conda, Mamba, virtualenv, venv, ... should be fine.</p>
@@ -596,14 +574,13 @@ but any alternative like Conda, Mamba, virtualenv, venv, ... should be fine.</p>
 <p>In order to use it, you need to activate the environment:
 <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>activate<span class="w"> </span>&lt;env_name&gt;
 </code></pre></div></p>
-<h2 id="step-3-install-membrain-seg-and-its-dependencies">Step 3: Install MemBrain-seg and its dependencies</h2>
-<p>Move to the folder "membrain-seg" (from the cloned repository in Step 1) that contains the "src" folder.
-Here, run</p>
-<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>membrain-seg
-pip<span class="w"> </span>install<span class="w"> </span>.
+<h2 id="step-2-install-membrain-seg-via-pypi">Step 2: Install membrain-seg via PyPI</h2>
+<p><strong>New:</strong> MemBrain-seg is now pip-installable. <br></p>
+<p>That means, you can install membrain-seg by typing
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>membrain-seg
 </code></pre></div>
-<p>This will install MemBrain-seg and all dependencies required for segmenting your tomograms.</p>
-<h2 id="step-4-validate-installation">Step 4: Validate installation</h2>
+This will install MemBrain-seg and all dependencies required for segmenting your tomograms.</p>
+<h2 id="step-3-validate-installation">Step 3: Validate installation</h2>
 <p>As a first check whether the installation was successful, you can run
 <div class="highlight"><pre><span></span><code>membrain
 </code></pre></div>
@@ -612,7 +589,7 @@ This should display the different options you can choose from MemBrain, like "se
     <img width="50%" src="https://user-images.githubusercontent.com/34575029/250504233-d7e49aef-e783-45fb-b04e-8736b1af7d6e.png">
 </p>
 
-<h2 id="step-5-download-pre-trained-segmentation-model-optional">Step 5: Download pre-trained segmentation model (optional)</h2>
+<h2 id="step-4-download-pre-trained-segmentation-model-optional">Step 4: Download pre-trained segmentation model (optional)</h2>
 <p>We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. However, our current best model is available for download <a href="https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing">here</a> and should also work on non-denoised data. Please let us know how it works for you.</p>
 <p>NOTE: Previous model files are not compatible with MONAI v1.3.0 or higher. So if you're using v1.3.0 or higher, consider downgrading to MONAI v1.2.0 or downloading this <a href="https://drive.google.com/file/d/1Tfg2Ju-cgSj_71_b1gVMnjqNYea7L1Hm/view?usp=sharing">adapted version</a> of our most recent model file. </p>
 <p>If the given model does not work properly, you may want to try one of our previous versions:</p>

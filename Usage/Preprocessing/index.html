@@ -249,7 +249,7 @@
         
   
   <span class="md-ellipsis">
-    Membrain-Seg
+    MemBrain-seg
   </span>
   
 
@@ -452,6 +452,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#deconvolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deconvolution
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -605,6 +614,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#deconvolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deconvolution
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -638,6 +656,7 @@ to similar styles as the training data.</p>
 <ul>
 <li><strong>Pixel size matching</strong>: Rescaling of your tomogram to a similar pixel size as the training data</li>
 <li><strong>Fourier amplitude matching</strong>: Rescaling of Fourier components to pronounce different features in the tomograms (adapted from <a href="https://github.com/ZauggGroup/DeePiCt">DeePiCt</a>)</li>
+<li><strong>Deconvolution</strong>: Deconvolution filter to enhance tomogram contrast (described in the <a href="https://www.nature.com/articles/s41592-019-0580-y">Warp publication</a>.)</li>
 </ul>
 <h2 id="table-of-contents">Table of Contents</h2>
 <ul>
@@ -651,12 +670,12 @@ to similar styles as the training data.</p>
 <p>We are still exploring when it makes sense to use which preprocessing technique. But here are 
 already some rules of thumb:</p>
 <ol>
-<li>Whenever your pixel sizes differs by a lot from around 10-12&Aring; / pixel, you should consider using pixel size matching. We recommend to match to a pixel size of 10&Aring;.</li>
+<li>Whenever your pixel sizes differs by a lot from around 10-12&Aring; / pixel, you should consider using pixel size matching. We recommend to match to a pixel size of 10&Aring;. <br> It is also possible to do this rescaling on-the-fly, see our <a href="https://teamtomo.org/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling">segmentation instructions</a>.</li>
 <li>The Fourier amplitude matching only works in some cases, depending on the CTFs of input 
 and target tomograms. Our current recommendation is: If you're not satisfied with MemBrain's 
 segmentation performance, why not give the amplitude matching a shot?</li>
+<li>Deconvolution: This can make sense if your input tomogram has a very low signal-to-noise ratio. We still recommend <a href="https://github.com/juglab/cryoCARE_pip">Cryo-CARE</a> as a denoising method, but this deconvolution can provide an easy-to-use alternative.</li>
 </ol>
-<p>More detailed guidelines are in progress!</p>
 <h2 id="usage">Usage</h2>
 <p>You can control all commands of this preprocessing module by typing <code>tomo_preprocessing</code>+ some options.<br />
 To view all available commands, use:</p>
@@ -668,16 +687,25 @@ To view all available commands, use:</p>
 <h3 id="available-commands"><strong>Available Commands</strong></h3>
 <ul>
 <li><strong>match_pixel_size</strong>: Tomogram rescaling to specified pixel size. Example:<br />
-<code>tomo_preprocessing match_pixel_size --input-tomogram &lt;path-to-tomo&gt; --output-path &lt;path-to-output&gt; --pixel-size-out 10.0 --pixel-size-in &lt;your-px-size&gt;</code></li>
+<div class="highlight"><pre><span></span><code>tomo_preprocessing<span class="w"> </span>match_pixel_size<span class="w"> </span>--input-tomogram<span class="w"> </span>&lt;path-to-tomo&gt;<span class="w"> </span>--output-path<span class="w"> </span>&lt;path-to-output&gt;<span class="w"> </span>--pixel-size-out<span class="w"> </span><span class="m">10</span>.0<span class="w"> </span>--pixel-size-in<span class="w"> </span>&lt;your-px-size&gt;<span class="sb">`</span>
+</code></pre></div></li>
 <li><strong>match_seg_to_tomo</strong>: Segmentation rescaling to fit to target tomogram's shape. Example:<br />
-<code>tomo_preprocessing match_seg_to_tomo --seg-path &lt;path-to-seg&gt; --orig-tomo-path &lt;path-to-tomo&gt; --output-path &lt;path-to-output&gt;</code></li>
+<div class="highlight"><pre><span></span><code>tomo_preprocessing<span class="w"> </span>match_seg_to_tomo<span class="w"> </span>--seg-path<span class="w"> </span>&lt;path-to-seg&gt;<span class="w"> </span>--orig-tomo-path<span class="w"> </span>&lt;path-to-tomo&gt;<span class="w"> </span>--output-path<span class="w"> </span>&lt;path-to-output&gt;<span class="sb">`</span>
+</code></pre></div></li>
 <li><strong>extract_spectrum</strong>: Extracts the radially averaged amplitude spectrum from the input tomogram. Example:<br />
-<code>tomo_preprocessing extract_spectrum --input-path &lt;path-to-tomo&gt; --output-path &lt;path-to-output&gt;</code></li>
+<div class="highlight"><pre><span></span><code>tomo_preprocessing<span class="w"> </span>extract_spectrum<span class="w"> </span>--input-path<span class="w"> </span>&lt;path-to-tomo&gt;<span class="w"> </span>--output-path<span class="w"> </span>&lt;path-to-output&gt;
+</code></pre></div></li>
 <li><strong>match_spectrum</strong>: Match amplitude of Fourier spectrum from input tomogram to target spectrum. Example:<br />
-<code>tomo_preprocessing match_spectrum --input &lt;path-to-tomo&gt; --target &lt;path-to-spectrum&gt; --output &lt;path-to-output&gt;</code></li>
+<div class="highlight"><pre><span></span><code>tomo_preprocessing<span class="w"> </span>match_spectrum<span class="w"> </span>--input<span class="w"> </span>&lt;path-to-tomo&gt;<span class="w"> </span>--target<span class="w"> </span>&lt;path-to-spectrum&gt;<span class="w"> </span>--output<span class="w"> </span>&lt;path-to-output&gt;
+</code></pre></div></li>
+<li><strong>deconvolve</strong>: Perform the deconvolution filter to enhance tomogram contrast. Example:
+<div class="highlight"><pre><span></span><code>tomo_preprocessing<span class="w"> </span>deconvolve<span class="w"> </span>--input<span class="w"> </span>&lt;path-to-tomo&gt;<span class="w"> </span>--output<span class="w"> </span>&lt;path-to-output&gt;<span class="w"> </span>--pixel-size<span class="w"> </span>&lt;your-pixel-size&gt;
+</code></pre></div></li>
 </ul>
 <h3 id="pixel-size-matching"><strong>Pixel Size Matching</strong></h3>
-<p>Pixel size matching is recommended when your tomogram pixel sizes differs strongly from the training pixel size range (roughly 10-14&Aring;). You can perform it using the command</p>
+<p>Pixel size matching is recommended when your tomogram pixel sizes differs strongly from the training pixel size range (roughly 10-14&Aring;). <br>
+<strong>IMPORTANT NOTE</strong>: MemBrain-seg can now also perform the rescaling on-the-fly during segmentation, making the below worklow redundant if you are not interested in the rescaled tomograms. You can check the on-the-fly rescaling at our <a href="https://teamtomo.org/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling">segmentation instructions</a></p>
+<p>If you prefer to not do it on-the-fly, you can perform the pixel size matching using the command</p>
 <div class="highlight"><pre><span></span><code>tomo_preprocessing<span class="w"> </span>match_pixel_size<span class="w"> </span>--input-tomogram<span class="w"> </span>&lt;path-to-tomo&gt;<span class="w"> </span>--output-path<span class="w"> </span>&lt;path-to-output&gt;<span class="w"> </span>--pixel-size-out<span class="w"> </span><span class="m">10</span>.0<span class="w"> </span>--pixel-size-in<span class="w"> </span>&lt;your-px-size&gt;
 </code></pre></div>
 <p>after adjusting the paths to your respective tomograms.
@@ -699,6 +727,10 @@ This extracts the radially averaged Fourier spectrum and stores it into a .tsv f
 </code></pre></div>
 Now, the input tomograms Fourier components are re-scaled based on the equalization kernel computed from the input tomogram's radially averaged Fourier intensities, and the previously extracted .tsv file.</li>
 </ol>
+<h3 id="deconvolution"><strong>Deconvolution</strong></h3>
+<p>Deconvolution can be applied in a single step as preprocesing before performing the segmentation using the command 
+<div class="highlight"><pre><span></span><code>tomo_preprocessing<span class="w"> </span>deconvolve<span class="w"> </span>--input<span class="w"> </span>&lt;path-to-tomo&gt;<span class="w"> </span>--output<span class="w"> </span>&lt;path-to-output&gt;<span class="w"> </span>--pixel-size<span class="w"> </span>&lt;your-pixel-size&gt;
+</code></pre></div></p>
 
 
 
