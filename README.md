@@ -42,7 +42,7 @@ To enhance segmentation, MemBrain-seg includes preprocessing functions. These he
 Explore MemBrain-seg, use it for your needs, and let us know how it works for you!
 
 
-Preliminary [documentation](https://github.com/teamtomo/membrain-seg/blob/main/docs/index.md) is available, but far from perfect. Please let us know if you encounter any issues, and we are more than happy to help (and get feedback what does not work yet).
+Preliminary [documentation](https://teamtomo.org/membrain-seg/) is available, but far from perfect. Please let us know if you encounter any issues, and we are more than happy to help (and get feedback what does not work yet).
 
 ```
 [1] Lamm, L., Zufferey, S., Righetto, R.D., Wietrzynski, W., Yamauchi, K.A., Burt, A., Liu, Y., Zhang, H., Martinez-Sanchez, A., Ziegler, S., Isensee, F., Schnabel, J.A., Engel, B.D., and Peng, T, 2024. MemBrain v2: an end-to-end tool for the analysis of membranes in cryo-electron tomography. bioRxiv, https://doi.org/10.1101/2024.01.05.574336
@@ -51,25 +51,25 @@ Preliminary [documentation](https://github.com/teamtomo/membrain-seg/blob/main/d
 ```
 
 # Installation
-For detailed installation instructions, please look [here](./docs/installation.md).
+For detailed installation instructions, please look [here](https://teamtomo.org/membrain-seg/installation/).
 
 # Features
 ## Segmentation
 Segmenting the membranes in your tomograms is the main feature of this repository. 
-Please find more detailed instructions [here](./docs/Usage/Segmentation.md).
+Please find more detailed instructions [here](https://teamtomo.org/membrain-seg/Usage/Segmentation/).
 
 ## Preprocessing
-Currently, we provide the following two [preprocessing](https://github.com/teamtomo/membrain-seg/tree/main/src/tomo_preprocessing) options:
+Currently, we provide the following two [preprocessing](https://github.com/teamtomo/membrain-seg/tree/main/src/membrain_seg/tomo_preprocessing) options:
 - Pixel size matching: Rescale your tomogram to match the training pixel sizes
 - Fourier amplitude matching: Scale Fourier components to match the "style" of different tomograms
 - Deconvolution: denoises the tomogram by applying the deconvolution filter from Warp
 
-For more information, see the [Preprocessing](./docs/Usage/Preprocessing.md) subsection.
+For more information, see the [Preprocessing](https://teamtomo.org/membrain-seg/Usage/Preprocessing/) subsection.
 
 ## Model training
-It is also possible to use this package to train your own model. Instructions can be found [here](./docs/Usage/Training.md).
+It is also possible to use this package to train your own model. Instructions can be found [here](https://teamtomo.org/membrain-seg/Usage/Training/).
 
 ## Patch annotations
 In case you would like to train a model that works better for your tomograms, it may be beneficial to add some more patches from your tomograms to the training dataset. 
-Recommendations on how to to this can be found [here](./docs/Usage/Annotations.md).
+Recommendations on how to to this can be found [here](https://teamtomo.org/membrain-seg/Usage/Annotations/).
 
