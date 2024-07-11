@@ -21,6 +21,11 @@ def match_pixel_size(
             specified, it will be read from the tomogram's header. ATTENTION: This can \
             lead to severe errors if the header pixel size is not correct.",
     ),
+    use_sliding_window: bool = Option(  # noqa: B008
+        False,
+        help="Use sliding window inference for resizing. \
+            This is faster but can be less accurate for large pixel size changes.",
+    ),
     disable_smooth: bool = Option(  # noqa: B008
         False,
         help="Disable smoothing (ellipsoid mask + \
@@ -33,7 +38,12 @@ def match_pixel_size(
     to use MemBrain-seg with a pixel size of around 10A/pixel.
     """
     _match_pixel_size(
-        input_tomogram, output_path, pixel_size_in, pixel_size_out, disable_smooth
+        input_tomogram,
+        output_path,
+        pixel_size_in,
+        pixel_size_out,
+        disable_smooth,
+        use_sliding_window,
     )
 
 
