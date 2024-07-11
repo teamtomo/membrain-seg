@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import torch
+from torch_fourier_rescale.fourier_rescale_3d import fourier_rescale_3d
 
 from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
@@ -10,9 +11,7 @@ from membrain_seg.segmentation.dataloading.data_utils import (
 )
 from membrain_seg.tomo_preprocessing.matching_utils.px_matching_utils import (
     determine_output_shape,
-    fourier_cropping,
     fourier_cropping_torch,
-    fourier_extend,
     fourier_extend_torch,
 )
 
@@ -151,23 +150,19 @@ class SW_Rescaler(torch.nn.Module):
 
 
 def rescale_entire_tomogram(
-    tomo: np.ndarray, pixel_size_in: float, pixel_size_out: float, smoothing: bool
+    tomo: np.ndarray,
+    pixel_size_in: float,
+    pixel_size_out: float,
 ):
     """Rescale the entire tomogram using Fourier-based resizing."""
-    # Calculate the output shape after pixel size matching
-    output_shape = determine_output_shape(
-        pixel_size_in, pixel_size_out, tomo.data.shape
+    resized_data = fourier_rescale_3d(
+        image=tomo,
+        source_spacing=pixel_size_in,
+        target_spacing=pixel_size_out,
     )
-
-    # Perform Fourier-based resizing (cropping or extending) using the determined
-    # output shape
-    if (pixel_size_in / pixel_size_out) < 1.0:
-        resized_data = fourier_cropping(tomo.data, output_shape, smoothing)
-    elif (pixel_size_in / pixel_size_out) > 1.0:
-        resized_data = fourier_extend(tomo.data, output_shape, smoothing)
-    else:
-        resized_data = tomo.data
-    return resized_data
+    new_spacing = resized_data[1]
+    resized_data = resized_data[0]
+    return resized_data, new_spacing
 
 
 def rescale_sliding_window(
@@ -188,7 +183,6 @@ def match_pixel_size(
     output_path: str,
     pixel_size_in: float,
     pixel_size_out: float,
-    disable_smooth: bool,
     use_sliding_window: bool,
 ) -> None:
     """
@@ -206,8 +200,6 @@ def match_pixel_size(
         ATTENTION: This can lead to errors if the header is not correct.
     pixel_size_out : float
         The target pixel size.
-    disable_smooth : bool
-        If True, smoothing will be disabled in the Fourier-based resizing process.
     use_sliding_window : bool
         If True, sliding window inference will be used for resizing.
 
@@ -232,8 +224,7 @@ def match_pixel_size(
     # Load the input tomogram and its pixel size
     file_path = input_tomogram
     tomo = load_tomogram(file_path, normalize_data=True)
-    pixel_size_in = pixel_size_in or tomo.voxel_size.x
-    smoothing = not disable_smooth
+    pixel_size_in = pixel_size_in or float(tomo.voxel_size.x)
 
     print(
         "Matching input tomogram",
@@ -248,11 +239,12 @@ def match_pixel_size(
     if use_sliding_window:
         resized_data = rescale_sliding_window(tomo.data, pixel_size_in, pixel_size_out)
     else:
-        resized_data = rescale_entire_tomogram(
-            tomo.data, pixel_size_in, pixel_size_out, smoothing
+        resized_data, pixel_size_out = rescale_entire_tomogram(
+            torch.tensor(tomo.data), pixel_size_in, pixel_size_out
         )
-
     resized_data = normalize_tomogram(resized_data)
     tomo.data = resized_data
+    tomo.voxel_size = pixel_size_out
+
     # Save the resized tomogram to the specified output path
     store_tomogram(output_path, tomo, voxel_size=pixel_size_out)

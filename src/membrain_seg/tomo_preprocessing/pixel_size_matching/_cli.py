@@ -26,11 +26,6 @@ def match_pixel_size(
         help="Use sliding window inference for resizing. \
             This is faster but can be less accurate for large pixel size changes.",
     ),
-    disable_smooth: bool = Option(  # noqa: B008
-        False,
-        help="Disable smoothing (ellipsoid mask + \
-            cosine decay). Disable if causing problems or for speed up",
-    ),
 ):
     """Tomogram pixel size matching.
 
@@ -42,7 +37,6 @@ def match_pixel_size(
         output_path,
         pixel_size_in,
         pixel_size_out,
-        disable_smooth,
         use_sliding_window,
     )
 
