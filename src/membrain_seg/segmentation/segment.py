@@ -159,7 +159,9 @@ def segment(
             with torch.cuda.amp.autocast():
                 mirrored_input = get_mirrored_img(new_data.clone(), m).to(device)
                 mirrored_pred = inferer(mirrored_input, pl_model)
-                if not isinstance(mirrored_pred, list):
+                if not (
+                    isinstance(mirrored_pred, list) or isinstance(mirrored_pred, tuple)
+                ):
                     mirrored_pred = [mirrored_pred]
                 correct_pred = get_mirrored_img(mirrored_pred[0], m)
                 predictions += correct_pred.detach().cpu()
