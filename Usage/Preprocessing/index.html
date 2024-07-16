@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.28">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.29">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.6543a935.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.76a95c52.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -670,7 +670,7 @@ to similar styles as the training data.</p>
 <p>We are still exploring when it makes sense to use which preprocessing technique. But here are 
 already some rules of thumb:</p>
 <ol>
-<li>Whenever your pixel sizes differs by a lot from around 10-12&Aring; / pixel, you should consider using pixel size matching. We recommend to match to a pixel size of 10&Aring;. <br> It is also possible to do this rescaling on-the-fly, see our <a href="https://teamtomo.org/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling">segmentation instructions</a>.</li>
+<li>Whenever your pixel sizes differs by a lot from around 10-12&Aring; / pixel, you should consider using pixel size matching. We recommend to match to a pixel size of 10&Aring;. <br> It is also possible to do this rescaling on-the-fly, see our <a href="https://teamtomo.github.io/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling">segmentation instructions</a>.</li>
 <li>The Fourier amplitude matching only works in some cases, depending on the CTFs of input 
 and target tomograms. Our current recommendation is: If you're not satisfied with MemBrain's 
 segmentation performance, why not give the amplitude matching a shot?</li>
@@ -704,7 +704,7 @@ To view all available commands, use:</p>
 </ul>
 <h3 id="pixel-size-matching"><strong>Pixel Size Matching</strong></h3>
 <p>Pixel size matching is recommended when your tomogram pixel sizes differs strongly from the training pixel size range (roughly 10-14&Aring;). <br>
-<strong>IMPORTANT NOTE</strong>: MemBrain-seg can now also perform the rescaling on-the-fly during segmentation, making the below worklow redundant if you are not interested in the rescaled tomograms. You can check the on-the-fly rescaling at our <a href="https://teamtomo.org/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling">segmentation instructions</a></p>
+<strong>IMPORTANT NOTE</strong>: MemBrain-seg can now also perform the rescaling on-the-fly during segmentation, making the below worklow redundant if you are not interested in the rescaled tomograms. You can check the on-the-fly rescaling at our <a href="https://teamtomo.github.io/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling">segmentation instructions</a></p>
 <p>If you prefer to not do it on-the-fly, you can perform the pixel size matching using the command</p>
 <div class="highlight"><pre><span></span><code>tomo_preprocessing<span class="w"> </span>match_pixel_size<span class="w"> </span>--input-tomogram<span class="w"> </span>&lt;path-to-tomo&gt;<span class="w"> </span>--output-path<span class="w"> </span>&lt;path-to-output&gt;<span class="w"> </span>--pixel-size-out<span class="w"> </span><span class="m">10</span>.0<span class="w"> </span>--pixel-size-in<span class="w"> </span>&lt;your-px-size&gt;
 </code></pre></div>
