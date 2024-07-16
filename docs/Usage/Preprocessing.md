@@ -27,7 +27,7 @@ This module currently allows you to use the following preprocessing methods:
 We are still exploring when it makes sense to use which preprocessing technique. But here are 
 already some rules of thumb:
 
-1. Whenever your pixel sizes differs by a lot from around 10-12&Aring; / pixel, you should consider using pixel size matching. We recommend to match to a pixel size of 10&Aring;. <br> It is also possible to do this rescaling on-the-fly, see our [segmentation instructions](https://teamtomo.org/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling).
+1. Whenever your pixel sizes differs by a lot from around 10-12&Aring; / pixel, you should consider using pixel size matching. We recommend to match to a pixel size of 10&Aring;. <br> It is also possible to do this rescaling on-the-fly, see our [segmentation instructions](https://teamtomo.github.io/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling).
 2. The Fourier amplitude matching only works in some cases, depending on the CTFs of input 
 and target tomograms. Our current recommendation is: If you're not satisfied with MemBrain's 
 segmentation performance, why not give the amplitude matching a shot?
@@ -74,7 +74,7 @@ tomo_preprocessing deconvolve --input <path-to-tomo> --output <path-to-output> -
 
 ### **Pixel Size Matching**
 Pixel size matching is recommended when your tomogram pixel sizes differs strongly from the training pixel size range (roughly 10-14&Aring;). <br>
-**IMPORTANT NOTE**: MemBrain-seg can now also perform the rescaling on-the-fly during segmentation, making the below worklow redundant if you are not interested in the rescaled tomograms. You can check the on-the-fly rescaling at our [segmentation instructions](https://teamtomo.org/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling)
+**IMPORTANT NOTE**: MemBrain-seg can now also perform the rescaling on-the-fly during segmentation, making the below worklow redundant if you are not interested in the rescaled tomograms. You can check the on-the-fly rescaling at our [segmentation instructions](https://teamtomo.github.io/membrain-seg/Usage/Segmentation/#on-the-fly-rescaling)
 
 If you prefer to not do it on-the-fly, you can perform the pixel size matching using the command
 
