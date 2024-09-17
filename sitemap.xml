@@ -2,32 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://teamtomo.org/membrain-seg/</loc>
-         <lastmod>2024-07-16</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2024-09-17</lastmod>
     </url>
     <url>
          <loc>https://teamtomo.org/membrain-seg/installation/</loc>
-         <lastmod>2024-07-16</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2024-09-17</lastmod>
     </url>
     <url>
          <loc>https://teamtomo.org/membrain-seg/Usage/Annotations/</loc>
-         <lastmod>2024-07-16</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2024-09-17</lastmod>
+    </url>
+    <url>
+         <loc>https://teamtomo.org/membrain-seg/Usage/Fine-tuning/</loc>
+         <lastmod>2024-09-17</lastmod>
     </url>
     <url>
          <loc>https://teamtomo.org/membrain-seg/Usage/Preprocessing/</loc>
-         <lastmod>2024-07-16</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2024-09-17</lastmod>
     </url>
     <url>
          <loc>https://teamtomo.org/membrain-seg/Usage/Segmentation/</loc>
-         <lastmod>2024-07-16</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2024-09-17</lastmod>
     </url>
     <url>
          <loc>https://teamtomo.org/membrain-seg/Usage/Training/</loc>
-         <lastmod>2024-07-16</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2024-09-17</lastmod>
     </url>
 </urlset>
