@@ -375,7 +375,7 @@ class ToleranceCallback(Callback):
                 return []
 
             # Check if the metric value deviates beyond the threshold
-            if abs(metric_value - self.baseline_value) > self.threshold:
+            if metric_value - self.baseline_value > self.threshold:
                 print(
                     f"Stopping training as {self.metric_name} "
                     f"deviates too far from the baseline value."

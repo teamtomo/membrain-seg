@@ -7,7 +7,6 @@ from membrain_seg.segmentation.dataloading.memseg_pl_datamodule import (
 )
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
 from membrain_seg.segmentation.training.optim_utils import (
-    PrintLearningRate,
     ToleranceCallback,
 )
 from membrain_seg.segmentation.training.training_param_summary import (
@@ -158,9 +157,6 @@ def fine_tune(
     # Monitor learning rate changes
     lr_monitor = LearningRateMonitor(logging_interval="epoch", log_momentum=True)
 
-    # Print the current learning rate at the start of each epoch
-    print_lr_cb = PrintLearningRate()
-
     # Initialize the trainer with specified precision, logger, and callbacks
     trainer = pl.Trainer(
         precision="16-mixed",
@@ -169,7 +165,6 @@ def fine_tune(
             checkpoint_callback_train_loss,
             checkpoint_callback_regular,
             lr_monitor,
-            print_lr_cb,
             tolerance_callback,
         ],
         max_epochs=max_epochs,

@@ -2,7 +2,10 @@ import os
 
 from typer import Option
 
-from membrain_seg.segmentation.dataloading.data_utils import store_tomogram
+from membrain_seg.segmentation.dataloading.data_utils import (
+    load_tomogram,
+    store_tomogram,
+)
 
 from ..skeletonize import skeletonization as _skeletonization
 from .cli import cli
@@ -50,7 +53,11 @@ def skeletonize(
     --batch-size <batch-size>
     """
     # Assuming _skeletonization function is already defined and can handle batch_size
-    ske = _skeletonization(label_path=label_path, batch_size=batch_size)
+    segmentation = load_tomogram(label_path)
+    ske = _skeletonization(segmentation=segmentation.data, batch_size=batch_size)
+
+    # Update the segmentation data with the skeletonized output while preserving the original header and voxel_size
+    segmentation.data = ske
 
     if not os.path.exists(out_folder):
         os.makedirs(out_folder)
@@ -60,5 +67,5 @@ def skeletonize(
         os.path.splitext(os.path.basename(label_path))[0] + "_skel.mrc",
     )
 
-    store_tomogram(filename=out_file, tomogram=ske)
+    store_tomogram(filename=out_file, tomogram=segmentation)
     print("Skeleton saved to ", out_file)
