@@ -12,6 +12,7 @@ import numpy as np
 import scipy.ndimage as ndimage
 import torch
 
+
 from membrain_seg.segmentation.skeletonization.diff3d import (
     compute_gradients,
     compute_hessian,
@@ -21,6 +22,7 @@ from membrain_seg.segmentation.skeletonization.eig3d import (
 )
 from membrain_seg.segmentation.skeletonization.nonmaxsup import nonmaxsup
 from membrain_seg.segmentation.training.surface_dice import apply_gaussian_filter
+
 
 
 def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
@@ -36,6 +38,7 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
     segmentation : ndarray
         Tomogram segmentation as a numpy array, where non-zero values represent
         the structures of interest.
+
     batch_size : int
         The number of elements to process in one batch during eigen decomposition.
         Useful for managing memory usage.
@@ -58,6 +61,7 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
         --batch-size 1000000
     This command runs the skeletonization process from the command line.
     """
+
     # Convert non-zero segmentation values to 1.0
     labels = (segmentation > 0) * 1.0
 
