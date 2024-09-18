@@ -100,7 +100,7 @@ class IgnoreLabelDiceCELoss(_Loss):
         # Combine the Dice and Cross Entropy losses
         combined_loss = self.lambda_dice * dice_loss + self.lambda_ce * bce_loss
         return combined_loss
-    
+
 
 class CombinedLoss(_Loss):
     """
@@ -111,7 +111,7 @@ class CombinedLoss(_Loss):
     losses : list
         A list of loss function instances.
     weights : list
-        List of weights corresponding to each loss function (must 
+        List of weights corresponding to each loss function (must
         be of same length as losses)
     kwargs : dict
         Additional keyword arguments.
@@ -131,7 +131,9 @@ class CombinedLoss(_Loss):
         self.apply_loss_not_for = apply_loss_not_for
         self.no_sdice_for_no_deepict = no_sdice_for_no_deepict
 
-    def forward(self, data: torch.Tensor, target: torch.Tensor, ds_label: str) -> torch.Tensor:
+    def forward(
+        self, data: torch.Tensor, target: torch.Tensor, ds_label: str
+    ) -> torch.Tensor:
         """
         Compute the combined loss.
 
@@ -141,23 +143,36 @@ class CombinedLoss(_Loss):
             Tensor of model outputs.
         target : torch.Tensor
             Tensor of target labels.
+        ds_label : str
+            The dataset label.
 
         Returns
         -------
         torch.Tensor
             The calculated combined loss.
         """
-        loss = 0.
-        weight_fac = 1.
-        for loss_idx, (cur_loss, cur_weight, skip_cases) in enumerate(zip(self.losses, self.weights, self.apply_loss_not_for)):
-            
-            if loss_idx == 0 and not any(ds_lab in skip_cases for ds_lab in ds_label) or ("None" in skip_cases):
+        loss = 0.0
+        weight_fac = 1.0
+        for loss_idx, (cur_loss, cur_weight, skip_cases) in enumerate(
+            zip(self.losses, self.weights, self.apply_loss_not_for)
+        ):
+            if (
+                loss_idx == 0
+                and not any(ds_lab in skip_cases for ds_lab in ds_label)
+                or ("None" in skip_cases)
+            ):
                 loss += weight_fac * cur_weight * cur_loss(data, target)
-            elif loss_idx == 1 and any(ds_lab not in skip_cases for ds_lab in ds_label) or ("None" in skip_cases): 
+            elif (
+                loss_idx == 1
+                and any(ds_lab not in skip_cases for ds_lab in ds_label)
+                or ("None" in skip_cases)
+            ):
                 loss += weight_fac * cur_weight * cur_loss(data, target)
             else:
-                loss *= (1. / (1 - cur_weight + 1e-3)) # This assumes that all weights add up to one!! 
-                weight_fac *= (1. / (1 - cur_weight + 1e-3))
+                loss *= 1.0 / (
+                    1 - cur_weight + 1e-3
+                )  # This assumes that all weights add up to one!!
+                weight_fac *= 1.0 / (1 - cur_weight + 1e-3)
         return loss
 
 
@@ -202,6 +217,8 @@ class DeepSuperVisionLoss(_Loss):
             List of tensors of model outputs.
         targets : list
             List of tensors of target labels.
+        ds_labels : list
+            List of dataset labels.
 
         Returns
         -------
@@ -210,6 +227,8 @@ class DeepSuperVisionLoss(_Loss):
         """
         loss = 0.0
         ds_labels_loop = [ds_labels] * 5
-        for weight, data, target, ds_label in zip(self.weights, inputs, targets, ds_labels_loop):
+        for weight, data, target, ds_label in zip(
+            self.weights, inputs, targets, ds_labels_loop
+        ):
             loss += weight * self.loss_fn(data, target, ds_label)
         return loss
