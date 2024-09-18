@@ -2,7 +2,6 @@ import os
 from typing import Dict
 
 # from skimage import io
-import imageio as io
 import numpy as np
 from torch.utils.data import Dataset
 
@@ -11,7 +10,7 @@ from membrain_seg.segmentation.dataloading.memseg_augmentation import (
     get_training_transforms,
     get_validation_transforms,
 )
-from PIL import Image
+
 
 class CryoETMemSegDataset(Dataset):
     """
@@ -56,7 +55,7 @@ class CryoETMemSegDataset(Dataset):
         train: bool = False,
         aug_prob_to_one: bool = False,
         fourier_amplitude_aug: bool = False,
-        missing_wedge_aug: bool = False
+        missing_wedge_aug: bool = False,
     ) -> None:
         """
         Constructs all the necessary attributes for the CryoETMemSegDataset object.
@@ -72,18 +71,27 @@ class CryoETMemSegDataset(Dataset):
         aug_prob_to_one : bool, default False
             A flag indicating whether the probability of augmentation should be set
             to one or not.
+        fourier_amplitude_aug : bool, default False
+            A flag indicating whether Fourier amplitude augmentation should be applied.
+        missing_wedge_aug : bool, default False
+            A flag indicating whether missing wedge augmentation should be applied.
+
         """
         self.train = train
         self.img_folder, self.label_folder = img_folder, label_folder
         self.initialize_imgs_paths()
         self.load_data()
         self.transforms = (
-            get_training_transforms(prob_to_one=aug_prob_to_one, fourier_amplitude_aug=fourier_amplitude_aug, missing_wedge_aug=missing_wedge_aug)
+            get_training_transforms(
+                prob_to_one=aug_prob_to_one,
+                fourier_amplitude_aug=fourier_amplitude_aug,
+                missing_wedge_aug=missing_wedge_aug,
+            )
             if self.train
             else get_validation_transforms()
         )
 
-    def __getitem__(self, idx: int, orig: bool=False) -> Dict[str, np.ndarray]:
+    def __getitem__(self, idx: int, orig: bool = False) -> Dict[str, np.ndarray]:
         """
         Returns a dictionary containing an image-label pair for the provided index.
 
@@ -93,6 +101,8 @@ class CryoETMemSegDataset(Dataset):
         ----------
         idx : int
             Index of the sample to be fetched.
+        orig : bool, default False
+            A flag indicating whether the original image should be returned or not.
 
         Returns
         -------
@@ -140,6 +150,9 @@ class CryoETMemSegDataset(Dataset):
                 label, (1, 2, 0)
             )  # TODO: Needed? Probably no? z-axis should not matter
             img = np.transpose(img, (1, 2, 0))
+            img -= np.mean(img)
+            img /= np.std(img)
+
             self.imgs.append(img)
             self.labels.append(label)
             self.dataset_labels.append(get_dataset_token(entry[0]))
@@ -176,13 +189,17 @@ class CryoETMemSegDataset(Dataset):
             The number of image-label pairs to be generated and saved.
         """
         os.makedirs(test_folder, exist_ok=True)
-        from membrain_seg.segmentation.dataloading.data_utils import store_tomogram
         from numpy import fft as fft
+
+        from membrain_seg.segmentation.dataloading.data_utils import store_tomogram
+
         for i in range(num_files):
             test_sample = self.__getitem__(i % self.__len__(), orig=False)
             test_sample_orig = self.__getitem__(i % self.__len__(), orig=True)
             test_sample_fft = fft.fftshift(fft.fftn(test_sample["image"][0, :, :, :]))
-            test_sample_orig_fft = fft.fftshift(fft.fftn(test_sample_orig["image"][0, :, :, :]))
+            test_sample_orig_fft = fft.fftshift(
+                fft.fftn(test_sample_orig["image"][0, :, :, :])
+            )
             print(i)
             store_tomogram(
                 os.path.join(test_folder, f"test_img{i}.mrc"),
@@ -205,63 +222,41 @@ class CryoETMemSegDataset(Dataset):
                 test_sample["label"][0][0, :, :, :],
             )
 
-            # store_tomogram(
-            #     os.path.join(test_folder, f"test_img{i}_orig.mrc"),
-            #     test_sample["image_orig"][0, :, :, :],
-            # )
-            # for num_img in range(0, test_sample["image"].shape[-1], 30):
-                # print(np.array(test_sample["image"][0, :, :, num_img]))
-                # exit()
-                # img = Image.fromarray(np.array(test_sample["image"][0, :, :, num_img]), mode="RGB")
-                # img.save(os.path.join(test_folder, f"test_img{i}_group{num_img}.png"))
-                # io.imsave(
-                #     os.path.join(test_folder, f"test_img{i}_group{num_img}.png"),
-                #     test_sample["image"][0, :, :, num_img],
-                # )
-
-            # for num_mask in range(0, test_sample["label"][0].shape[-1], 30):
-            #     img = Image.fromarray(np.array(test_sample["label"][0][0, :, :, num_mask]), mode="RGB")
-            #     img.save(os.path.join(test_folder, f"test_mask{i}_group{num_mask}.png"))
-                # io.imsave(
-                #     os.path.join(test_folder, f"test_mask{i}_group{num_mask}.png"),
-                #     test_sample["label"][0][0, :, :, num_mask],
-                # )
-
-            # for num_mask in range(0, test_sample["label"][1].shape[0], 15):
-            #     io.imsave(
-            #         os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
-            #         test_sample["label"][1][0, :, :, num_mask],
-            #     )
-
 
 def get_dataset_token(patch_name):
+    """Returns the dataset token based on the provided patch name."""
     basename = os.path.basename(patch_name)
-    
-    if basename.startswith("50_") or \
-        basename.startswith("633_") or \
-            basename.startswith("165_") or \
-                basename.startswith("24_") or \
-                    basename.startswith("38_") or \
-                        basename.startswith("441_") or \
-                            basename.startswith("54_") or \
-                                basename.startswith("8_"):
-        if not "_raw" in basename:
+
+    if (
+        basename.startswith("50_")
+        or basename.startswith("633_")
+        or basename.startswith("165_")
+        or basename.startswith("24_")
+        or basename.startswith("38_")
+        or basename.startswith("441_")
+        or basename.startswith("54_")
+        or basename.startswith("8_")
+    ):
+        if "_raw" not in basename:
             return "Chlamy"
         else:
             return "Chlamy_raw"
     if basename.startswith("HDCR_"):
-            return "HDCR"
+        return "HDCR"
     if basename.startswith("AntonioSim"):
-            return "AntonioSim"
+        return "AntonioSim"
     if basename.startswith("CryoTomoSim"):
-            return "CTS"
+        return "CTS"
     if basename.startswith("tomo"):
-            if not "_raw" in basename:
-                return "Spinach"
-            else:
-                return "Spinach_raw"
+        if "_raw" not in basename:
+            return "Spinach"
+        else:
+            return "Spinach_raw"
     if basename.startswith("TS_"):
-            return "Deepict"
+        return "Deepict"
     if basename.startswith("YTC"):
-            return "Atty"
-    raise IOError("dataset token not known!!")
+        return "Atty"
+    if basename.startswith("Matthias"):
+        return "Matthias"
+    return "unknown"
+    # raise IOError("dataset token not known!!")
