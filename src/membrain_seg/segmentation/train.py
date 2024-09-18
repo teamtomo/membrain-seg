@@ -115,8 +115,8 @@ def train(
     )
 
     checkpoint_callback_regular = ModelCheckpoint(
-        save_top_k=-1,  # Save all checkpoints
-        every_n_epochs=100,
+        save_top_k=1,  # Save all checkpoints
+        every_n_epochs=10,
         dirpath="checkpoints/",
         filename=checkpointing_name + "-{epoch}-{val_loss:.2f}",
         verbose=True,  # Print a message when a checkpoint is saved
