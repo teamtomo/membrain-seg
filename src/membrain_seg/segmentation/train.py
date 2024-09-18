@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import pytorch_lightning as pl
@@ -9,9 +10,8 @@ from membrain_seg.segmentation.dataloading.memseg_pl_datamodule import (
     MemBrainSegDataModule,
 )
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
-import os
 
-os.environ['WANDB_MODE'] = 'offline'
+os.environ["WANDB_MODE"] = "offline"
 
 warnings.filterwarnings("ignore", category=UserWarning, module="torch._tensor")
 warnings.filterwarnings("ignore", category=UserWarning, module="monai.data")
@@ -34,7 +34,7 @@ def train(
     fourier_amplitude_aug: bool = False,
     exclude_deepict_from_dice: bool = False,
     no_sdice_for_no_deepict: bool = False,
-    cosine_annealing_interval: int = None
+    cosine_annealing_interval: int = None,
 ):
     """
     Train the model on the specified data.
@@ -63,6 +63,23 @@ def train(
         Name of the project for logging purposes.
     sub_name : str, optional
         Sub-name of the project for logging purposes.
+    use_BCE_dice : bool, optional
+        If True, uses a combination of Dice and binary cross entropy loss.
+    use_surf_dice : bool, optional
+        If True, uses Surface Dice loss.
+    surf_dice_weight : float, optional
+        Surface Dice weight compared to BCE Dice loss.
+    missing_wedge_aug : bool, optional
+        If True, uses additional, artificial missing wedges for data augmentation.
+    fourier_amplitude_aug : bool, optional
+        If True, uses Fourier amplitude matching as data augmentation.
+    exclude_deepict_from_dice : bool, optional
+        If True, computes only Surface Dice for Deepict data.
+    no_sdice_for_no_deepict : bool, optional
+        If True, computes only normal Dice for non-Deepict samples.
+    cosine_annealing_interval : int, optional
+        If an integer is specified, cosine annealing with warm restarts is
+        performed in the given interval times.
 
     Returns
     -------
@@ -75,22 +92,19 @@ def train(
         num_workers=num_workers,
         aug_prob_to_one=aug_prob_to_one,
         fourier_amplitude_aug=fourier_amplitude_aug,
-        missing_wedge_aug=missing_wedge_aug
+        missing_wedge_aug=missing_wedge_aug,
     )
-
-    # data_module.setup(stage="fit")
-    # data_module.train_dataset.test(test_folder="/scicore/home/engel0006/GROUP/pool-engel/Lorenz/SurfaceDICE/membrain-seg/test_augs", num_files=20)
-    # exit()
 
     # Set up the model
     model = SemanticSegmentationUnet(
-        max_epochs=max_epochs, use_deep_supervision=use_deep_supervision,
+        max_epochs=max_epochs,
+        use_deep_supervision=use_deep_supervision,
         use_BCE_dice=use_BCE_dice,
         use_surf_dice=use_surf_dice,
         surf_dice_weight=surf_dice_weight,
         exclude_deepict_from_dice=exclude_deepict_from_dice,
         no_sdice_for_no_deepict=no_sdice_for_no_deepict,
-        cosine_annealing_interval=cosine_annealing_interval
+        cosine_annealing_interval=cosine_annealing_interval,
     )
 
     project_name = project_name
@@ -112,11 +126,11 @@ def train(
 
     checkpoint_callback_last = ModelCheckpoint(
         save_top_k=1,  # Save only the best model
-        monitor='epoch',  # Monitor 'epoch' to save the last epoch model
-        mode='max',  # Set mode to 'max' to save the model with maximum 'epoch'
-        dirpath='checkpoints/', 
-        filename=checkpointing_name + '-{epoch}-{val_loss:.2f}', 
-        verbose=True
+        monitor="epoch",  # Monitor 'epoch' to save the last epoch model
+        mode="max",  # Set mode to 'max' to save the model with maximum 'epoch'
+        dirpath="checkpoints/",
+        filename=checkpointing_name + "-{epoch}-{val_loss:.2f}",
+        verbose=True,
     )
 
     lr_monitor = LearningRateMonitor(logging_interval="epoch", log_momentum=True)
