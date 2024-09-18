@@ -32,7 +32,7 @@ def train(
     """
     log_dir = "./logs"
     batch_size = 2
-    num_workers = 1
+    num_workers = 8
     max_epochs = 1000
     aug_prob_to_one = True
     use_deep_supervision = True
@@ -114,21 +114,22 @@ def train_advanced(
     ),
     missing_wedge_aug: bool = Option(  # noqa: B008
         False,
-        help="Should additional, artificial missing wedges be used for data augmentation?",
+        help="Should additional, artificial missing wedges be used for data \
+            augmentation?",
     ),
     exclude_deepict_from_dice: bool = Option(  # noqa: B008
         False,
         help="Should we compute only Surface Dice for Deepict data?",
     ),
-    no_sdice_for_no_deepict: bool = Option( # noqa: B008
+    no_sdice_for_no_deepict: bool = Option(  # noqa: B008
         False,
         help="Should we compute only normal dice for non-Deepict samples?",
     ),
-    cosine_annealing_interval: int = Option( # noqa: B008
+    cosine_annealing_interval: int = Option(  # noqa: B008
         None,
-        help="If an integer is specified, cosine annealing with warm restarts is performed\
-            in the given interval times.",
-    )
+        help="If an integer is specified, cosine annealing with warm restarts \
+            is performed in the given interval times.",
+    ),
 ):
     """
     Initiates the MemBrain training routine with more advanced options.
@@ -158,6 +159,29 @@ def train_advanced(
         Name of the project for logging purposes, by default 'membrain-seg_v0'.
     sub_name : str
         Sub-name for the project, by default '1'.
+    use_surf_dice : bool
+        Determines whether to use Surface Dice loss, by default False.
+    surf_sice_weight : float
+        Surface Dice weight compared to BCE Dice loss, by default 1.0.
+    use_BCE_dice : bool
+        Determines whether to use a combination of Dice and binary cross entropy loss,
+        by default True.
+    fourier_amplitude_aug : bool
+        Determines whether to use Fourier amplitude matching as data augmentation,
+        by default False.
+    missing_wedge_aug : bool
+        Determines whether to use additional, artificial missing wedges for data
+        augmentation, by default False.
+    exclude_deepict_from_dice : bool
+        Determines whether to compute only Surface Dice for Deepict data,
+        by default False.
+    no_sdice_for_no_deepict : bool
+        Determines whether to compute only normal Dice for non-Deepict samples,
+        by default False.
+    cosine_annealing_interval : int
+        If an integer is specified, cosine annealing with warm restarts is
+        performed in the given interval times.
+
 
     Note
 
@@ -182,7 +206,7 @@ def train_advanced(
         fourier_amplitude_aug=fourier_amplitude_aug,
         exclude_deepict_from_dice=exclude_deepict_from_dice,
         no_sdice_for_no_deepict=no_sdice_for_no_deepict,
-        cosine_annealing_interval=cosine_annealing_interval
+        cosine_annealing_interval=cosine_annealing_interval,
     )
 
 
