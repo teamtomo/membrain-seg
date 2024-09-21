@@ -135,7 +135,7 @@ def train(
     project_name = project_name
     checkpointing_name = project_name + "_" + sub_name
     # Set up logging
-    wandb_logger = pl_loggers.WandbLogger(
+    pl_loggers.WandbLogger(
         project=project_name, log_model=False, save_code=True, name=sub_name
     )
     csv_logger = pl_loggers.CSVLogger(log_dir)
@@ -165,7 +165,7 @@ def train(
     # Set up the trainer
     trainer = pl.Trainer(
         precision="16-mixed",
-        logger=[csv_logger, wandb_logger],
+        logger=[csv_logger],
         callbacks=[
             # checkpoint_callback_val_loss,
             checkpoint_callback_last,

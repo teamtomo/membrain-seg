@@ -257,7 +257,6 @@ class CombinedLoss(_Loss):
 
             # Zero out losses for excluded cases
             for batch_idx, ds_lab in enumerate(ds_label):
-
                 if (
                     "all" in self.loss_inclusion_tokens[loss_idx]
                     or ds_lab in self.loss_inclusion_tokens[loss_idx]

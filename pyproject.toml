@@ -26,8 +26,6 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
     "imageio",
-    "scipy",
-    "typer[all]",
     "mrcfile",
     "monai",
     "numpy<2.0.0",

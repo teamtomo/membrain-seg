@@ -71,6 +71,5 @@ def skeletonize(
         out_folder,
         os.path.splitext(os.path.basename(label_path))[0] + "_skel.mrc",
     )
-
     store_tomogram(filename=out_file, tomogram=segmentation)
     print("Skeleton saved to ", out_file)

@@ -8,12 +8,6 @@ from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete, Compose, EnsureType, Lambda
 
 from ..training.metric_utils import masked_accuracy, threshold_function
-
-# from monai.networks.nets import UNet as MonaiUnet
-# The normal Monai DynUNet upsamples low-resolution layers to compare directly to GT
-# My implementation leaves them in low resolution and compares to down-sampled GT
-# Not sure which implementation is better
-# To be discussed with Alister & Kevin
 from ..training.optim_utils import (
     CombinedLoss,
     DeepSuperVisionLoss,
@@ -262,6 +256,17 @@ class SemanticSegmentationUnet(pl.LightningModule):
             )
             * output[0].shape[0]
         )
+        self.running_train_surf_dice += (
+            masked_surface_dice(
+                data=output[0].detach(),
+                target=labels[0].detach(),
+                ignore_label=2.0,
+                soft_skel_iterations=5,
+                smooth=1.0,
+                reduction="mean",
+            )
+            * output[0].shape[0]
+        )
 
         return {"loss": loss}
 
@@ -326,6 +331,18 @@ class SemanticSegmentationUnet(pl.LightningModule):
                 labels[0].detach(),
                 ignore_label=2.0,
                 threshold_value=0.0,
+            )
+            * outputs[0].shape[0]
+        )
+
+        self.running_val_surf_dice += (
+            masked_surface_dice(
+                data=outputs[0].detach(),
+                target=labels[0].detach(),
+                ignore_label=2.0,
+                soft_skel_iterations=5,
+                smooth=1.0,
+                reduction="mean",
             )
             * outputs[0].shape[0]
         )
