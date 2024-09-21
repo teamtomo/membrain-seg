@@ -41,7 +41,16 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         The test dataset.
     """
 
-    def __init__(self, data_dir, batch_size, num_workers, aug_prob_to_one=False, missing_wedge_aug=False, fourier_amplitude_aug=False):
+    def __init__(
+        self,
+        data_dir,
+        batch_size,
+        num_workers,
+        on_the_fly_dataloading=False,
+        fourier_amplitude_aug=False,
+        missing_wedge_aug=False,
+        aug_prob_to_one=False,
+    ):
         """Initialization of data paths and data loaders.
 
         The data_dir should have the following structure:
@@ -74,6 +83,7 @@ class MemBrainSegDataModule(pl.LightningDataModule):
         self.aug_prob_to_one = aug_prob_to_one
         self.fourier_amplitude_aug = fourier_amplitude_aug
         self.missing_wedge_aug = missing_wedge_aug
+        self.on_the_fly_dataloading = on_the_fly_dataloading
 
     def setup(self, stage: Optional[str] = None):
         """
@@ -92,18 +102,24 @@ class MemBrainSegDataModule(pl.LightningDataModule):
                 img_folder=self.train_img_dir,
                 label_folder=self.train_lab_dir,
                 train=True,
-                aug_prob_to_one=self.aug_prob_to_one,#
+                aug_prob_to_one=self.aug_prob_to_one,  #
                 fourier_amplitude_aug=self.fourier_amplitude_aug,
-                missing_wedge_aug=self.missing_wedge_aug
-
+                missing_wedge_aug=self.missing_wedge_aug,
+                on_the_fly_loading=self.on_the_fly_dataloading,
             )
             self.val_dataset = CryoETMemSegDataset(
-                img_folder=self.val_img_dir, label_folder=self.val_lab_dir, train=False
+                img_folder=self.val_img_dir,
+                label_folder=self.val_lab_dir,
+                train=False,
+                on_the_fly_loading=self.on_the_fly_dataloading,
             )
 
         if stage in (None, "test"):
             self.test_dataset = CryoETMemSegDataset(
-                self.data_dir, test=True, transform=self.transform
+                self.data_dir,
+                test=True,
+                transform=self.transform,
+                on_the_fly_loading=self.on_the_fly_dataloading,
             )  # TODO: How to do prediction?
 
     def train_dataloader(self) -> DataLoader:
