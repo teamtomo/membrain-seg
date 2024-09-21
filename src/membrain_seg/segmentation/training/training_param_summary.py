@@ -3,6 +3,7 @@ def print_training_parameters(
     log_dir: str = "logs/",
     batch_size: int = 2,
     num_workers: int = 8,
+    on_the_fly_dataloading: bool = False,
     max_epochs: int = 1000,
     aug_prob_to_one: bool = False,
     use_deep_supervision: bool = False,
@@ -25,6 +26,8 @@ def print_training_parameters(
         Number of samples per batch of input data.
     num_workers : int, optional
         Number of subprocesses to use for data loading.
+    on_the_fly_dataloading : bool, optional
+        If True, data is loaded on the fly.
     max_epochs : int, optional
         Maximum number of epochs to train for.
     aug_prob_to_one : bool, optional
@@ -66,6 +69,12 @@ def print_training_parameters(
     print(
         "Number of Workers:\n   {} \n   Subprocesses to use for data "
         "loading.".format(num_workers)
+    )
+    print("————————————————————————————————————————————————————————")
+    on_the_fly_status = "Enabled" if on_the_fly_dataloading else "Disabled"
+    print(
+        "On-the-Fly Data Loading:\n   {} \n   If enabled, data is loaded on "
+        "the fly.".format(on_the_fly_status)
     )
     print("————————————————————————————————————————————————————————")
     print(f"Max Epochs:\n   {max_epochs} \n   Maximum number of training epochs.")
