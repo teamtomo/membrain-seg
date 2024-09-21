@@ -36,6 +36,7 @@ def train(
     log_dir = "./logs"
     batch_size = 2
     num_workers = 1
+    on_the_fly_dataloading = False
     max_epochs = 1000
     aug_prob_to_one = True
     use_deep_supervision = True
@@ -47,6 +48,7 @@ def train(
         log_dir=log_dir,
         batch_size=batch_size,
         num_workers=num_workers,
+        on_the_fly_dataloading=on_the_fly_dataloading,
         max_epochs=max_epochs,
         aug_prob_to_one=aug_prob_to_one,
         use_deep_supervision=use_deep_supervision,
@@ -75,6 +77,10 @@ def train_advanced(
     num_workers: int = Option(  # noqa: B008
         8,
         help="Number of worker threads for loading data",
+    ),
+    on_the_fly_dataloading: bool = Option(  # noqa: B008
+        False,
+        help="Whether to load data on the fly. This is useful for large datasets.",
     ),
     max_epochs: int = Option(  # noqa: B008
         1000,
@@ -131,6 +137,8 @@ def train_advanced(
         Number of samples per batch, by default 2.
     num_workers : int
         Number of worker threads for data loading, by default 1.
+    on_the_fly_dataloading : bool
+        Determines whether to load data on the fly, by default False.
     max_epochs : int
         Maximum number of training epochs, by default 1000.
     aug_prob_to_one : bool
@@ -162,6 +170,7 @@ def train_advanced(
         log_dir=log_dir,
         batch_size=batch_size,
         num_workers=num_workers,
+        on_the_fly_dataloading=on_the_fly_dataloading,
         max_epochs=max_epochs,
         aug_prob_to_one=aug_prob_to_one,
         use_deep_supervision=use_deep_supervision,

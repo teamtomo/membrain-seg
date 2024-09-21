@@ -22,6 +22,7 @@ def train(
     log_dir: str = "logs/",
     batch_size: int = 2,
     num_workers: int = 8,
+    on_the_fly_dataloading: bool = False,
     max_epochs: int = 1000,
     aug_prob_to_one: bool = False,
     use_deep_supervision: bool = False,
@@ -48,6 +49,8 @@ def train(
         Number of samples per batch of input data.
     num_workers : int, optional
         Number of subprocesses to use for data loading.
+    on_the_fly_dataloading : bool, optional
+        If True, data is loaded on the fly.
     max_epochs : int, optional
         Maximum number of epochs to train for.
     aug_prob_to_one : bool, optional
@@ -74,6 +77,7 @@ def train(
         log_dir=log_dir,
         batch_size=batch_size,
         num_workers=num_workers,
+        on_the_fly_dataloading=on_the_fly_dataloading,
         max_epochs=max_epochs,
         aug_prob_to_one=aug_prob_to_one,
         use_deep_supervision=use_deep_supervision,
@@ -88,6 +92,7 @@ def train(
         data_dir=data_dir,
         batch_size=batch_size,
         num_workers=num_workers,
+        on_the_fly_dataloading=on_the_fly_dataloading,
         aug_prob_to_one=aug_prob_to_one,
     )
 
