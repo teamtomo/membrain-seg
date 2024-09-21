@@ -59,6 +59,7 @@ class CryoETMemSegDataset(Dataset):
         train: bool = False,
         aug_prob_to_one: bool = False,
         patch_size: int = 160,
+        on_the_fly_loading: bool = False,
     ) -> None:
         """
         Constructs all the necessary attributes for the CryoETMemSegDataset object.
@@ -76,12 +77,16 @@ class CryoETMemSegDataset(Dataset):
             to one or not.
         patch_size : int, default 160
             The size of the patches to be extracted from the images.
+        on_the_fly_loading : bool, default False
+            A flag indicating whether the data should be loaded on the fly or not.
         """
         self.train = train
         self.img_folder, self.label_folder = img_folder, label_folder
         self.patch_size = patch_size
+        self.on_the_fly_loading = on_the_fly_loading
         self.initialize_imgs_paths()
-        self.load_data()
+        if not self.on_the_fly_loading:
+            self.load_data()
         self.transforms = (
             get_training_transforms(prob_to_one=aug_prob_to_one)
             if self.train
@@ -104,13 +109,20 @@ class CryoETMemSegDataset(Dataset):
         Dict[str, np.ndarray]
             A dictionary containing an image and its corresponding label.
         """
-        idx_dict = {
-            "image": np.expand_dims(self.imgs[idx], 0),
-            "label": np.expand_dims(self.labels[idx], 0),
-        }
+        if self.on_the_fly_loading:
+            idx_dict = self.load_data_sample(idx)
+            idx_dict["image"] = np.expand_dims(idx_dict["image"], 0)
+            idx_dict["label"] = np.expand_dims(idx_dict["label"], 0)
+            ds_label = idx_dict["dataset"]
+        else:
+            idx_dict = {
+                "image": np.expand_dims(self.imgs[idx], 0),
+                "label": np.expand_dims(self.labels[idx], 0),
+            }
+            ds_label = self.dataset_labels[idx]
         idx_dict = self.get_random_crop(idx_dict)
         idx_dict = self.transforms(idx_dict)
-        idx_dict["dataset"] = self.dataset_labels[idx]
+        idx_dict["dataset"] = ds_label  # transforms remove the dataset token
         return idx_dict
 
     def __len__(self) -> int:
@@ -228,6 +240,27 @@ class CryoETMemSegDataset(Dataset):
         ), f"Image shape is {img.shape} instead of {self.patch_size}"
         return {"image": img, "label": label}
 
+    def load_data_sample(self, idx: int) -> Dict[str, np.ndarray]:
+        """
+        Loads a single image-label pair from the dataset.
+
+        Parameters
+        ----------
+        idx : int
+            The index of the sample to be loaded.
+
+        Returns
+        -------
+        Dict[str, np.ndarray]
+            A dictionary containing an image and its corresponding label.
+        """
+        label = read_nifti(self.data_paths[idx][1])
+        img = read_nifti(self.data_paths[idx][0])
+        label = np.transpose(label, (1, 2, 0))
+        img = np.transpose(img, (1, 2, 0))
+        ds_token = get_dataset_token(self.data_paths[idx][0])
+        return {"image": img, "label": label, "dataset": ds_token}
+
     def load_data(self) -> None:
         """
         Loads image-label pairs into memory from the specified directories.
@@ -240,18 +273,11 @@ class CryoETMemSegDataset(Dataset):
         self.imgs = []
         self.labels = []
         self.dataset_labels = []
-        for entry in tqdm(self.data_paths):
-            label = read_nifti(
-                entry[1]
-            )  # TODO: Change this to be applicable to .mrc images
-            img = read_nifti(entry[0])
-            label = np.transpose(
-                label, (1, 2, 0)
-            )  # TODO: Needed? Probably no? z-axis should not matter
-            img = np.transpose(img, (1, 2, 0))
-            self.imgs.append(img)
-            self.labels.append(label)
-            self.dataset_labels.append(get_dataset_token(entry[0]))
+        for entry_num in tqdm(range(len(self.data_paths))):
+            sample_dict = self.load_data_sample(entry_num)
+            self.imgs.append(sample_dict["image"])
+            self.labels.append(sample_dict["label"])
+            self.dataset_labels.append(sample_dict["dataset"])
 
     def initialize_imgs_paths(self) -> None:
         """
