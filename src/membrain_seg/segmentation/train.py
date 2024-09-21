@@ -95,7 +95,6 @@ def train(
         on_the_fly_dataloading=on_the_fly_dataloading,
         aug_prob_to_one=aug_prob_to_one,
     )
-    data_module.setup(stage="fit")
 
     # Set up the model
     model = SemanticSegmentationUnet(
