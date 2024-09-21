@@ -17,10 +17,10 @@ from ..training.metric_utils import masked_accuracy, threshold_function
 from ..training.optim_utils import (
     CombinedLoss,
     DeepSuperVisionLoss,
-    DynUNetDirectDeepSupervision,  # I like to use deep supervision
+    DynUNetDirectDeepSupervision,
     IgnoreLabelDiceCELoss,
 )
-from ..training.surface_dice_loss import IgnoreLabelSurfaceDiceLoss, masked_surface_dice
+from ..training.surface_dice import IgnoreLabelSurfaceDiceLoss, masked_surface_dice
 
 
 class SemanticSegmentationUnet(pl.LightningModule):
@@ -64,6 +64,12 @@ class SemanticSegmentationUnet(pl.LightningModule):
         The maximum number of epochs for training.
     use_deep_supervision : bool, default=False
         Whether to use deep supervision.
+    use_surf_dice : bool, default=False
+        Whether to use surface dice loss.
+    surf_dice_weight : float, default=1.0
+        The weight for the surface dice loss.
+    surf_dice_tokens : list, default=[]
+        The tokens for which to compute the surface dice loss.
 
     """
 
@@ -84,10 +90,11 @@ class SemanticSegmentationUnet(pl.LightningModule):
         use_deep_supervision: bool = False,
         use_BCE_dice=True,
         use_surf_dice=False,
-        surf_dice_weight=1.0,
         exclude_deepict_from_dice=False,
         no_sdice_for_no_deepict=False,
         cosine_annealing_interval: int = None,
+        surf_dice_weight: float = 1.0,
+        surf_dice_tokens: list = None,
     ):
         super().__init__()
 
@@ -111,58 +118,38 @@ class SemanticSegmentationUnet(pl.LightningModule):
             upsample_kernel_size=(1, 2, 2, 2, 2, 2),
             filters=channels,
             res_block=True,
-            # norm_name="INSTANCE",
-            # norm=Norm.INSTANCE,  # I like the instance normalization better than
-            # batchnorm in this case, as we will probably have
-            # only small batch sizes, making BN more noisy
             deep_supervision=True,
             deep_supr_num=2,
         )
+
+        ### Build up loss function
         losses = []
         weights = []
-        if use_BCE_dice:
-            ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="mean")
-            losses.append(ignore_dice_loss)
-            weights.append(1.0)
+        loss_inclusion_tokens = []
+        ignore_dice_loss = IgnoreLabelDiceCELoss(ignore_label=2, reduction="none")
+        losses.append(ignore_dice_loss)
+        weights.append(1.0)
+        loss_inclusion_tokens.append(["all"])  # Apply to every element
+
         if use_surf_dice:
+            if surf_dice_tokens is None:
+                surf_dice_tokens = ["all"]
             ignore_surf_dice_loss = IgnoreLabelSurfaceDiceLoss(
-                ignore_label=2, soft_skel_iterations=3
+                ignore_label=2, soft_skel_iterations=5
             )
             losses.append(ignore_surf_dice_loss)
             weights.append(surf_dice_weight)
+            loss_inclusion_tokens.append(surf_dice_tokens)
 
-        weight_sum = 0.0
-        for entry in weights:
-            weight_sum += entry
-        scaled_weights = [entry / weight_sum for entry in weights]
-        if exclude_deepict_from_dice:
-            if not no_sdice_for_no_deepict:
-                apply_loss_not_for = [["Deepict"], ["None"]]
-            else:
-                apply_loss_not_for = [
-                    ["Deepict"],
-                    [
-                        "Chlamy",
-                        "Chlamy_raw",
-                        "HDCR",
-                        "AntonioSim",
-                        "CTS",
-                        "Spinach",
-                        "Spinach_raw",
-                        "Atty",
-                    ],
-                ]
-        else:
-            apply_loss_not_for = [["None"], ["None"]]
+        scaled_weights = [entry / sum(weights) for entry in weights]
 
         loss_function = CombinedLoss(
             losses=losses,
             weights=scaled_weights,
-            apply_loss_not_for=apply_loss_not_for,
-            no_sdice_for_no_deepict=no_sdice_for_no_deepict,
+            loss_inclusion_tokens=loss_inclusion_tokens,
         )
+
         self.loss_function = DeepSuperVisionLoss(
-            # ignore_dice_loss,
             loss_function,
             weights=(
                 [1.0, 0.5, 0.25, 0.125, 0.0675]
@@ -197,6 +184,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.training_step_outputs = []
         self.validation_step_outputs = []
         self.running_train_acc = 0.0
+        self.running_train_surf_dice = 0.0
         self.running_val_acc = 0.0
         self.running_train_surf_dice = 0.0
         self.running_val_surf_dice = 0.0
@@ -268,8 +256,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
                 data=output[0].detach(),
                 target=labels[0].detach(),
                 ignore_label=2.0,
-                soft_skel_iterations=3,
+                soft_skel_iterations=5,
                 smooth=1.0,
+                reduction="mean",
             )
             * output[0].shape[0]
         )
@@ -311,15 +300,7 @@ class SemanticSegmentationUnet(pl.LightningModule):
         using a sliding window. See the pytorch-lightning
         module documentation for details.
         """
-        images, labels, ds_label = (
-            batch[self.image_key],
-            batch[self.label_key],
-            batch["dataset"],
-        )
-        # sw_batch_size = 4
-        # outputs = sliding_window_inference(
-        #     images, self.roi_size, sw_batch_size, self.forward
-        # )
+        images, labels, ds_label = batch["image"], batch["label"], batch["dataset"]
         outputs = self.forward(images)
         loss = self.loss_function(outputs, labels, ds_label)
 
@@ -328,9 +309,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         # compute more stats?
         outputs4dice = outputs[0].clone()
         labels4dice = labels[0].clone()
-        outputs4dice[
-            labels4dice == 2
-        ] = -1.0  # Setting to -1 here leads to 0-labels after thresholding
+        outputs4dice[labels4dice == 2] = (
+            -1.0
+        )  # Setting to -1 here leads to 0-labels after thresholding
         labels4dice[labels4dice == 2] = 0  # Need to set to zero before post_label
         # Otherwise we have 3 classes
         outputs4dice = [self.post_pred(i) for i in decollate_batch(outputs4dice)]
@@ -348,13 +329,15 @@ class SemanticSegmentationUnet(pl.LightningModule):
             )
             * outputs[0].shape[0]
         )
+
         self.running_val_surf_dice += (
             masked_surface_dice(
                 data=outputs[0].detach(),
                 target=labels[0].detach(),
                 ignore_label=2.0,
-                soft_skel_iterations=3,
+                soft_skel_iterations=5,
                 smooth=1.0,
+                reduction="mean",
             )
             * outputs[0].shape[0]
         )
@@ -385,6 +368,6 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.validation_step_outputs = []
         print("EPOCH Validation loss", mean_val_loss.item())
         print("EPOCH Validation dice", mean_val_dice)
-        print("EPOCH Validation surface dice", mean_val_surf_dice)
+        print("EPOCH Validation surface dice", mean_val_surf_dice.item())
         print("EPOCH Validation acc", mean_val_acc.item())
         return {"val_loss": mean_val_loss, "val_metric": mean_val_dice}

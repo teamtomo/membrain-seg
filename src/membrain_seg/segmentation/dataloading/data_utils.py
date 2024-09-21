@@ -118,7 +118,7 @@ def load_data_for_inference(data_path: str, transforms: Callable, device: device
     new_data = transforms(new_data)
     new_data = new_data.unsqueeze(0)  # Add batch dimension
     new_data = new_data.to(device)
-    return new_data, tomogram.header
+    return new_data, tomogram.header, tomogram.voxel_size
 
 
 def store_segmented_tomograms(
@@ -130,6 +130,8 @@ def store_segmented_tomograms(
     store_connected_components: bool = False,
     connected_component_thres: int = None,
     mrc_header: np.recarray = None,
+    voxel_size: float = None,
+    segmentation_threshold: float = 0.0,
 ) -> None:
     """
     Helper function for storing output segmentations.
@@ -159,6 +161,11 @@ def store_segmented_tomograms(
         If given, the mrc header will be used to retain header information
         from another tomogram. This way, pixel sizes and other header
         information is not lost.
+    voxel_size: float, optional
+        If given, this will be the voxel size stored in the header of the
+        output segmentation.
+    segmentation_threshold : float, optional
+        Threshold for the segmentation. Default is 0.0.
     """
     # Create out directory if it doesn't exist yet
     make_directory_if_not_exists(out_folder)
@@ -168,20 +175,30 @@ def store_segmented_tomograms(
     out_folder = out_folder
     if store_probabilities:
         out_file = os.path.join(
-            out_folder, os.path.basename(orig_data_path)[:-4] + "_scores.mrc"
+            out_folder,
+            os.path.splitext(os.path.basename(orig_data_path))[0] + "_scores.mrc",
         )
-        out_tomo = Tomogram(data=predictions_np, header=mrc_header)
+        out_tomo = Tomogram(
+            data=predictions_np, header=mrc_header, voxel_size=voxel_size
+        )
         store_tomogram(out_file, out_tomo)
-    predictions_np_thres = predictions.squeeze(0).squeeze(0).cpu().numpy() > 0.0
+    predictions_np_thres = (
+        predictions.squeeze(0).squeeze(0).cpu().numpy() > segmentation_threshold
+    )
     out_file_thres = os.path.join(
         out_folder,
-        os.path.basename(orig_data_path)[:-4] + "_" + ckpt_token + "_segmented.mrc",
+        os.path.splitext(os.path.basename(orig_data_path))[0]
+        + "_"
+        + ckpt_token
+        + "_segmented.mrc",
     )
     if store_connected_components:
         predictions_np_thres = connected_components(
             predictions_np_thres, size_thres=connected_component_thres
         )
-    out_tomo = Tomogram(data=predictions_np_thres, header=mrc_header)
+    out_tomo = Tomogram(
+        data=predictions_np_thres, header=mrc_header, voxel_size=voxel_size
+    )
     store_tomogram(out_file_thres, out_tomo)
     print("MemBrain has finished segmenting your tomogram.")
     return out_file_thres
@@ -334,7 +351,7 @@ def convert_dtype(tomogram: np.ndarray) -> np.ndarray:
     if (
         tomogram.min() >= np.finfo("float16").min
         and tomogram.max() <= np.finfo("float16").max
-    ):
+    ) and np.allclose(tomogram, tomogram.astype("float16")):
         return tomogram.astype("float16")
     elif (
         tomogram.min() >= np.finfo("float32").min
@@ -368,33 +385,22 @@ def store_tomogram(
         if isinstance(tomogram, Tomogram):
             data = tomogram.data
             header = tomogram.header
+            if voxel_size is None:
+                voxel_size = tomogram.voxel_size
         else:
             data = tomogram
             header = None
-        data = convert_dtype(data)
-        data = np.transpose(data, (2, 1, 0))
-        dtype_mode = _dtype_to_mode[data.dtype]
-        out_mrc.set_data(data)
+
         if header is not None:
             attributes = header.dtype.names
             for attr in attributes:
-                # skip density and shape attribues
-                if attr in [
-                    "mode",
-                    "dmean",
-                    "dmin",
-                    "dmax",
-                    "rms",
-                    "nx",
-                    "ny",
-                    "nz",
-                    "mx",
-                    "my",
-                    "mz",
-                ]:
+                if attr not in ["nlabl", "label"]:
                     continue
                 setattr(out_mrc.header, attr, getattr(header, attr))
-            out_mrc.header.mode = dtype_mode
+
+        data = convert_dtype(data)
+        data = np.transpose(data, (2, 1, 0))
+        out_mrc.set_data(data)
         if voxel_size is not None:
             out_mrc.voxel_size = voxel_size
 

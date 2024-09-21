@@ -1,9 +1,10 @@
 import os
 from typing import Dict
 
-# from skimage import io
+import imageio as io
 import numpy as np
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 from membrain_seg.segmentation.dataloading.data_utils import read_nifti
 from membrain_seg.segmentation.dataloading.memseg_augmentation import (
@@ -30,6 +31,9 @@ class CryoETMemSegDataset(Dataset):
     aug_prob_to_one : bool, default False
         A flag indicating whether the probability of augmentation should be
         set to one or not.
+    patch_size : int, default 160
+        The size of the patches to be extracted from the images.
+
 
     Methods
     -------
@@ -56,6 +60,7 @@ class CryoETMemSegDataset(Dataset):
         aug_prob_to_one: bool = False,
         fourier_amplitude_aug: bool = False,
         missing_wedge_aug: bool = False,
+        patch_size: int = 160,
     ) -> None:
         """
         Constructs all the necessary attributes for the CryoETMemSegDataset object.
@@ -75,10 +80,12 @@ class CryoETMemSegDataset(Dataset):
             A flag indicating whether Fourier amplitude augmentation should be applied.
         missing_wedge_aug : bool, default False
             A flag indicating whether missing wedge augmentation should be applied.
-
+        patch_size : int, default 160
+            The size of the patches to be extracted from the images.
         """
         self.train = train
         self.img_folder, self.label_folder = img_folder, label_folder
+        self.patch_size = patch_size
         self.initialize_imgs_paths()
         self.load_data()
         self.transforms = (
@@ -113,6 +120,7 @@ class CryoETMemSegDataset(Dataset):
             "image": np.expand_dims(self.imgs[idx], 0),
             "label": np.expand_dims(self.labels[idx], 0),
         }
+        idx_dict = self.get_random_crop(idx_dict)
         if not orig:
             idx_dict = self.transforms(idx_dict)
         idx_dict["dataset"] = self.dataset_labels[idx]
@@ -129,6 +137,110 @@ class CryoETMemSegDataset(Dataset):
         """
         return len(self.data_paths)
 
+    def get_random_crop(self, idx_dict: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+        """
+        Returns a random crop from the image-label pair.
+
+        Parameters
+        ----------
+        idx_dict : Dict[str, np.ndarray]
+            A dictionary containing an image and its corresponding label.
+
+        Returns
+        -------
+        Dict[str, np.ndarray]
+            A dictionary containing a random crop from the image and its corresponding
+            label.
+        """
+        img, label = idx_dict["image"], idx_dict["label"]
+        x, y, z = img.shape[1:]
+
+        if x <= self.patch_size or y <= self.patch_size or z <= self.patch_size:
+            # pad with 2s on both sides
+            pad_x = max(self.patch_size - x, 0)
+            pad_y = max(self.patch_size - y, 0)
+            pad_z = max(self.patch_size - z, 0)
+            img = np.pad(
+                img,
+                (
+                    (0, 0),
+                    (pad_x // 2, pad_x // 2),
+                    (pad_y // 2, pad_y // 2),
+                    (pad_z // 2, pad_z // 2),
+                ),
+                mode="constant",
+                constant_values=2,
+            )
+            label = np.pad(
+                label,
+                (
+                    (0, 0),
+                    (pad_x // 2, pad_x // 2),
+                    (pad_y // 2, pad_y // 2),
+                    (pad_z // 2, pad_z // 2),
+                ),
+                mode="constant",
+                constant_values=0,
+            )
+            # make sure there was no rounding issue
+            if (
+                img.shape[1] < self.patch_size
+                or img.shape[2] < self.patch_size
+                or img.shape[3] < self.patch_size
+            ):
+                img = np.pad(
+                    img,
+                    (
+                        (0, 0),
+                        (0, max(self.patch_size - img.shape[1], 0)),
+                        (0, max(self.patch_size - img.shape[2], 0)),
+                        (0, max(self.patch_size - img.shape[3], 0)),
+                    ),
+                    mode="constant",
+                    constant_values=2,
+                )
+                label = np.pad(
+                    label,
+                    (
+                        (0, 0),
+                        (0, max(self.patch_size - label.shape[1], 0)),
+                        (0, max(self.patch_size - label.shape[2], 0)),
+                        (0, max(self.patch_size - label.shape[3], 0)),
+                    ),
+                    mode="constant",
+                    constant_values=0,
+                )
+            assert (
+                img.shape[1] == self.patch_size
+                and img.shape[2] == self.patch_size
+                and img.shape[3] == self.patch_size
+            ), f"Image shape is {img.shape} instead of {self.patch_size}"
+            return {"image": img, "label": label}
+
+        x_crop, y_crop, z_crop = self.patch_size, self.patch_size, self.patch_size
+        x_start = np.random.randint(0, x - x_crop)
+        y_start = np.random.randint(0, y - y_crop)
+        z_start = np.random.randint(0, z - z_crop)
+        img = img[
+            :,
+            x_start : x_start + x_crop,
+            y_start : y_start + y_crop,
+            z_start : z_start + z_crop,
+        ]
+        label = label[
+            :,
+            x_start : x_start + x_crop,
+            y_start : y_start + y_crop,
+            z_start : z_start + z_crop,
+        ]
+
+        assert (
+            img.shape[1] == self.patch_size
+            and img.shape[2] == self.patch_size
+            and img.shape[3] == self.patch_size
+        ), f"Image shape is {img.shape} instead of {self.patch_size}"
+        return {"image": img, "label": label}
+
     def load_data(self) -> None:
         """
         Loads image-label pairs into memory from the specified directories.
@@ -141,7 +253,7 @@ class CryoETMemSegDataset(Dataset):
         self.imgs = []
         self.labels = []
         self.dataset_labels = []
-        for entry in self.data_paths:
+        for entry in tqdm(self.data_paths):
             label = read_nifti(
                 entry[1]
             )  # TODO: Change this to be applicable to .mrc images
@@ -191,72 +303,42 @@ class CryoETMemSegDataset(Dataset):
         os.makedirs(test_folder, exist_ok=True)
         from numpy import fft as fft
 
-        from membrain_seg.segmentation.dataloading.data_utils import store_tomogram
-
         for i in range(num_files):
-            test_sample = self.__getitem__(i % self.__len__(), orig=False)
-            test_sample_orig = self.__getitem__(i % self.__len__(), orig=True)
-            test_sample_fft = fft.fftshift(fft.fftn(test_sample["image"][0, :, :, :]))
-            test_sample_orig_fft = fft.fftshift(
-                fft.fftn(test_sample_orig["image"][0, :, :, :])
-            )
-            print(i)
-            store_tomogram(
-                os.path.join(test_folder, f"test_img{i}.mrc"),
-                test_sample["image"][0, :, :, :],
-            )
-            store_tomogram(
-                os.path.join(test_folder, f"test_img_fft{i}.mrc"),
-                test_sample_fft,
-            )
-            store_tomogram(
-                os.path.join(test_folder, f"test_img_orig{i}.mrc"),
-                test_sample_orig["image"][0, :, :, :],
-            )
-            store_tomogram(
-                os.path.join(test_folder, f"test_img_orig_fft{i}.mrc"),
-                test_sample_orig_fft,
-            )
-            store_tomogram(
-                os.path.join(test_folder, f"test_img{i}_lab.mrc"),
-                test_sample["label"][0][0, :, :, :],
-            )
+            test_sample = self.__getitem__(i % self.__len__())
+            for num_img in range(0, test_sample["image"].shape[-1], 30):
+                io.imsave(
+                    os.path.join(test_folder, f"test_img{i}_group{num_img}.png"),
+                    test_sample["image"][0, :, :, num_img],
+                )
+
+            for num_mask in range(0, test_sample["label"][0].shape[-1], 30):
+                io.imsave(
+                    os.path.join(test_folder, f"test_mask{i}_group{num_mask}.png"),
+                    test_sample["label"][0][0, :, :, num_mask],
+                )
+
+            for num_mask in range(0, test_sample["label"][1].shape[0], 15):
+                io.imsave(
+                    os.path.join(test_folder, f"test_mask_ds2_{i}_group{num_mask}.png"),
+                    test_sample["label"][1][0, :, :, num_mask],
+                )
 
 
 def get_dataset_token(patch_name):
-    """Returns the dataset token based on the provided patch name."""
-    basename = os.path.basename(patch_name)
+    """
+    Get the dataset token from the patch name.
 
-    if (
-        basename.startswith("50_")
-        or basename.startswith("633_")
-        or basename.startswith("165_")
-        or basename.startswith("24_")
-        or basename.startswith("38_")
-        or basename.startswith("441_")
-        or basename.startswith("54_")
-        or basename.startswith("8_")
-    ):
-        if "_raw" not in basename:
-            return "Chlamy"
-        else:
-            return "Chlamy_raw"
-    if basename.startswith("HDCR_"):
-        return "HDCR"
-    if basename.startswith("AntonioSim"):
-        return "AntonioSim"
-    if basename.startswith("CryoTomoSim"):
-        return "CTS"
-    if basename.startswith("tomo"):
-        if "_raw" not in basename:
-            return "Spinach"
-        else:
-            return "Spinach_raw"
-    if basename.startswith("TS_"):
-        return "Deepict"
-    if basename.startswith("YTC"):
-        return "Atty"
-    if basename.startswith("Matthias"):
-        return "Matthias"
-    return "unknown"
-    # raise IOError("dataset token not known!!")
+    Parameters
+    ----------
+    patch_name : str
+        The name of the patch.
+
+    Returns
+    -------
+    str
+        The dataset token.
+
+    """
+    basename = os.path.basename(patch_name)
+    dataset_token = basename.split("_")[0]
+    return dataset_token

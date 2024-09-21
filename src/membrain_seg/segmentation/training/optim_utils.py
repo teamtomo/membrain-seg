@@ -1,7 +1,11 @@
+from typing import Optional
+
+import pytorch_lightning as pl
 import torch
 from monai.losses import DiceLoss, MaskedLoss
 from monai.networks.nets import DynUNet
 from monai.utils import LossReduction
+from pytorch_lightning import Callback
 from torch.nn.functional import (
     binary_cross_entropy_with_logits,
     sigmoid,
@@ -53,7 +57,7 @@ class IgnoreLabelDiceCELoss(_Loss):
     def __init__(
         self,
         ignore_label: int,
-        reduction: str = "mean",
+        reduction: str = "none",
         lambda_dice: float = 1.0,
         lambda_ce: float = 1.0,
         **kwargs,
@@ -94,86 +98,34 @@ class IgnoreLabelDiceCELoss(_Loss):
             orig_data, target_tensor, reduction="none"
         )
         bce_loss[~mask] = 0.0
-        bce_loss = torch.sum(bce_loss) / torch.sum(mask)
-        dice_loss = self.dice_loss(data, target, mask)
+        # TODO: Check if this is correct: I adjusted the loss to be
+        # computed per batch element
+        bce_loss = torch.sum(bce_loss, dim=(1, 2, 3, 4)) / torch.sum(
+            mask, dim=(1, 2, 3, 4)
+        )
+        # Compute Dice loss separately for each batch element
+        dice_loss = torch.zeros_like(bce_loss)
+        for batch_idx in range(data.shape[0]):
+            dice_loss[batch_idx] = self.dice_loss(
+                data[batch_idx].unsqueeze(0),
+                target[batch_idx].unsqueeze(0),
+                mask[batch_idx].unsqueeze(0),
+            )
 
         # Combine the Dice and Cross Entropy losses
         combined_loss = self.lambda_dice * dice_loss + self.lambda_ce * bce_loss
+        if self.reduction == "mean":
+            combined_loss = combined_loss.mean()
+        elif self.reduction == "sum":
+            combined_loss = combined_loss.sum()
+        elif self.reduction == "none":
+            return combined_loss
+        else:
+            raise ValueError(
+                f"Invalid reduction type {self.reduction}. "
+                "Valid options are 'mean' and 'sum'."
+            )
         return combined_loss
-
-
-class CombinedLoss(_Loss):
-    """
-    Combine multiple loss functions into a single one.
-
-    Parameters
-    ----------
-    losses : list
-        A list of loss function instances.
-    weights : list
-        List of weights corresponding to each loss function (must
-        be of same length as losses)
-    kwargs : dict
-        Additional keyword arguments.
-    """
-
-    def __init__(
-        self,
-        losses: list,
-        weights: list,
-        apply_loss_not_for: list,
-        no_sdice_for_no_deepict: bool,
-        **kwargs,
-    ) -> None:
-        super().__init__()
-        self.losses = losses
-        self.weights = weights
-        self.apply_loss_not_for = apply_loss_not_for
-        self.no_sdice_for_no_deepict = no_sdice_for_no_deepict
-
-    def forward(
-        self, data: torch.Tensor, target: torch.Tensor, ds_label: str
-    ) -> torch.Tensor:
-        """
-        Compute the combined loss.
-
-        Parameters
-        ----------
-        data : torch.Tensor
-            Tensor of model outputs.
-        target : torch.Tensor
-            Tensor of target labels.
-        ds_label : str
-            The dataset label.
-
-        Returns
-        -------
-        torch.Tensor
-            The calculated combined loss.
-        """
-        loss = 0.0
-        weight_fac = 1.0
-        for loss_idx, (cur_loss, cur_weight, skip_cases) in enumerate(
-            zip(self.losses, self.weights, self.apply_loss_not_for)
-        ):
-            if (
-                loss_idx == 0
-                and not any(ds_lab in skip_cases for ds_lab in ds_label)
-                or ("None" in skip_cases)
-            ):
-                loss += weight_fac * cur_weight * cur_loss(data, target)
-            elif (
-                loss_idx == 1
-                and any(ds_lab not in skip_cases for ds_lab in ds_label)
-                or ("None" in skip_cases)
-            ):
-                loss += weight_fac * cur_weight * cur_loss(data, target)
-            else:
-                loss *= 1.0 / (
-                    1 - cur_weight + 1e-3
-                )  # This assumes that all weights add up to one!!
-                weight_fac *= 1.0 / (1 - cur_weight + 1e-3)
-        return loss
 
 
 class DeepSuperVisionLoss(_Loss):
@@ -218,7 +170,7 @@ class DeepSuperVisionLoss(_Loss):
         targets : list
             List of tensors of target labels.
         ds_labels : list
-            List of dataset labels.
+            List of dataset labels for each batch element.
 
         Returns
         -------
@@ -232,3 +184,200 @@ class DeepSuperVisionLoss(_Loss):
         ):
             loss += weight * self.loss_fn(data, target, ds_label)
         return loss
+
+
+class CombinedLoss(_Loss):
+    """
+    Combine multiple loss functions into a single one.
+
+    Parameters
+    ----------
+    losses : List[Callable]
+        A list of loss function instances.
+    weights : List[float]
+        List of weights corresponding to each loss function (must
+        be of same length as losses).
+    loss_inclusion_tokens : List[List[str]]
+        A list of lists containing tokens for each loss function.
+        Each sublist corresponds to a loss function and contains
+        tokens for which the loss should be included.
+        If the list contains "all", then the loss will be included
+        for all cases.
+
+    Notes
+    -----
+    IMPORTANT: Loss functions need to return a tensors containing the
+    loss for each batch element.
+
+    The loss_exclusion_tokens parameter is used to exclude certain
+    cases from the loss calculation. For example, if the loss_exclusion_tokens
+    parameter is [["ds1", "ds2"], ["ds1"]], then the first loss function
+    will be excluded for cases where the dataset label is "ds1" or "ds2",
+    and the second loss function will be excluded for cases where the
+    dataset label is "ds1".
+    """
+
+    def __init__(
+        self,
+        losses: list,
+        weights: list,
+        loss_inclusion_tokens: list,
+        **kwargs,
+    ) -> None:
+        super().__init__()
+        self.losses = losses
+        self.weights = weights
+        self.loss_inclusion_tokens = loss_inclusion_tokens
+
+    def forward(
+        self, data: torch.Tensor, target: torch.Tensor, ds_label: list
+    ) -> torch.Tensor:
+        """
+        Compute the combined loss.
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            Tensor of model outputs.
+        target : torch.Tensor
+            Tensor of target labels.
+        ds_label : List[str]
+            List of dataset labels for each batch element.
+
+        Returns
+        -------
+        torch.Tensor
+            The calculated combined loss.
+        """
+        loss = 0.0
+        for loss_idx, (cur_loss, cur_weight) in enumerate(
+            zip(self.losses, self.weights)
+        ):
+            cur_loss_val = cur_loss(data, target)
+
+            # Zero out losses for excluded cases
+            for batch_idx, ds_lab in enumerate(ds_label):
+
+                if (
+                    "all" in self.loss_inclusion_tokens[loss_idx]
+                    or ds_lab in self.loss_inclusion_tokens[loss_idx]
+                ):
+                    continue
+                cur_loss_val[batch_idx] = 0.0
+
+            # Aggregate loss
+            cur_loss_val = cur_loss_val.sum() / ((cur_loss_val != 0.0).sum() + 1e-3)
+            loss += cur_weight * cur_loss_val
+
+        # Normalize loss
+        loss = loss / sum(self.weights)
+        return loss
+
+
+class PrintLearningRate(Callback):
+    """
+    Callback to print the current learning rate at the start of each epoch.
+
+    Methods
+    -------
+    on_epoch_start(trainer, pl_module)
+        Prints the current learning rate at the start of each epoch.
+
+    Parameters
+    ----------
+    trainer : pl.Trainer
+        The trainer object that manages the training process.
+    pl_module : pl.LightningModule
+        The model being trained.
+
+    """
+
+    def on_epoch_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+        """
+        Prints the current learning rate at the start of each epoch.
+
+        Parameters
+        ----------
+        trainer : pl.Trainer
+            The trainer object that manages the training process.
+        pl_module : pl.LightningModule
+            The model being trained.
+        """
+        current_lr = trainer.optimizers[0].param_groups[0]["lr"]
+        print(f"Epoch {trainer.current_epoch}: Learning Rate = {current_lr}")
+
+
+class ToleranceCallback(Callback):
+    """
+    Callback to stop training.
+
+    It is activated if the monitored metric deviates
+    beyond a certain threshold from the baseline value obtained
+    after the first epoch.
+
+    Parameters
+    ----------
+    metric_name : str
+        The name of the metric to monitor.
+    threshold : float
+        The threshold value for deviation from the baseline.
+
+    Methods
+    -------
+    on_validation_epoch_end(trainer, pl_module)
+        Checks if the monitored metric deviates beyond the threshold
+        and stops training if it does.
+    """
+
+    def __init__(self, metric_name: str, threshold: float):
+        """
+        Initializes the ToleranceCallback with the metric to monitor.
+
+        Parameters
+        ----------
+        metric_name : str
+            The name of the metric to monitor.
+        threshold : float
+            The threshold value for deviation from the baseline.
+        """
+        super().__init__()
+        self.metric_name = metric_name
+        self.threshold = threshold
+        self.baseline_value: Optional[float] = (
+            None  # Baseline value will be set after the first epoch
+        )
+
+    def on_validation_epoch_end(
+        self, trainer: pl.Trainer, pl_module: pl.LightningModule
+    ):
+        """
+        Checks if the monitored metric deviates beyond the threshold.
+
+        Parameters
+        ----------
+        trainer : pl.Trainer
+            The trainer object that manages the training process.
+        pl_module : pl.LightningModule
+            The model being trained.
+        """
+        # Access the metric value from the validation metrics
+        metric_value = trainer.callback_metrics.get(self.metric_name)
+
+        # If the metric value is a tensor, convert it to a float
+        if isinstance(metric_value, torch.Tensor):
+            metric_value = metric_value.item()
+
+        # Set the baseline value after the first validation epoch
+        if metric_value is not None:
+            if self.baseline_value is None:
+                self.baseline_value = metric_value
+                print(f"Baseline {self.metric_name} set to {self.baseline_value}")
+                return []
+
+            # Check if the metric value deviates beyond the threshold
+            if metric_value - self.baseline_value > self.threshold:
+                print(
+                    f"Stopping training as {self.metric_name} "
+                    f"deviates too far from the baseline value."
+                )
+                trainer.should_stop = True

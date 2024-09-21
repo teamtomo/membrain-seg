@@ -40,20 +40,27 @@ def get_corrections_from_folder(folder_name, orig_pred_file):
     for filename in os.listdir(folder_name):
         if not (
             filename.startswith("Add")
+            or filename.startswith("add")
             or filename.startswith("Remove")
+            or filename.startswith("remove")
             or filename.startswith("Ignore")
+            or filename.startswith("ignore")
         ):
-            print("ATTENTION! Not processing", filename)
-            print("Is this intended?")
+            print(
+                "File does not fit into Add/Remove/Ignore naming! " "Not processing",
+                filename,
+            )
             continue
         readdata = sitk.GetArrayFromImage(
             sitk.ReadImage(os.path.join(folder_name, filename))
         )
-        if filename.startswith("Add"):
+        print("Adding file", filename)
+
+        if filename.startswith("Add") or filename.startswith("add"):
             add_patch += readdata
-        if filename.startswith("Remove"):
+        if filename.startswith("Remove") or filename.startswith("remove"):
             remove_patch += readdata
-        if filename.startswith("Ignore"):
+        if filename.startswith("Ignore") or filename.startswith("ignore"):
             ignore_patch += readdata
         correction_count += 1
 
@@ -105,8 +112,15 @@ def convert_single_nrrd_files(labels_dir, corrections_dir, out_dir):
     for label_file in os.listdir(labels_dir):
         if not os.path.isfile(os.path.join(labels_dir, label_file)):
             continue
+        print("")
         print("Finding correction files for", label_file)
-        token = os.path.splitext(label_file)[0]
+        # token = os.path.splitext(label_file)[0]
+        if label_file.endswith(".nii.gz"):
+            token = label_file[:-7]
+        elif label_file.endswith(".nrrd"):
+            token = label_file[:-5]
+        elif label_file.endswith(".mrc"):
+            token = label_file[:-4]
         found_flag = 0
         for filename in os.listdir(corrections_dir):
             if not os.path.isdir(os.path.join(corrections_dir, filename)):
@@ -116,9 +130,9 @@ def convert_single_nrrd_files(labels_dir, corrections_dir, out_dir):
                 merged_corrections = get_corrections_from_folder(
                     cur_patch_corrections_folder, os.path.join(labels_dir, label_file)
                 )
-                out_file = os.path.join(out_dir, label_file)
+                out_file = os.path.join(out_dir, token + ".nii.gz")
                 print("Storing corrections in", out_file)
                 write_nifti(out_file, merged_corrections)
                 found_flag = 1
-            if found_flag == 0:
-                print("No corrections folder found for patch", token)
+        if found_flag == 0:
+            print("No corrections folder found for patch", token)

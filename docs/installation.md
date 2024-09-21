@@ -3,14 +3,7 @@
 These installation instructions are very preliminary, and surely will not work on all systems.
 But if any problems come up, do not hesitate to contact us (lorenz.lamm@helmholtz-munich.de).
 
-## Step 1: Clone repository
-
-Make sure to have git installed, then run
-```shell
-git clone https://github.com/teamtomo/membrain-seg.git
-```
-
-## Step 2: Create a virtual environment
+## Step 1: Create a virtual environment
 Before running any scripts, you should create a virtual Python environment.
 In these instructions, we use Miniconda for managing your virtual environments,
 but any alternative like Conda, Mamba, virtualenv, venv, ... should be fine.
@@ -27,18 +20,18 @@ In order to use it, you need to activate the environment:
 conda activate <env_name>
 ```
 
-## Step 3: Install MemBrain-seg and its dependencies
-Move to the folder "membrain-seg" (from the cloned repository in Step 1) that contains the "src" folder.
-Here, run
 
+## Step 2: Install membrain-seg via PyPI
+
+**New:** MemBrain-seg is now pip-installable. <br>
+
+That means, you can install membrain-seg by typing
 ```shell
-cd membrain-seg
-pip install .
+pip install membrain-seg
 ```
-
 This will install MemBrain-seg and all dependencies required for segmenting your tomograms.
 
-## Step 4: Validate installation
+## Step 3: Validate installation
 As a first check whether the installation was successful, you can run
 ```shell
 membrain
@@ -50,10 +43,17 @@ This should display the different options you can choose from MemBrain, like "se
     <img width="50%" src="https://user-images.githubusercontent.com/34575029/250504233-d7e49aef-e783-45fb-b04e-8736b1af7d6e.png">
 </p>
 
-## Step 5: Download pre-trained segmentation model (optional)
-We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. You can find a pre-trained segmentation model for denoised tomograms [here](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing). 
+## Step 4: Download pre-trained segmentation model (optional)
+We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. However, our current best model is available for download [here](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing) and should also work on non-denoised data. Please let us know how it works for you.
 
-In case you don't have denoised tomograms available, you can also use [this model](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing). It performs much better on non-denoised data, and maintains a good performance on denoised tomograms.
+NOTE: Previous model files are not compatible with MONAI v1.3.0 or higher. So if you're using v1.3.0 or higher, consider downgrading to MONAI v1.2.0 or downloading this [adapted version](https://drive.google.com/file/d/1Tfg2Ju-cgSj_71_b1gVMnjqNYea7L1Hm/view?usp=sharing) of our most recent model file. 
+
+If the given model does not work properly, you may want to try one of our previous versions:
+
+Other (older) model versions:
+- [v9 -- best model until 10th Aug 2023](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing)
+- [v9b -- model for non-denoised data until 10th Aug 2023](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing)
+
 
 Once downloaded, you can use it in MemBrain-seg's [Segmentation](./Usage/Segmentation.md) functionality to segment your tomograms.
 
@@ -61,3 +61,16 @@ Once downloaded, you can use it in MemBrain-seg's [Segmentation](./Usage/Segment
 ```
 [1] T. -O. Buchholz, M. Jordan, G. Pigino and F. Jug, "Cryo-CARE: Content-Aware Image Restoration for Cryo-Transmission Electron Microscopy Data," 2019 IEEE 16th International Symposium on Biomedical Imaging (ISBI 2019), Venice, Italy, 2019, pp. 502-506, doi: 10.1109/ISBI.2019.8759519.
 ```
+
+
+# Troubleshooting
+Here is a collection of common issues and how to fix them:
+
+- `RuntimeError: The NVIDIA driver on your system is too old (found version 11070). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has 
+been compiled with your version of the CUDA driver.` 
+
+  The latest Pytorch versions require higher CUDA versions that may not be installed on your system yet. You can either install the new CUDA version or (maybe easier) downgrade Pytorch to a version that is compatible:
+
+  `pip uninstall torch`
+
+  `pip install torch==2.0.1`

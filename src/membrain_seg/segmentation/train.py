@@ -2,7 +2,6 @@ import os
 import warnings
 
 import pytorch_lightning as pl
-from pytorch_lightning import Callback
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
@@ -10,6 +9,10 @@ from membrain_seg.segmentation.dataloading.memseg_pl_datamodule import (
     MemBrainSegDataModule,
 )
 from membrain_seg.segmentation.networks.unet import SemanticSegmentationUnet
+from membrain_seg.segmentation.training.optim_utils import PrintLearningRate
+from membrain_seg.segmentation.training.training_param_summary import (
+    print_training_parameters,
+)
 
 os.environ["WANDB_MODE"] = "offline"
 
@@ -30,11 +33,12 @@ def train(
     use_BCE_dice: bool = True,
     use_surf_dice: bool = False,
     surf_dice_weight: float = 1.0,
-    missing_wedge_aug: bool = False,
-    fourier_amplitude_aug: bool = False,
     exclude_deepict_from_dice: bool = False,
     no_sdice_for_no_deepict: bool = False,
     cosine_annealing_interval: int = None,
+    surf_dice_tokens: list = None,
+    missing_wedge_aug: bool = False,
+    fourier_amplitude_aug: bool = False,
 ):
     """
     Train the model on the specified data.
@@ -80,11 +84,31 @@ def train(
     cosine_annealing_interval : int, optional
         If an integer is specified, cosine annealing with warm restarts is
         performed in the given interval times.
+    use_surf_dice : bool, optional
+        If True, enables Surface-Dice loss.
+    surf_dice_weight : float, optional
+        Weight for the Surface-Dice loss.
+    surf_dice_tokens : list, optional
+        List of tokens to use for the Surface-Dice loss.
 
     Returns
     -------
     None
     """
+    print_training_parameters(
+        data_dir=data_dir,
+        log_dir=log_dir,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        max_epochs=max_epochs,
+        aug_prob_to_one=aug_prob_to_one,
+        use_deep_supervision=use_deep_supervision,
+        project_name=project_name,
+        sub_name=sub_name,
+        use_surf_dice=use_surf_dice,
+        surf_dice_weight=surf_dice_weight,
+        surf_dice_tokens=surf_dice_tokens,
+    )
     # Set up the data module
     data_module = MemBrainSegDataModule(
         data_dir=data_dir,
@@ -105,6 +129,7 @@ def train(
         exclude_deepict_from_dice=exclude_deepict_from_dice,
         no_sdice_for_no_deepict=no_sdice_for_no_deepict,
         cosine_annealing_interval=cosine_annealing_interval,
+        surf_dice_tokens=surf_dice_tokens,
     )
 
     project_name = project_name
@@ -116,7 +141,7 @@ def train(
     csv_logger = pl_loggers.CSVLogger(log_dir)
 
     # Set up model checkpointing
-    checkpoint_callback_val_loss = ModelCheckpoint(
+    ModelCheckpoint(
         dirpath="checkpoints/",
         filename=checkpointing_name + "-{epoch:02d}-{val_loss:.2f}",
         monitor="val_loss",
@@ -135,18 +160,14 @@ def train(
 
     lr_monitor = LearningRateMonitor(logging_interval="epoch", log_momentum=True)
 
-    class PrintLearningRate(Callback):
-        def on_epoch_start(self, trainer, pl_module):
-            current_lr = trainer.optimizers[0].param_groups[0]["lr"]
-            print(f"Epoch {trainer.current_epoch}: Learning Rate = {current_lr}")
-
     print_lr_cb = PrintLearningRate()
+
     # Set up the trainer
     trainer = pl.Trainer(
         precision="16-mixed",
         logger=[csv_logger, wandb_logger],
         callbacks=[
-            checkpoint_callback_val_loss,
+            # checkpoint_callback_val_loss,
             checkpoint_callback_last,
             lr_monitor,
             print_lr_cb,

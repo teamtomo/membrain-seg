@@ -1,29 +1,35 @@
-from membrain_seg.tomo_preprocessing.matching_utils.filter_utils import rotational_kernel
 import numpy as np
-from scipy.ndimage import gaussian_filter1d
-import torch 
 import numpy.fft as fft
+import torch
 from monai.transforms import (
     Randomizable,
     Transform,
 )
+from scipy.ndimage import gaussian_filter1d
+
+from membrain_seg.tomo_preprocessing.matching_utils.filter_utils import (
+    rotational_kernel,
+)
 
 
 def wedge_mask(shape, angle):
+    """Function to generate a missing wedge mask."""
     # Create the 3D coordinate grid
-    x_coords, _, z_coords = np.meshgrid(np.arange(shape[0]), np.arange(shape[1]), np.arange(shape[2]), indexing='ij')
+    x_coords, _, z_coords = np.meshgrid(
+        np.arange(shape[0]), np.arange(shape[1]), np.arange(shape[2]), indexing="ij"
+    )
     x_center = np.mean(x_coords)
     z_center = np.mean(z_coords)
-    
+
     angle_radians = np.radians(angle)
     m = np.tan(angle_radians)  # slope
-    b = z_center # intercept
+    b = z_center  # intercept
 
     def above_wedge(x):
         return m * x + b
-    
-    x_left_side = x_coords[:int(x_coords.shape[0] / 2), :, :]
-    x_right_side = x_coords[int(x_coords.shape[0] / 2):, :, :]
+
+    x_left_side = x_coords[: int(x_coords.shape[0] / 2), :, :]
+    x_right_side = x_coords[int(x_coords.shape[0] / 2) :, :, :]
 
     x_right_above_wedge = above_wedge(x_right_side - x_center)
     x_left_above_wedge = above_wedge(x_center - x_left_side)
@@ -37,13 +43,18 @@ def wedge_mask(shape, angle):
 
     wedge_mask = above_wedge_mask + below_wedge_mask
     wedge_mask = wedge_mask > 0
-    wedge_mask[int(x_coords.shape[0] / 2), int(x_coords.shape[2] / 2), int(x_coords.shape[2] / 2)] = 1
+    wedge_mask[
+        int(x_coords.shape[0] / 2),
+        int(x_coords.shape[2] / 2),
+        int(x_coords.shape[2] / 2),
+    ] = 1
     return ~wedge_mask
 
 
 def get_line_plot(n_points, smooth_sigma, step_sigma, offset):
+    """Function to generate a line plot with a random walk and Gaussian smoothing."""
     # Generate an array of x values from 0 to n_points
-    x = np.linspace(0, n_points-1, n_points)
+    x = np.linspace(0, n_points - 1, n_points)
 
     # Generate an array of y values using a random walk
     y = np.cumsum(np.random.randn(n_points) * step_sigma)
@@ -54,6 +65,7 @@ def get_line_plot(n_points, smooth_sigma, step_sigma, offset):
 
 
 def normalize_and_fft_patch(patch):
+    """Normalizes a patch and returns its FFT."""
     patch -= patch.min()
     patch /= patch.max()
     t = fft.fftn(patch)
@@ -62,7 +74,8 @@ def normalize_and_fft_patch(patch):
 
 
 def fft_patch_to_real(fft_patch):
-    fft_patch  = fft.fftshift(fft_patch) # Added this. Do I need it? What happens?
+    """Function to convert an FFT patch to a real-space patch."""
+    fft_patch = fft.fftshift(fft_patch)  # Added this. Do I need it? What happens?
     t = fft.ifftn(fft_patch)
     t = np.real(t)
     # t = np.abs(t).astype("f4")
@@ -70,17 +83,25 @@ def fft_patch_to_real(fft_patch):
 
 
 class MissingWedgeMaskAndFourierAmplitudeMatchingCombined(Randomizable, Transform):
-    """
-    still empty
-    """
+    """still empty."""
 
-    def __init__(self, keys, amplitude_aug=True, missing_wedge_aug=True, smooth_sigma_range=(2., 4.), step_sigma_range=(0.1, 4.), offset_range=(2., 10.),
-            missing_angle_range=(55.,88.), missing_wedge_prob=0.5, amplitude_prob=0.5):
+    def __init__(
+        self,
+        keys,
+        amplitude_aug=True,
+        missing_wedge_aug=True,
+        smooth_sigma_range=(2.0, 4.0),
+        step_sigma_range=(0.1, 4.0),
+        offset_range=(2.0, 10.0),
+        missing_angle_range=(55.0, 88.0),
+        missing_wedge_prob=0.5,
+        amplitude_prob=0.5,
+    ):
         self.keys = keys
 
         self.amplitude_aug = amplitude_aug
         self.smooth_sigma_range = smooth_sigma_range
-        self.step_sigma_range=step_sigma_range
+        self.step_sigma_range = step_sigma_range
         self.offset_range = offset_range
 
         self.missing_wedge_aug = missing_wedge_aug
@@ -94,12 +115,16 @@ class MissingWedgeMaskAndFourierAmplitudeMatchingCombined(Randomizable, Transfor
         if isinstance(self.smooth_sigma_range, float):
             self.smooth_sigma = self.smooth_sigma_range
         elif isinstance(self.smooth_sigma_range, tuple):
-            self.smooth_sigma = np.random.uniform(self.smooth_sigma_range[0], self.smooth_sigma_range[1])
+            self.smooth_sigma = np.random.uniform(
+                self.smooth_sigma_range[0], self.smooth_sigma_range[1]
+            )
 
         if isinstance(self.step_sigma_range, float):
             self.step_sigma = self.step_sigma_range
         elif isinstance(self.step_sigma_range, tuple):
-            self.step_sigma = np.random.uniform(self.step_sigma_range[0], self.step_sigma_range[1])
+            self.step_sigma = np.random.uniform(
+                self.step_sigma_range[0], self.step_sigma_range[1]
+            )
 
         if isinstance(self.offset_range, float):
             self.offset = self.offset_range
@@ -109,11 +134,12 @@ class MissingWedgeMaskAndFourierAmplitudeMatchingCombined(Randomizable, Transfor
         if isinstance(self.missing_angle_range, float):
             self.missing_angle = self.missing_angle_range
         elif isinstance(self.smooth_sigma_range, tuple):
-            self.missing_angle = np.random.uniform(self.missing_angle_range[0], self.missing_angle_range[1])
-        
+            self.missing_angle = np.random.uniform(
+                self.missing_angle_range[0], self.missing_angle_range[1]
+            )
+
         self._do_mw_transform = self.R.random() < self.missing_wedge_prob
         self._do_amp_transform = self.R.random() < self.amplitude_prob
-        
 
     def __call__(self, data):
         """Apply median filter."""
@@ -125,13 +151,17 @@ class MissingWedgeMaskAndFourierAmplitudeMatchingCombined(Randomizable, Transfor
                 patch = data[key][c]
                 fft_patch = normalize_and_fft_patch(patch)
                 if self.amplitude_aug and self._do_amp_transform:
-                    _, fake_spectrum = get_line_plot(n_points=int(patch.shape[0] / 2), \
-                        smooth_sigma=self.smooth_sigma, step_sigma=self.step_sigma, offset=self.offset)
+                    _, fake_spectrum = get_line_plot(
+                        n_points=int(patch.shape[0] / 2),
+                        smooth_sigma=self.smooth_sigma,
+                        step_sigma=self.step_sigma,
+                        offset=self.offset,
+                    )
                     equal_kernel = rotational_kernel(fake_spectrum, patch.shape)
                     fft_patch *= equal_kernel
                 if self.missing_wedge_aug and self._do_mw_transform:
                     missing_wedge_mask = wedge_mask(patch.shape, self.missing_angle)
-                    fft_patch[~missing_wedge_mask] = 0.
+                    fft_patch[~missing_wedge_mask] = 0.0
                 real_patch = fft_patch_to_real(fft_patch)
                 real_patch -= real_patch.mean()
                 real_patch /= real_patch.std()

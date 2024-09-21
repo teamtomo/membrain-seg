@@ -1,4 +1,5 @@
 """membrane segmentation in 3D for cryo-ET."""
+
 from importlib.metadata import PackageNotFoundError, version
 
 try:

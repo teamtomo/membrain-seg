@@ -18,7 +18,7 @@ cli = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
     rich_markup_mode="rich",
-    pretty_exceptions_show_locals=False
+    pretty_exceptions_show_locals=False,
 )
 OPTION_PROMPT_KWARGS = {"prompt": True, "prompt_required": True}
 PKWARGS = OPTION_PROMPT_KWARGS
@@ -38,9 +38,8 @@ def callback():
 
     Example:
     -------
-    membrain predict --tomogram-path <path-to-your-tomo>
-        --ckpt-path <path-to-model-checkpoint>
-        --out-folder ./segmentations
+    membrain segment --tomogram-path <path-to-your-tomo>
+    --ckpt-path <path-to-your-model>
 
     -------
     """

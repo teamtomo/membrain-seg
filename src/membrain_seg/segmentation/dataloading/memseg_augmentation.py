@@ -15,6 +15,9 @@ from monai.transforms import (
     ToTensord,
 )
 
+from membrain_seg.segmentation.dataloading.fourier_augmentations import (
+    MissingWedgeMaskAndFourierAmplitudeMatchingCombined,
+)
 from membrain_seg.segmentation.dataloading.transforms import (
     AxesShuffle,
     BlankCuboidTransform,
@@ -29,8 +32,6 @@ from membrain_seg.segmentation.dataloading.transforms import (
     SharpeningTransformMONAI,
     SimulateLowResolutionTransform,
 )
-
-from membrain_seg.segmentation.dataloading.fourier_augmentations import MissingWedgeMaskAndFourierAmplitudeMatchingCombined
 
 ### Hard-coded area
 
@@ -116,8 +117,10 @@ def get_mirrored_img(img: torch.Tensor, mirror_idx: int) -> torch.Tensor:
 
 
 def get_training_transforms(
-    prob_to_one: bool = False, return_as_list: bool = False, missing_wedge_aug: bool = False,
-    fourier_amplitude_aug: bool = False
+    prob_to_one: bool = False,
+    return_as_list: bool = False,
+    missing_wedge_aug: bool = False,
+    fourier_amplitude_aug: bool = False,
 ) -> Union[List[Callable], Compose]:
     """
     Returns the data augmentation transforms for training phase.
@@ -137,6 +140,11 @@ def get_training_transforms(
     return_as_list : bool, optional
         If True, the sequence of transformations is returned as a list.
         If False, the sequence is returned as a Compose object. Default is False.
+    missing_wedge_aug : bool, optional
+        If True, the missing wedge augmentation is applied. Default is False.
+    fourier_amplitude_aug : bool, optional
+        If True, the Fourier amplitude augmentation is applied. Default is False.
+
 
     Returns
     -------
@@ -155,10 +163,11 @@ def get_training_transforms(
             spatial_axes=(0, 1),
         ),
         MissingWedgeMaskAndFourierAmplitudeMatchingCombined(
-            keys=["image"], amplitude_aug=fourier_amplitude_aug,
+            keys=["image"],
+            amplitude_aug=fourier_amplitude_aug,
             missing_wedge_aug=missing_wedge_aug,
             missing_wedge_prob=(0.75 if prob_to_one else 0.5),
-            amplitude_prob=(0.75 if prob_to_one else 0.5)
+            amplitude_prob=(0.75 if prob_to_one else 0.5),
         ),
         RandRotate90d(
             keys=("image", "label"),
@@ -172,7 +181,6 @@ def get_training_transforms(
             max_k=3,
             spatial_axes=(1, 2),
         ),
-
         RandRotated(
             keys=("image", "label"),
             range_x=data_aug_params["rotation_x"],
@@ -181,9 +189,7 @@ def get_training_transforms(
             prob=(1.0 if prob_to_one else 0.75),
             mode=("bilinear", "nearest"),
         ),
-
         AxesShuffle,
-
         RandZoomd(
             keys=("image", "label"),
             prob=(1.0 if prob_to_one else 0.3),
@@ -191,7 +197,7 @@ def get_training_transforms(
             max_zoom=1.43,
             mode=("trilinear", "nearest-exact"),
             padding_mode=("constant", "constant"),
-        ),  
+        ),
         OneOf(
             [
                 RandApplyTransform(
@@ -266,9 +272,11 @@ def get_training_transforms(
                     np.random.uniform(np.log(x[y] // 6), np.log(x[y]))
                 ),
                 loc=(-0.5, 1.5),
-                max_strength=lambda x, y: np.random.uniform(-5, -1)
-                if np.random.uniform() < 0.5
-                else np.random.uniform(1, 5),
+                max_strength=lambda x, y: (
+                    np.random.uniform(-5, -1)
+                    if np.random.uniform() < 0.5
+                    else np.random.uniform(1, 5)
+                ),
                 mean_centered=False,
             ),
             prob=(1.0 if prob_to_one else 0.3),
@@ -280,9 +288,11 @@ def get_training_transforms(
                     np.random.uniform(np.log(x[y] // 6), np.log(x[y]))
                 ),
                 loc=(-0.5, 1.5),
-                gamma=lambda: np.random.uniform(0.01, 0.8)
-                if np.random.uniform() < 0.5
-                else np.random.uniform(1.5, 4),
+                gamma=lambda: (
+                    np.random.uniform(0.01, 0.8)
+                    if np.random.uniform() < 0.5
+                    else np.random.uniform(1.5, 4)
+                ),
             ),
             prob=(1.0 if prob_to_one else 0.3),
         ),
