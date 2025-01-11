@@ -8,6 +8,7 @@
 # to the original licensing agreements. For details on the original license, refer to
 # the publication: https://www.sciencedirect.com/science/article/pii/S1047847714000495.
 # ---------------------------------------------------------------------------------
+import logging
 from typing import List, Tuple
 
 import numpy as np
@@ -18,8 +19,7 @@ def batch_mask_eigendecomposition_3d(
     filtered_hessian: List[torch.Tensor], batch_size: int, labels: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Perform batch eigendecomposition on a 3D Hessian matrix using a binary mask to
-    select voxels.
+    Perform batch eigendecomposition on a 3D Hessian matrix using a binary mask.
 
     This function processes only those voxels where the label is set to 1,
     computing the largest eigenvalue and its corresponding eigenvector for
@@ -54,7 +54,7 @@ def batch_mask_eigendecomposition_3d(
     # if no specified batch size is given
     if batch_size is None:
         batch_size = Nx * Ny * Nz
-    print("batch_size=", batch_size)
+        logging.info("batch_size=" + str(batch_size))
 
     # Identify coordinates where computation is needed
     active_voxel_coords = np.where(labels == 1)
@@ -77,7 +77,6 @@ def batch_mask_eigendecomposition_3d(
         dim=-1,
     ).view(-1, 3, 3)
     del hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ
-    print("Hessian component matrix shape:", hessian_components.shape)
 
     # Initialize output arrays
     first_eigenvalues = np.zeros((Nx, Ny, Nz), dtype=np.float32)
@@ -88,9 +87,6 @@ def batch_mask_eigendecomposition_3d(
     for i in range(0, num_active_voxels, batch_size):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        # print('i=', i)
-        # print(f"Allocated: {torch.cuda.memory_allocated(0)/1e9:.2f} GB")
-        # print(f"Cached:    {torch.cuda.memory_reserved(0)/1e9:.2f} GB")
 
         i_end = min(i + batch_size, num_active_voxels)
         batch_matrix = hessian_components[i:i_end, :, :]
@@ -108,7 +104,7 @@ def batch_mask_eigendecomposition_3d(
         # Store results back to CPU to save cuda memory
         first_eigenvalues[
             x_indices[i:i_end], y_indices[i:i_end], z_indices[i:i_end]
-        ] = batch_first_eigenvalues.cpu().numpy().real
+        ] = (batch_first_eigenvalues.cpu().numpy().real)
         first_eigenvectors[
             x_indices[i:i_end], y_indices[i:i_end], z_indices[i:i_end], :
         ] = (batch_first_eigenvectors.view(-1, 3).cpu().numpy()).real

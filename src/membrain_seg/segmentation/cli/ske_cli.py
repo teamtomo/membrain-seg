@@ -1,3 +1,4 @@
+import logging
 import os
 
 from typer import Option
@@ -7,18 +8,19 @@ from membrain_seg.segmentation.dataloading.data_utils import (
     store_tomogram,
 )
 
-
 from ..skeletonize import skeletonization as _skeletonization
 from .cli import cli
 
 
 @cli.command(name="skeletonize", no_args_is_help=True)
 def skeletonize(
-    label_path: str = Option(..., help="Specifies the path for skeletonization."),
-    out_folder: str = Option(
+    label_path: str = Option(  # noqa: B008
+        ..., help="Specifies the path for skeletonization."
+    ),
+    out_folder: str = Option(  # noqa: B008
         "./predictions", help="Directory to save the resulting skeletons."
     ),
-    batch_size: int = Option(
+    batch_size: int = Option(  # noqa: B008
         None,
         help="Optional batch size for processing the tomogram. If not specified, "
         "the entire volume is processed at once. If operating with limited GPU "
@@ -58,9 +60,9 @@ def skeletonize(
     segmentation = load_tomogram(label_path)
     ske = _skeletonization(segmentation=segmentation.data, batch_size=batch_size)
 
-    # Update the segmentation data with the skeletonized output while preserving the original header and voxel_size
+    # Update the segmentation data with the skeletonized output while preserving the
+    # original header and voxel_size
     segmentation.data = ske
-
 
     if not os.path.exists(out_folder):
         os.makedirs(out_folder)
@@ -69,6 +71,6 @@ def skeletonize(
         out_folder,
         os.path.splitext(os.path.basename(label_path))[0] + "_skel.mrc",
     )
-    
+
     store_tomogram(filename=out_file, tomogram=segmentation)
-    print("Skeleton saved to ", out_file)
+    logging.info("Skeleton saved to " + out_file)
