@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 import pytorch_lightning as pl
@@ -304,11 +305,13 @@ class PrintLearningRate(Callback):
             The model being trained.
         """
         current_lr = trainer.optimizers[0].param_groups[0]["lr"]
-        print(f"Epoch {trainer.current_epoch}: Learning Rate = {current_lr}")
+        logging.info(f"Epoch {trainer.current_epoch}: Learning Rate = {current_lr}")
 
 
 class ToleranceCallback(Callback):
     """
+    Tolerance.
+
     Callback to stop training if the monitored metric deviates
     beyond a certain threshold from the baseline value obtained
     after the first epoch.
@@ -329,6 +332,8 @@ class ToleranceCallback(Callback):
 
     def __init__(self, metric_name: str, threshold: float):
         """
+        TolleranceCallback constructor.
+
         Initializes the ToleranceCallback with the metric
         to monitor and the deviation threshold.
 
@@ -350,6 +355,8 @@ class ToleranceCallback(Callback):
         self, trainer: pl.Trainer, pl_module: pl.LightningModule
     ):
         """
+        Validation epoch end hook.
+
         Checks if the monitored metric deviates beyond the threshold
         and stops training if it does.
 
@@ -371,12 +378,14 @@ class ToleranceCallback(Callback):
         if metric_value is not None:
             if self.baseline_value is None:
                 self.baseline_value = metric_value
-                print(f"Baseline {self.metric_name} set to {self.baseline_value}")
+                logging.info(
+                    f"Baseline {self.metric_name} set to {self.baseline_value}"
+                )
                 return []
 
             # Check if the metric value deviates beyond the threshold
             if metric_value - self.baseline_value > self.threshold:
-                print(
+                logging.info(
                     f"Stopping training as {self.metric_name} "
                     f"deviates too far from the baseline value."
                 )

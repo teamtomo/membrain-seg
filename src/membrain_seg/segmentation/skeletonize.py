@@ -64,15 +64,12 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
     # Convert non-zero segmentation values to 1.0
     labels = (segmentation > 0) * 1.0
 
-    logging.info("Distance transform on original labels.")
     labels_dt = ndimage.distance_transform_edt(labels) * (-1)
 
     # Calculates partial derivative along 3 dimensions.
-    logging.info("Computing partial derivative.")
     gradX, gradY, gradZ = compute_gradients(labels_dt)
 
     # Calculates Hessian tensor
-    logging.info("Computing Hessian tensor.")
     hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ = compute_hessian(
         gradX, gradY, gradZ
     )
@@ -80,10 +77,8 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
     del gradX, gradY, gradZ
 
     # Apply Gaussian filter with the same sigma value for all dimensions
-    logging.info("Applying Gaussian filtering.")
     # Load hessian tensors on GPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
 
     filtered_hessian = [
         apply_gaussian_filter(
@@ -108,7 +103,6 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
     )
 
     # Non-maximum suppression
-    logging.info("Generation of skeleton based on non-maximum suppression algorithm.")
     first_eigenvalue = ndimage.gaussian_filter(first_eigenvalue, sigma=1)
     skeleton = nonmaxsup(
         first_eigenvalue,

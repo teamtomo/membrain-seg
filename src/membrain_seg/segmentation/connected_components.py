@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 from scipy import ndimage
 
@@ -31,17 +33,17 @@ def connected_components(binary_seg: np.ndarray, size_thres: int = None):
         the number of connected components found. All background voxels
         are zero.
     """
-    print("Computing connected components.")
+    logging.info("Computing connected components.")
     # Get 3D connected components
     structure = np.ones((3, 3, 3))
     labeled_array, num_features = ndimage.label(binary_seg, structure=structure)
 
     # remove small clusters
     if size_thres is not None and size_thres > 1:
-        print(
-            "Removing components smaller than",
-            size_thres,
-            "voxels. (This can take a while)",
+        logging.info(
+            "Removing components smaller than "
+            + str(size_thres)
+            + " voxels. (This can take a while)",
         )
         sizes = ndimage.sum(binary_seg, labeled_array, range(1, num_features + 1))
         too_small = np.nonzero(sizes < size_thres)[0] + 1  # features labeled from 1

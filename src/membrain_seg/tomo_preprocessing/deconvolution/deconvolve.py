@@ -1,3 +1,5 @@
+import logging
+
 from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     store_tomogram,
@@ -82,22 +84,22 @@ on that of the focustools package: https://github.com/C-CINA/focustools/
     # if df2 is None:
     #     df2 = df1
 
-    print(
-        "\nDeconvolving input tomogram:\n",
-        mrcin,
-        "\noutput will be written as:\n",
-        mrcout,
-        "\nusing:",
-        f"\npixel_size: {apix:.3f}",
-        f"\ndf: {df:.1f}",
-        f"\nkV: {kV:.1f}",
-        f"\nCs: {Cs:.1f}",
-        f"\nstrength: {strength:.3f}",
-        f"\nfalloff: {falloff:.3f}",
-        f"\nhp_fraction: {hp_frac:.3f}",
-        f"\nskip_lowpass: {skip_lowpass}\n",
+    logging.info(
+        "\nDeconvolving input tomogram:\n"
+        + mrcin
+        + "\noutput will be written as:\n"
+        + mrcout
+        + "\nusing:"
+        + f"\npixel_size: {apix:.3f}"
+        + f"\ndf: {df:.1f}"
+        + f"\nkV: {kV:.1f}"
+        + f"\nCs: {Cs:.1f}"
+        + f"\nstrength: {strength:.3f}"
+        + f"\nfalloff: {falloff:.3f}"
+        + f"\nhp_fraction: {hp_frac:.3f}"
+        + f"\nskip_lowpass: {skip_lowpass}\n",
     )
-    print("Deconvolution can take a few minutes, please wait...")
+    logging.info("Deconvolution can take a few minutes, please wait...")
 
     ssnr = AdhocSSNR(
         imsize=tomo.data.shape,
@@ -132,4 +134,4 @@ on that of the focustools package: https://github.com/C-CINA/focustools/
 
     store_tomogram(mrcout, deconvtomo, voxel_size=apix)
 
-    print("\nDone!")
+    logging.info("\nDone!")

@@ -1,3 +1,4 @@
+import logging
 import os
 
 import torch
@@ -117,7 +118,7 @@ def segment(
                 "Input pixel size is 0.0. Please specify the pixel size manually."
             )
         if in_pixel_size == 1.0:
-            print(
+            logging.warning(
                 "WARNING: Input pixel size is 1.0. Looks like a corrupt header.",
                 "Please specify the pixel size manually.",
             )
@@ -150,9 +151,9 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     if test_time_augmentation:
-        print(
-            "Performing 8-fold test-time augmentation.",
-            "I.e. the following bar will run 8 times.",
+        logging.info(
+            "Performing 8-fold test-time augmentation. "
+            + "I.e. the following bar will run 8 times.",
         )
     for m in range(8 if test_time_augmentation else 1):
         with torch.no_grad():

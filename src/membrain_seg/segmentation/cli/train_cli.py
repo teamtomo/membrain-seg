@@ -1,11 +1,13 @@
+import logging
 from typing import List, Optional
 
 from typer import Option
 from typing_extensions import Annotated
 
-from ..train import train as _train
 from .cli import OPTION_PROMPT_KWARGS as PKWARGS
 from .cli import cli
+
+logging.basicConfig(level=logging.INFO)
 
 
 @cli.command(name="train", no_args_is_help=True)
@@ -33,6 +35,22 @@ def train(
 
     The actual training logic resides in the function '_train'.
     """
+    from ..train import train as _train
+
+    print("Training the model")
+    print("")
+    print("")
+    print(
+        "This will take forever. If you are bored, why not learn about what's \
+            happening under the hood by reading the MemBrain v2 preprint?"
+    )
+    print(
+        "MemBrain v2: an end-to-end tool for the analysis of membranes in \
+            cryo-electron tomography"
+    )
+    print("https://www.biorxiv.org/content/10.1101/2024.01.05.574336v1")
+    print("")
+
     log_dir = "./logs"
     batch_size = 2
     num_workers = 1
@@ -165,6 +183,22 @@ def train_advanced(
 
     The actual training logic resides in the function '_train'.
     """
+    from ..train import train as _train
+
+    print("Training the model")
+    print("")
+    print("")
+    print(
+        "This will take forever. If you are bored, why not learn about what's \
+            happening under the hood by reading the MemBrain v2 preprint?"
+    )
+    print(
+        "MemBrain v2: an end-to-end tool for the analysis of membranes in \
+        cryo-electron tomography"
+    )
+    print("https://www.biorxiv.org/content/10.1101/2024.01.05.574336v1")
+    print("")
+
     _train(
         data_dir=data_dir,
         log_dir=log_dir,

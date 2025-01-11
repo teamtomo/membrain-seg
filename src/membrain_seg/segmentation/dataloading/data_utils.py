@@ -1,5 +1,7 @@
 import csv
+import logging
 import os
+import warnings
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Union
 
@@ -200,7 +202,7 @@ def store_segmented_tomograms(
         data=predictions_np_thres, header=mrc_header, voxel_size=voxel_size
     )
     store_tomogram(out_file_thres, out_tomo)
-    print("MemBrain has finished segmenting your tomogram.")
+    logging.info("MemBrain has finished segmenting your tomogram.")
     return out_file_thres
 
 
@@ -286,6 +288,16 @@ def load_tomogram(
         and voxel size.
 
     """
+    warnings.filterwarnings(
+        "ignore",
+        message="Map ID string not found - \
+                                not an MRC file, or file is corrupt",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="Unrecognised machine stamp: \
+                                0x00 0x00 0x00 0x00",
+    )
     with mrcfile.open(filename, permissive=True) as tomogram:
         data = tomogram.data.copy()
         data = np.transpose(data, (2, 1, 0))

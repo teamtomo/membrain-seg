@@ -1,11 +1,13 @@
+import logging
 from typing import List, Optional
 
 from typer import Option
 from typing_extensions import Annotated
 
-from ..finetune import fine_tune as _fine_tune
 from .cli import OPTION_PROMPT_KWARGS as PKWARGS
 from .cli import cli
+
+logging.basicConfig(level=logging.INFO)
 
 
 @cli.command(name="finetune", no_args_is_help=True)
@@ -25,6 +27,8 @@ def finetune(
     ),
 ):
     """
+    CLI for fine-tuning a pre-trained model.
+
     Initiates fine-tuning of a pre-trained model on new datasets
     and validation on original datasets.
 
@@ -51,6 +55,8 @@ def finetune(
     using the provided model checkpoint.
     The actual fine-tuning logic resides in the function '_fine_tune'.
     """
+    from ..finetune import fine_tune as _fine_tune
+
     finetune_learning_rate = 1e-5
     log_dir = "logs_finetune/"
     batch_size = 2
@@ -157,6 +163,8 @@ def finetune_advanced(
     ),
 ):
     """
+    CLI for fine-tuning a pre-trained model with advanced options.
+
     Initiates fine-tuning of a pre-trained model on new datasets
     and validation on original datasets with more advanced options.
 
@@ -217,6 +225,8 @@ def finetune_advanced(
     using the provided model checkpoint.
     The actual fine-tuning logic resides in the function '_fine_tune'.
     """
+    from ..finetune import fine_tune as _fine_tune
+
     _fine_tune(
         pretrained_checkpoint_path=pretrained_checkpoint_path,
         finetune_data_dir=finetune_data_dir,
