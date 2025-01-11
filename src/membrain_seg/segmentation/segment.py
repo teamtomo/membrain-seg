@@ -152,8 +152,8 @@ def segment(
     predictions = torch.zeros_like(new_data)
     if test_time_augmentation:
         logging.info(
-            "Performing 8-fold test-time augmentation.",
-            "I.e. the following bar will run 8 times.",
+            "Performing 8-fold test-time augmentation. "
+            + "I.e. the following bar will run 8 times.",
         )
     for m in range(8 if test_time_augmentation else 1):
         with torch.no_grad():

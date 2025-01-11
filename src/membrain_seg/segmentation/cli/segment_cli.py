@@ -4,15 +4,10 @@ from typing import List
 
 from typer import Option
 
-from membrain_seg.segmentation.dataloading.data_utils import (
-    load_tomogram,
-    store_tomogram,
-)
-
-from ..connected_components import connected_components as _connected_components
-from ..segment import segment as _segment
 from .cli import OPTION_PROMPT_KWARGS as PKWARGS
 from .cli import cli
+
+logging.basicConfig(level=logging.INFO)
 
 
 @cli.command(name="segment", no_args_is_help=True)
@@ -76,6 +71,20 @@ def segment(
     membrain segment --tomogram-path <path-to-your-tomo>
     --ckpt-path <path-to-your-model>
     """
+    from membrain_seg.segmentation.segment import segment as _segment
+
+    print("Segmenting tomogram", tomogram_path)
+    print("")
+    print(
+        "This can take several minutes. If you are bored, why not learn about \
+            what's happening under the hood by reading the MemBrain v2 preprint?"
+    )
+    print(
+        "MemBrain v2: an end-to-end tool for the analysis of membranes in \
+            cryo-electron tomography"
+    )
+    print("https://www.biorxiv.org/content/10.1101/2024.01.05.574336v1")
+    print("")
     _segment(
         tomogram_path=tomogram_path,
         ckpt_path=ckpt_path,
@@ -116,6 +125,14 @@ def components(
     membrain components --tomogram-path <path-to-your-tomo>
     --connected-component-thres 5
     """
+    from membrain_seg.segmentation.connected_components import (
+        connected_components as _connected_components,
+    )
+    from membrain_seg.segmentation.dataloading.data_utils import (
+        load_tomogram,
+        store_tomogram,
+    )
+
     segmentation = load_tomogram(segmentation_path)
     conn_comps = _connected_components(
         binary_seg=segmentation.data, size_thres=connected_component_thres
@@ -160,12 +177,17 @@ def thresholds(
     indicating the threshold values in the default 'predictions' folder or
     in the folder specified by the user.
     """
+    from membrain_seg.segmentation.dataloading.data_utils import (
+        load_tomogram,
+        store_tomogram,
+    )
+
     scoremap = load_tomogram(scoremap_path)
     score_data = scoremap.data
     if not isinstance(thresholds, list):
         thresholds = [thresholds]
     for threshold in thresholds:
-        logging.info("Thresholding at", threshold)
+        logging.info("Thresholding at" + str(threshold))
         thresholded_data = score_data > threshold
         segmentation = scoremap
         segmentation.data = thresholded_data
@@ -175,4 +197,4 @@ def thresholds(
             + f"_threshold_{threshold}.mrc",
         )
         store_tomogram(filename=out_file, tomogram=segmentation)
-        logging.info("Saved thresholded scoremap to", out_file)
+        logging.info("Saved thresholded scoremap to " + out_file)

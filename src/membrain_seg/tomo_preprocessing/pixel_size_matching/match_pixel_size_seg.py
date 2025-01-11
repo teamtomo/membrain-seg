@@ -57,9 +57,7 @@ def match_segmentation_pixel_size_to_tomo(
     output_shape = orig_tomo.data.shape
 
     logging.info(
-        "Matching input tomogram",
-        os.path.basename(file_path),
-        "from shape",
+        "Matching input tomogram" + os.path.basename(file_path) + "from shape",
         tomo.data.shape,
         "to shape",
         output_shape,

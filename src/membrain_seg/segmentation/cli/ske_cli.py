@@ -3,13 +3,9 @@ import os
 
 from typer import Option
 
-from membrain_seg.segmentation.dataloading.data_utils import (
-    load_tomogram,
-    store_tomogram,
-)
-
-from ..skeletonize import skeletonization as _skeletonization
 from .cli import cli
+
+logging.basicConfig(level=logging.INFO)
 
 
 @cli.command(name="skeletonize", no_args_is_help=True)
@@ -55,7 +51,25 @@ def skeletonize(
     membrain skeletonize --label-path <path> --out-folder <output-directory>
     --batch-size <batch-size>
     """
-    # Assuming _skeletonization function is already defined and can handle batch_size
+    from membrain_seg.segmentation.dataloading.data_utils import (
+        load_tomogram,
+        store_tomogram,
+    )
+
+    from ..skeletonize import skeletonization as _skeletonization
+
+    print("Skeletonizing the segmentation")
+    print("")
+    print(
+        "This can take several minutes. If you are bored, why not learn about what's \
+            happening under the hood by reading the MemBrain v2 preprint?"
+    )
+    print(
+        "MemBrain v2: an end-to-end tool for the analysis of membranes in \
+            cryo-electron tomography"
+    )
+    print("https://www.biorxiv.org/content/10.1101/2024.01.05.574336v1")
+    print("")
 
     segmentation = load_tomogram(label_path)
     ske = _skeletonization(segmentation=segmentation.data, batch_size=batch_size)

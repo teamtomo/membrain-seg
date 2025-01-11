@@ -85,19 +85,19 @@ on that of the focustools package: https://github.com/C-CINA/focustools/
     #     df2 = df1
 
     logging.info(
-        "\nDeconvolving input tomogram:\n",
-        mrcin,
-        "\noutput will be written as:\n",
-        mrcout,
-        "\nusing:",
-        f"\npixel_size: {apix:.3f}",
-        f"\ndf: {df:.1f}",
-        f"\nkV: {kV:.1f}",
-        f"\nCs: {Cs:.1f}",
-        f"\nstrength: {strength:.3f}",
-        f"\nfalloff: {falloff:.3f}",
-        f"\nhp_fraction: {hp_frac:.3f}",
-        f"\nskip_lowpass: {skip_lowpass}\n",
+        "\nDeconvolving input tomogram:\n"
+        + mrcin
+        + "\noutput will be written as:\n"
+        + mrcout
+        + "\nusing:"
+        + f"\npixel_size: {apix:.3f}"
+        + f"\ndf: {df:.1f}"
+        + f"\nkV: {kV:.1f}"
+        + f"\nCs: {Cs:.1f}"
+        + f"\nstrength: {strength:.3f}"
+        + f"\nfalloff: {falloff:.3f}"
+        + f"\nhp_fraction: {hp_frac:.3f}"
+        + f"\nskip_lowpass: {skip_lowpass}\n",
     )
     logging.info("Deconvolution can take a few minutes, please wait...")
 
