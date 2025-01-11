@@ -8,10 +8,11 @@
 # to the original licensing agreements. For details on the original license, refer to
 # the publication: https://www.sciencedirect.com/science/article/pii/S1047847714000495.
 # ---------------------------------------------------------------------------------
+import logging
+
 import numpy as np
 import scipy.ndimage as ndimage
 import torch
-
 
 from membrain_seg.segmentation.skeletonization.diff3d import (
     compute_gradients,
@@ -22,7 +23,6 @@ from membrain_seg.segmentation.skeletonization.eig3d import (
 )
 from membrain_seg.segmentation.skeletonization.nonmaxsup import nonmaxsup
 from membrain_seg.segmentation.training.surface_dice import apply_gaussian_filter
-
 
 
 def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
@@ -61,19 +61,18 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
         --batch-size 1000000
     This command runs the skeletonization process from the command line.
     """
-
     # Convert non-zero segmentation values to 1.0
     labels = (segmentation > 0) * 1.0
 
-    print("Distance transform on original labels.")
+    logging.info("Distance transform on original labels.")
     labels_dt = ndimage.distance_transform_edt(labels) * (-1)
 
     # Calculates partial derivative along 3 dimensions.
-    print("Computing partial derivative.")
+    logging.info("Computing partial derivative.")
     gradX, gradY, gradZ = compute_gradients(labels_dt)
 
     # Calculates Hessian tensor
-    print("Computing Hessian tensor.")
+    logging.info("Computing Hessian tensor.")
     hessianXX, hessianYY, hessianZZ, hessianXY, hessianXZ, hessianYZ = compute_hessian(
         gradX, gradY, gradZ
     )
@@ -81,10 +80,10 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
     del gradX, gradY, gradZ
 
     # Apply Gaussian filter with the same sigma value for all dimensions
-    print("Applying Gaussian filtering.")
+    logging.info("Applying Gaussian filtering.")
     # Load hessian tensors on GPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    logging.info(f"Using device: {device}")
 
     filtered_hessian = [
         apply_gaussian_filter(
@@ -98,8 +97,8 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
     ]
 
     # Solve Eigen problem
-    print("Computing Eigenvalues and Eigenvectors.")
-    print(
+    logging.info("Computing Eigenvalues and Eigenvectors.")
+    logging.info(
         "In case the execution of the program is terminated unexpectedly, "
         "attempt to rerun it using smaller segmentation patches"
         "or give a specified batch size as input, e.g. batch_size=1000000."
@@ -109,7 +108,7 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
     )
 
     # Non-maximum suppression
-    print("Genration of skeleton based on non-maximum suppression algorithm.")
+    logging.info("Generation of skeleton based on non-maximum suppression algorithm.")
     first_eigenvalue = ndimage.gaussian_filter(first_eigenvalue, sigma=1)
     skeleton = nonmaxsup(
         first_eigenvalue,
