@@ -291,12 +291,12 @@ def load_tomogram(
     warnings.filterwarnings(
         "ignore",
         message="Map ID string not found - \
-                                not an MRC file, or file is corrupt",
+not an MRC file, or file is corrupt",
     )
     warnings.filterwarnings(
         "ignore",
         message="Unrecognised machine stamp: \
-                                0x00 0x00 0x00 0x00",
+0x00 0x00 0x00 0x00",
     )
     with mrcfile.open(filename, permissive=True) as tomogram:
         data = tomogram.data.copy()
