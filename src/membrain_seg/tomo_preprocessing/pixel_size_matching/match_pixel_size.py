@@ -1,3 +1,4 @@
+import logging
 import os
 
 from membrain_seg.segmentation.dataloading.data_utils import (
@@ -61,7 +62,7 @@ def match_pixel_size(
     pixel_size_in = pixel_size_in or tomo.voxel_size.x
     smoothing = not disable_smooth
 
-    print(
+    logging.info(
         "Matching input tomogram",
         os.path.basename(file_path),
         "from pixel size",

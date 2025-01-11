@@ -1,3 +1,4 @@
+import logging
 import os
 
 from scipy import ndimage
@@ -55,7 +56,7 @@ def match_segmentation_pixel_size_to_tomo(
     orig_tomo = load_tomogram(match_tomo_path, normalize_data=False)
     output_shape = orig_tomo.data.shape
 
-    print(
+    logging.info(
         "Matching input tomogram",
         os.path.basename(file_path),
         "from shape",

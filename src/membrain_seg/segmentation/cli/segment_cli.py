@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import List
 
@@ -27,7 +28,7 @@ def segment(
     out_folder: str = Option(  # noqa: B008
         "./predictions", help="Path to the folder where segmentations should be stored."
     ),
-    rescale_patches: bool = Option( # noqa: B008
+    rescale_patches: bool = Option(  # noqa: B008
         False, help="Should patches be rescaled on-the-fly during inference?"
     ),
     in_pixel_size: float = Option(  # noqa: B008
@@ -36,7 +37,7 @@ def segment(
             (default: 10 Angstrom)",
     ),
     out_pixel_size: float = Option(  # noqa: B008
-        10.,
+        10.0,
         help="Pixel size of the output segmentation in Angstrom. \
             (default: 10 Angstrom; should normally stay at 10 Angstrom)",
     ),
@@ -164,7 +165,7 @@ def thresholds(
     if not isinstance(thresholds, list):
         thresholds = [thresholds]
     for threshold in thresholds:
-        print("Thresholding at", threshold)
+        logging.info("Thresholding at", threshold)
         thresholded_data = score_data > threshold
         segmentation = scoremap
         segmentation.data = thresholded_data
@@ -174,4 +175,4 @@ def thresholds(
             + f"_threshold_{threshold}.mrc",
         )
         store_tomogram(filename=out_file, tomogram=segmentation)
-        print("Saved thresholded scoremap to", out_file)
+        logging.info("Saved thresholded scoremap to", out_file)

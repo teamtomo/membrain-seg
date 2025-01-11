@@ -1,3 +1,5 @@
+import logging
+
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
@@ -105,13 +107,13 @@ def fine_tune(
         surf_dice_weight=surf_dice_weight,
         surf_dice_tokens=surf_dice_tokens,
     )
-    print("————————————————————————————————————————————————————————")
-    print(
+    logging.info("————————————————————————————————————————————————————————")
+    logging.info(
         f"Pretrained Checkpoint:\n"
         f"   '{pretrained_checkpoint_path}' \n"
         f"   Path to the pretrained model checkpoint."
     )
-    print("\n")
+    logging.info("\n")
 
     # Initialize the data module with fine-tuning datasets
     # New data for finetuning and old data for validation

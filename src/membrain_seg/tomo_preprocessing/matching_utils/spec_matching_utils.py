@@ -23,8 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------------
-
-
+import logging
 import warnings
 from typing import Optional, Union
 
@@ -184,7 +183,7 @@ def match_spectrum(
                 warnings.warn("Flat cutoff is higher than maximum frequency")
 
         else:
-            print("Were shrinking")
+            logging.info("Were shrinking")
             cutoff_v = np.ones_like(equal_v)
             try:
                 equal_v[cutoff:] = 0

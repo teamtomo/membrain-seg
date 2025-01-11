@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Dict
 
@@ -269,7 +270,7 @@ class CryoETMemSegDataset(Dataset):
         -----
         This function assumes the image and label files are in NIFTI format.
         """
-        print("Loading images into dataset.")
+        logging.info("Loading images into dataset.")
         self.imgs = []
         self.labels = []
         self.dataset_labels = []
