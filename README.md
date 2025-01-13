@@ -9,6 +9,12 @@
 
 Membrain-Seg<sup>1</sup> is a Python project developed by [teamtomo](https://github.com/teamtomo) for membrane segmentation in 3D for cryo-electron tomography (cryo-ET). This tool aims to provide researchers with an efficient and reliable method for segmenting membranes in 3D microscopic images. Membrain-Seg is currently under early development, so we may make breaking changes between releases.
 
+## Example notebook
+For a quick start, you can walk through our example notebook. You can easily run it on Google Colab by clicking on the badge below:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/CellArchLab/membrain_tutorial_scripts/blob/main/MemBrain_seg_tutorial.ipynb)
+
+
 ## Publication: 
 Membrain-seg's current functionalities are described on more detail in our [preprint](https://www.biorxiv.org/content/10.1101/2024.01.05.574336v1).
 
