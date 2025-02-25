@@ -259,9 +259,9 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.log("train_surf_dice", mean_train_surf_dice)
 
         self.training_step_outputs = []
-        logging.info("EPOCH Training loss", mean_train_loss.item())
-        logging.info("EPOCH Training acc", mean_train_acc.item())
-        logging.info("EPOCH Training surface dice", mean_train_surf_dice.item())
+        logging.info("EPOCH Training loss %s\n", mean_train_loss.item())
+        logging.info("EPOCH Training acc %s\n", mean_train_acc.item())
+        logging.info("EPOCH Training surface dice %s\n", mean_train_surf_dice.item())
         # Accuracy not the most informative metric, but a good sanity check
         return {"train_loss": mean_train_loss}
 
@@ -335,8 +335,8 @@ class SemanticSegmentationUnet(pl.LightningModule):
         self.log("val_accuracy", mean_val_acc)
 
         self.validation_step_outputs = []
-        logging.info("EPOCH Validation loss", mean_val_loss.item())
-        logging.info("EPOCH Validation dice", mean_val_dice)
-        logging.info("EPOCH Validation surface dice", mean_val_surf_dice.item())
-        logging.info("EPOCH Validation acc", mean_val_acc.item())
+        logging.info("EPOCH Validation loss %s\n", mean_val_loss.item())
+        logging.info("EPOCH Validation dice %s\n", mean_val_dice)
+        logging.info("EPOCH Validation surface dice %s\n", mean_val_surf_dice.item())
+        logging.info("EPOCH Validation acc %s\n", mean_val_acc.item())
         return {"val_loss": mean_val_loss, "val_metric": mean_val_dice}
