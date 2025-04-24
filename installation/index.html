@@ -657,12 +657,16 @@ This should display the different options you can choose from MemBrain, like "se
 </p>
 
 <h2 id="step-4-download-pre-trained-segmentation-model-optional">Step 4: Download pre-trained segmentation model (optional)</h2>
-<p>We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. However, our current best model is available for download <a href="https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing">here</a> and should also work on non-denoised data. Please let us know how it works for you.</p>
-<p>NOTE: Previous model files are not compatible with MONAI v1.3.0 or higher. So if you're using v1.3.0 or higher, consider downgrading to MONAI v1.2.0 or downloading this <a href="https://drive.google.com/file/d/1Tfg2Ju-cgSj_71_b1gVMnjqNYea7L1Hm/view?usp=sharing">adapted version</a> of our most recent model file. </p>
-<p>If the given model does not work properly, you may want to try one of our previous versions:</p>
+<p>We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. Our current best model is available for download <a href="https://drive.google.com/file/d/1hruug1GbO4V8C4bkE5DZJeybDyOxZ7PX/view?usp=sharing">here</a>. Please let us know how it works for you.
+If the given model does not work properly, you may want to try one of our experimental or previous versions:</p>
+<p>Experimental models:
+- <a href="https://drive.google.com/file/d/1kaN9ihB62OfHLFnyI2_t6Ya3kJm7Wun9/view?usp=sharing">v10_beta_FAaug -- model traing with Fourier amplitude augmentation for better generalization</a>
+- <a href="https://drive.google.com/file/d/1-i836rU-wfuClsqPRbKqJ-eW2jCUlwJm/view?usp=sharing">v10_beta_MWaug -- model traing with missing wedge augmentation for better missing wedge restoration</a></p>
 <p>Other (older) model versions:
+- <a href="https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing">v10_alpha -- standard model until 24th April 2025</a>
 - <a href="https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing">v9 -- best model until 10th Aug 2023</a>
 - <a href="https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing">v9b -- model for non-denoised data until 10th Aug 2023</a></p>
+<p>NOTE: Previous model files are not compatible with MONAI v1.3.0 or higher. So if you're using v1.3.0 or higher, consider downgrading to MONAI v1.2.0 or downloading this <a href="https://drive.google.com/file/d/1Tfg2Ju-cgSj_71_b1gVMnjqNYea7L1Hm/view?usp=sharing">adapted version</a> of our most recent model file. </p>
 <p>Once downloaded, you can use it in MemBrain-seg's <a href="../Usage/Segmentation/">Segmentation</a> functionality to segment your tomograms.</p>
 <div class="highlight"><pre><span></span><code>[1] T. -O. Buchholz, M. Jordan, G. Pigino and F. Jug, &quot;Cryo-CARE: Content-Aware Image Restoration for Cryo-Transmission Electron Microscopy Data,&quot; 2019 IEEE 16th International Symposium on Biomedical Imaging (ISBI 2019), Venice, Italy, 2019, pp. 502-506, doi: 10.1109/ISBI.2019.8759519.
 </code></pre></div>

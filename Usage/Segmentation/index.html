@@ -855,15 +855,18 @@ will display the segmentation command line interface and show available options.
 </p>
 
 <p>For example, for the prediction, you only need to type</p>
-<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;
+<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;<span class="w"> </span>--rescale-patches
 </code></pre></div>
 <p>Running this will segment your tomogram, and store the resulting .mrc file into the ./predictions 
-folder. If you would like to change this folder, you can simply specify another folder using
+folder. The <code>--rescale-patches</code> flag is important to rescale your tomogram to our training pixel size
+of 10 Angstrom. If your header information (pixel size) is corrupt, make sure to manually pass the
+correct pixel size with <code>--in-pixel-size</code>.</p>
+<p>If you would like to change the output folder, you can simply specify another folder using
 the <code>--out_folder</code> argument:</p>
-<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;<span class="w"> </span>--out-folder<span class="w"> </span>&lt;your-preferred-folder&gt;
+<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;<span class="w"> </span>--out-folder<span class="w"> </span>&lt;your-preferred-folder&gt;<span class="w"> </span>--rescale-patches
 </code></pre></div>
 <p>It is now also possible to assign different labels to different membrane instances via computing connected components and also remove small connected components:
-<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;<span class="w"> </span>--store-connected-components
+<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>segment<span class="w"> </span>--tomogram-path<span class="w"> </span>&lt;path-to-your-tomo&gt;<span class="w"> </span>--ckpt-path<span class="w"> </span>&lt;path-to-your-model&gt;<span class="w"> </span>--store-connected-components<span class="w"> </span>--rescale-patches
 </code></pre></div></p>
 <p>You can also compute the connected components <a href="#connected-components">after you have segmented your tomogram</a>.</p>
 <h3 id="more-membrain-segment-arguments">more membrain segment arguments:</h3>
