@@ -114,12 +114,12 @@ Instead, you can set the `--rescale-patches` flag and membrain-seg will do every
 
 Example: Your tomogram has pixel size 17.92:
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --rescale-patches --input-pixel-size 17.92
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --rescale-patches --in-pixel-size 17.92
 ```
 
 This will rescale small patches of your tomogram internally to 10A, feed them into our network, and scale back to the original pixel size. That means, your output segmentation mask corresponds directly to your input tomogram.
 
-Note: MemBrain-seg automatically reads teh pixel size also from your tomogram header. That means, you only need to pas the `--input-pixel-size` flag if your header is corrupt, e.g. after processing in Cryo-CARE.
+Note: MemBrain-seg automatically reads teh pixel size also from your tomogram header. That means, you only need to pass the `--in-pixel-size` flag if your header is corrupt, e.g. after processing in Cryo-CARE.
 
 ## Connected components
 If you have segmented your tomograms already, but would still like to extract the connected components of the segmentation, you don't need to re-do the segmentation, but can simply use the following command:
