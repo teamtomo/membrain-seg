@@ -3,14 +3,19 @@ MemBrain-seg is a practical tool for membrane segmentation in cryo-electron tomo
 The U-Net architecture and training parameters are largely inspired by nnUNet<sup>2</sup>.
 
 
-Our current best model is available for download [here](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing). Please let us know how it works for you.
-If the given model does not work properly, you may want to try one of our previous versions:
+Our current best model is available for download [here](https://drive.google.com/file/d/1hruug1GbO4V8C4bkE5DZJeybDyOxZ7PX/view?usp=sharing). Please let us know how it works for you.
+If the given model does not work properly, you may want to try one of our experimental or previous versions:
+
+Experimental models:
+- [v10_beta_FAaug -- model traing with Fourier amplitude augmentation for better generalization](https://drive.google.com/file/d/1kaN9ihB62OfHLFnyI2_t6Ya3kJm7Wun9/view?usp=sharing)
+- [v10_beta_MWaug -- model traing with missing wedge augmentation for better missing wedge restoration](https://drive.google.com/file/d/1-i836rU-wfuClsqPRbKqJ-eW2jCUlwJm/view?usp=sharing)
 
 Other (older) model versions:
+- [v10_alpha -- standard model until 24th April 2025](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing)
 - [v9 -- best model until 10th Aug 2023](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing)
 - [v9b -- model for non-denoised data until 10th Aug 2023](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing)
 
-If you wish, you can also train a new model using your own data, or combine it with our (soon to come!) publicly-available dataset. 
+If you wish, you can also train a new model using your own data, or combine it with our [publicly-available dataset](https://zenodo.org/records/15089686). 
 
 To enhance segmentation, MemBrain-seg includes preprocessing functions. These help to adjust your tomograms so they're similar to the data our network was trained on, making the process smoother and more efficient.
 

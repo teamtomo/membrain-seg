@@ -51,20 +51,24 @@ will display the segmentation command line interface and show available options.
 For example, for the prediction, you only need to type
 
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model>
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --rescale-patches
 ```
 
 Running this will segment your tomogram, and store the resulting .mrc file into the ./predictions 
-folder. If you would like to change this folder, you can simply specify another folder using
+folder. The `--rescale-patches` flag is important to rescale your tomogram to our training pixel size
+of 10 Angstrom. If your header information (pixel size) is corrupt, make sure to manually pass the
+correct pixel size with `--in-pixel-size`.
+
+If you would like to change the output folder, you can simply specify another folder using
 the `--out_folder` argument:
 
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --out-folder <your-preferred-folder>
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --out-folder <your-preferred-folder> --rescale-patches
 ```
 
 It is now also possible to assign different labels to different membrane instances via computing connected components and also remove small connected components:
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --store-connected-components
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --store-connected-components --rescale-patches
 ```
 
 You can also compute the connected components [after you have segmented your tomogram](#connected-components).
