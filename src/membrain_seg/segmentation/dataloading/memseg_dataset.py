@@ -169,7 +169,7 @@ class CryoETMemSegDataset(Dataset):
                     (pad_z // 2, pad_z // 2),
                 ),
                 mode="constant",
-                constant_values=2,
+                constant_values=0,
             )
             label = np.pad(
                 label,
@@ -180,7 +180,7 @@ class CryoETMemSegDataset(Dataset):
                     (pad_z // 2, pad_z // 2),
                 ),
                 mode="constant",
-                constant_values=0,
+                constant_values=2,
             )
             # make sure there was no rounding issue
             if (
