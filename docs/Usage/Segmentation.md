@@ -23,10 +23,11 @@ It may make sense to use a preprocessed tomogram.
 2. A **pre-trained MemBrain segmentation model**
 
 
-We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. However, our current best model is available for download [here](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing) and should also work on non-denoised data. Please let us know how it works for you.
+We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. However, our current best model is available for download [here](https://drive.google.com/file/d/1hruug1GbO4V8C4bkE5DZJeybDyOxZ7PX/view?usp=sharing) and should also work on non-denoised data. Please let us know how it works for you.
 If the given model does not work properly, you may want to try one of our previous versions:
 
 Other (older) model versions:
+- [v10_alpha -- standard model until 24th April 2025](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing)
 - [v9 -- best model until 10th Aug 2023](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing)
 - [v9b -- model for non-denoised data until 10th Aug 2023](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing)
 
