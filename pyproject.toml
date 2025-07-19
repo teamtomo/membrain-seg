@@ -28,7 +28,7 @@ dependencies = [
     "imageio",
     "mrcfile",
     "monai",
-    "numpy<2.0.0",
+    "numpy",
     "pandas",
     "pytorch-lightning",
     "scikit-image",
