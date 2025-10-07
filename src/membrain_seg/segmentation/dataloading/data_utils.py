@@ -206,6 +206,63 @@ def store_segmented_tomograms(
     return out_file_thres
 
 
+def store_uncertainty_map_as_mrc(
+        uncertainty_map: Tensor,
+        out_folder: str,
+        orig_data_path: str,
+        ckpt_token: str,
+        mrc_header: np.recarray = None,
+        voxel_size: float = None,
+    ) -> str:
+        """
+        Helper function for storing uncertainty maps.
+
+        Directly saves the given uncertainty map tensor to an .mrc file
+        in the same folder as other outputs, with suffix "_uncertainty.mrc".
+
+        Parameters
+        ----------
+        uncertainty_map : torch.Tensor
+            The voxel-wise uncertainty map (e.g., variance across TTA predictions).
+        out_folder : str
+            Directory path to store the output file.
+        orig_data_path : str
+            Path to the original tomogram (used for naming).
+        ckpt_token : str
+            Token of the model checkpoint (used for naming).
+        mrc_header : np.recarray, optional
+            Header information to be stored in the output file.
+        voxel_size : float, optional
+            If given, will be stored in the header of the output .mrc.
+
+        Returns
+        -------
+        out_file : str
+            Path to the saved uncertainty map file.
+        """
+        # Create out directory if it doesn't exist yet
+        make_directory_if_not_exists(out_folder)
+
+        # Convert to numpy
+        unc_np = uncertainty_map.squeeze().cpu().numpy()
+
+        # Build filename
+        out_file = os.path.join(
+            out_folder,
+            os.path.splitext(os.path.basename(orig_data_path))[0]
+            + "_"
+            + ckpt_token
+            + "_uncertainty.mrc",
+        )
+
+        # Save using Tomogram wrapper
+        out_tomo = Tomogram(data=unc_np, header=mrc_header, voxel_size=voxel_size)
+        store_tomogram(out_file, out_tomo)
+
+        logging.info(f"Uncertainty map saved to {out_file}")
+        return out_file
+
+
 def read_nifti(nifti_file: str) -> np.ndarray:
     """
     Read nifti file.

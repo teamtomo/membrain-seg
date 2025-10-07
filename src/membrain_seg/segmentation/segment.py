@@ -14,6 +14,7 @@ from membrain_seg.tomo_preprocessing.matching_utils.px_matching_utils import (
 from .dataloading.data_utils import (
     load_data_for_inference,
     store_segmented_tomograms,
+    store_uncertainty_map_as_mrc,
 )
 from .dataloading.memseg_augmentation import get_mirrored_img, get_prediction_transforms
 
@@ -30,6 +31,7 @@ def segment(
     store_connected_components=False,
     connected_component_thres=None,
     test_time_augmentation=True,
+    store_uncertainty_map=True,
     segmentation_threshold=0.0,
 ):
     """
@@ -71,6 +73,9 @@ def segment(
     test_time_augmentation: bool, optional
         If True, test-time augmentation is performed, i.e. data is rotated
         into eight different orientations and predictions are averaged.
+    store_uncertainty_map: bool, optional
+        If True, store an uncertainty map based on the voxel-wise variance
+        across the TTA predictions. Requires test_time_augmentation=True.
     segmentation_threshold: float, optional
         Threshold for the membrane segmentation. Only voxels with a membrane
         score higher than this threshold will be segmented. (default: 0.0)
@@ -150,6 +155,8 @@ def segment(
 
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
+    if store_uncertainty_map:
+        all_tta_predictions = torch.zeros((8,) + predictions.shape)
     if test_time_augmentation:
         logging.info(
             "Performing 8-fold test-time augmentation. "
@@ -166,8 +173,26 @@ def segment(
                     mirrored_pred = [mirrored_pred]
                 correct_pred = get_mirrored_img(mirrored_pred[0], m)
                 predictions += correct_pred.detach().cpu()
+                # After finishing prediction for this TTA variant, 
+                # store its probability map if uncertainty maps are enabled
+                if store_uncertainty_map:
+                    all_tta_predictions[m] = correct_pred.detach().cpu()
     if test_time_augmentation:
         predictions /= 8.0
+        if store_uncertainty_map:
+            # Compute voxel-wise variance across TTA predictions
+            # all_tta_predictions: shape (8, D, H, W)
+            # use sigmoid on each prediction before calculating variance
+            all_tta_predictions = torch.sigmoid(all_tta_predictions)
+            uncertainty_map = torch.var(all_tta_predictions, dim=0)
+            store_uncertainty_map_as_mrc(
+                uncertainty_map,
+                out_folder=out_folder,
+                orig_data_path=new_data_path,
+                ckpt_token=ckpt_token,
+                mrc_header=mrc_header,
+                voxel_size=voxel_size,
+            )
 
     # Extract segmentations and store them in an output file.
     segmentation_file = store_segmented_tomograms(

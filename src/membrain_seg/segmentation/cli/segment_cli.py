@@ -52,6 +52,11 @@ def segment(
         help="Use 8-fold test time augmentation (TTA)? TTA improves segmentation \
         quality slightly, but also increases runtime.",
     ),
+    store_uncertainty_map: bool = Option(
+        True,
+        help="If True, store an uncertainty map based on the voxel-wise variance "
+            "across the TTA predictions. Requires --test-time-augmentation=True.",
+    ),
     segmentation_threshold: float = Option(  # noqa: B008
         0.0,
         help="Threshold for the membrane segmentation. Only voxels with a \
@@ -97,6 +102,7 @@ def segment(
         connected_component_thres=connected_component_thres,
         sw_roi_size=sliding_window_size,
         test_time_augmentation=test_time_augmentation,
+        store_uncertainty_map=store_uncertainty_map,
         segmentation_threshold=segmentation_threshold,
     )
 
