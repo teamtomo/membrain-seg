@@ -183,22 +183,8 @@ def segment(
                     all_tta_predictions[m] = correct_pred.detach().cpu()
     if test_time_augmentation:
         predictions /= 8.0
-        if store_uncertainty_map:
-            # Compute voxel-wise variance across TTA predictions
-            # all_tta_predictions: shape (8, D, H, W)
-            # use sigmoid on each prediction before calculating variance
-            all_tta_predictions = torch.sigmoid(all_tta_predictions)
-            uncertainty_map = torch.var(all_tta_predictions, dim=0)
-            store_segmented_tomograms(
-                uncertainty_map,
-                out_folder=out_folder,
-                orig_data_path=new_data_path,
-                ckpt_token=ckpt_token,
-                mrc_header=mrc_header,
-                voxel_size=voxel_size,
-                store_uncertainty_map=True,
-
-            )
+        all_tta_predictions = torch.sigmoid(all_tta_predictions)
+        uncertainty_map = torch.var(all_tta_predictions, dim=0)
 
     # Extract segmentations and store them in an output file.
     segmentation_file = store_segmented_tomograms(
@@ -212,5 +198,7 @@ def segment(
         mrc_header=mrc_header,
         voxel_size=voxel_size,
         segmentation_threshold=segmentation_threshold,
+        store_uncertainty_map=store_uncertainty_map,
+        uncertainty_map=uncertainty_map if store_uncertainty_map else None,
     )
     return segmentation_file

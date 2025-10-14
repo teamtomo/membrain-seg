@@ -6,4 +6,3 @@ from .fine_tune_cli import finetune  # noqa: F401
 from .segment_cli import segment  # noqa: F401
 from .ske_cli import skeletonize  # noqa: F401
 from .train_cli import data_dir_help, train  # noqa: F401
-from .uncertainty_map_cli import process_uncertainty_map_cli  # noqa: F401
