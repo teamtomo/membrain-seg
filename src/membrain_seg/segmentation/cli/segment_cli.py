@@ -53,7 +53,7 @@ def segment(
         quality slightly, but also increases runtime.",
     ),
     store_uncertainty_map: bool = Option(
-        True,
+        False,
         help="If True, store an uncertainty map based on the voxel-wise variance "
             "across the TTA predictions. Requires --test-time-augmentation=True.",
     ),

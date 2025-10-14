@@ -14,7 +14,6 @@ from membrain_seg.tomo_preprocessing.matching_utils.px_matching_utils import (
 from .dataloading.data_utils import (
     load_data_for_inference,
     store_segmented_tomograms,
-    store_uncertainty_map_as_mrc,
 )
 from .dataloading.memseg_augmentation import get_mirrored_img, get_prediction_transforms
 
@@ -31,7 +30,7 @@ def segment(
     store_connected_components=False,
     connected_component_thres=None,
     test_time_augmentation=True,
-    store_uncertainty_map=True,
+    store_uncertainty_map=False,
     segmentation_threshold=0.0,
 ):
     """
@@ -156,6 +155,11 @@ def segment(
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     if store_uncertainty_map:
+        # make an assert statement to make sure that test_time_augmentation=True
+        assert test_time_augmentation, (
+            "To store uncertainty maps, test_time_augmentation must be True."
+            "Otherwise, variance cannot be computed."
+        )
         all_tta_predictions = torch.zeros((8,) + predictions.shape)
     if test_time_augmentation:
         logging.info(
@@ -185,13 +189,15 @@ def segment(
             # use sigmoid on each prediction before calculating variance
             all_tta_predictions = torch.sigmoid(all_tta_predictions)
             uncertainty_map = torch.var(all_tta_predictions, dim=0)
-            store_uncertainty_map_as_mrc(
+            store_segmented_tomograms(
                 uncertainty_map,
                 out_folder=out_folder,
                 orig_data_path=new_data_path,
                 ckpt_token=ckpt_token,
                 mrc_header=mrc_header,
                 voxel_size=voxel_size,
+                store_uncertainty_map=True,
+
             )
 
     # Extract segmentations and store them in an output file.
