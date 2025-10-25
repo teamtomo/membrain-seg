@@ -881,6 +881,7 @@ the <code>--out_folder</code> argument:</p>
 <p><strong>--store-connected-components / no-store-connected-components</strong>: Should connected components of the segmentation be computed? [default: no-store-connected-components]  </p>
 <p><strong>--connected-component-thres</strong>: Threshold for connected components. Components smaller than this will be removed from the segmentation. [default: None]</p>
 <p><strong>--test-time-augmentation / --no-test-time-augmentation</strong>: Should 8-fold test time augmentation be used? If activated (default), segmentations tendo be slightly better, but runtime is increased.</p>
+<p><strong>--store-uncertainty-map / --no-store-uncertainty-map</strong>: Should uncertainty map be output in addition to segmentations? [default: no-store-uncertainty-map]</p>
 <p><strong>--segmentation-threshold</strong>: Set a custom threshold for thresholding your membrane scoremap to increase / decrease segmented membranes (default: 0.0).</p>
 <p><strong>--sliding-window-size</strong> INTEGER Sliding window size used for inference. Smaller values than 160 consume less GPU, but also lead to worse segmentation results! [default: 160] </p>
 <p><strong>--help</strong> Show this message and exit.     </p>
