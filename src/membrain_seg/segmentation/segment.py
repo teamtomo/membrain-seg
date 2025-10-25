@@ -152,6 +152,8 @@ def segment(
         device=torch.device("cpu"),
     )
 
+    variance_map = None
+
     # Perform test time augmentation (8-fold mirroring)
     predictions = torch.zeros_like(new_data)
     if store_uncertainty_map:
@@ -183,8 +185,9 @@ def segment(
                     all_tta_predictions[m] = correct_pred.detach().cpu()
     if test_time_augmentation:
         predictions /= 8.0
-        all_tta_predictions = torch.sigmoid(all_tta_predictions)
-        uncertainty_map = torch.var(all_tta_predictions, dim=0)
+        if store_uncertainty_map:
+            all_tta_predictions = torch.sigmoid(all_tta_predictions)
+            variance_map = torch.var(all_tta_predictions, dim=0)
 
     # Extract segmentations and store them in an output file.
     segmentation_file = store_segmented_tomograms(
@@ -199,6 +202,6 @@ def segment(
         voxel_size=voxel_size,
         segmentation_threshold=segmentation_threshold,
         store_uncertainty_map=store_uncertainty_map,
-        uncertainty_map=uncertainty_map if store_uncertainty_map else None,
+        variance_map=variance_map,
     )
     return segmentation_file

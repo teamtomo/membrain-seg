@@ -96,6 +96,8 @@ You can also compute the connected components [after you have segmented your tom
 
 **--test-time-augmentation / --no-test-time-augmentation**: Should 8-fold test time augmentation be used? If activated (default), segmentations tendo be slightly better, but runtime is increased.
 
+**--store-uncertainty-map / --no-store-uncertainty-map**: Should uncertainty map be output in addition to segmentations? [default: no-store-uncertainty-map]
+
 **--segmentation-threshold**: Set a custom threshold for thresholding your membrane scoremap to increase / decrease segmented membranes (default: 0.0).
 
 **--sliding-window-size** INTEGER Sliding window size used for inference. Smaller values than 160 consume less GPU, but also lead to worse segmentation results! [default: 160] 
