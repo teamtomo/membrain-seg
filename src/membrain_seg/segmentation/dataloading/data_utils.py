@@ -136,7 +136,7 @@ def store_segmented_tomograms(
     voxel_size: float = None,
     segmentation_threshold: float = 0.0,
     store_uncertainty_map: bool = False,
-    uncertainty_map: Tensor = None,
+    variance_map: Tensor = None,
 ) -> None:
     """
     Helper function for storing output segmentations.
@@ -220,50 +220,71 @@ def store_segmented_tomograms(
     logging.info("MemBrain has finished segmenting your tomogram.")
 
     if store_uncertainty_map:
-        assert uncertainty_map is not None, \
-            "uncertainty_map must be provided when store_uncertainty_map=True"
-        
-        # Convert and save original uncertainty map
-        uncertainty_map_np = uncertainty_map.squeeze().cpu().numpy()
-        del uncertainty_map  # Free up memory
-
-        # Build filename
-        original_uncertainty_map_path = os.path.join(
-            out_folder,
-            os.path.splitext(os.path.basename(orig_data_path))[0]
-            + "_"
-            + ckpt_token
-            + "_uncertainty_map_original.mrc",
+        _store_uncertainty_map(
+            out_folder=out_folder,
+            orig_data_path=orig_data_path,
+            ckpt_token=ckpt_token,
+            predictions_np_thres=predictions_np_thres,
+            variance_map=variance_map,
+            mrc_header=mrc_header,
+            voxel_size=voxel_size,
         )
-
-        # Save using Tomogram wrapper
-        uncertainty_map_tomo = Tomogram(data=uncertainty_map_np, header=mrc_header, voxel_size=voxel_size)
-        store_tomogram(original_uncertainty_map_path, uncertainty_map_tomo)
-
-        logging.info(f"The original uncertainty map saved to {original_uncertainty_map_path}")
-
-        # Process uncertainty map
-        fg_mask = predictions_np_thres > 0.5
-        del predictions_np_thres  # Free up memory
-        eroded_mask = binary_erosion(fg_mask, iterations=1)
-        _, nearest = distance_transform_edt(
-            ~eroded_mask, return_distances=True, return_indices=True
-        )
-        del eroded_mask  # Free up memory
-        nn_uncertainty_map = uncertainty_map_np[tuple(nearest)]
-        combined_uncertainty_map = uncertainty_map_np.copy()
-        combined_uncertainty_map[fg_mask] = nn_uncertainty_map[fg_mask]
-
-        # Median filter (smooth XY plane only)
-        smoothed_uncertainty_map = median_filter(combined_uncertainty_map, size=(1, 3, 3))
-        smoothed_uncertainty_map_tomo = Tomogram(data=smoothed_uncertainty_map, header=mrc_header, voxel_size=voxel_size)
-
-        # Save processed uncertainty map
-        processed_uncertainty_map_path = original_uncertainty_map_path.replace("_original.mrc", "_processed.mrc")
-        store_tomogram(processed_uncertainty_map_path, smoothed_uncertainty_map_tomo)
-
-        logging.info(f"The processed uncertainty map saved to {processed_uncertainty_map_path}")
     return out_file_thres
+
+def _uncertainty_from_variance_map(
+        variance_map: Tensor,
+        predictions_np_thres: np.ndarray,
+    ) -> np.ndarray:
+
+    variance_map = variance_map.squeeze().cpu().numpy()
+    # Process uncertainty map
+    fg_mask = predictions_np_thres > 0.5
+    del predictions_np_thres  # Free up memory
+    eroded_mask = binary_erosion(fg_mask, iterations=1)
+    _, nearest = distance_transform_edt(
+        ~eroded_mask, return_distances=True, return_indices=True
+    )
+
+    nn_variance_map = variance_map[tuple(nearest)]
+    combined_uncertainty_map = variance_map.copy()
+    combined_uncertainty_map[fg_mask] = nn_variance_map[fg_mask]
+
+    # Median filter (smooth XY plane only)
+    smoothed_uncertainty_map = median_filter(combined_uncertainty_map, size=(1, 5, 5))
+
+    return smoothed_uncertainty_map
+
+def _store_uncertainty_map(
+    out_folder: str,
+    orig_data_path: str,
+    ckpt_token: str,
+    predictions_np_thres: np.ndarray,
+    variance_map: Tensor,
+    mrc_header: np.recarray,
+    voxel_size: float,
+):
+    assert variance_map is not None, \
+        "variance_map must be provided when store_uncertainty_map=True"
+    
+    smoothed_uncertainty_map = _uncertainty_from_variance_map(
+        variance_map,
+        predictions_np_thres,
+    )
+    smoothed_uncertainty_map_tomo = Tomogram(data=smoothed_uncertainty_map, header=mrc_header, voxel_size=voxel_size)
+
+    # Build filename
+    uncertainty_map_path = os.path.join(
+        out_folder,
+        os.path.splitext(os.path.basename(orig_data_path))[0]
+        + "_"
+        + ckpt_token
+        + "_uncertainty_map.mrc",
+    )
+
+    # Save processed uncertainty map
+    store_tomogram(uncertainty_map_path, smoothed_uncertainty_map_tomo)
+
+    logging.info(f"The processed uncertainty map saved to {uncertainty_map_path}")
 
 
 def read_nifti(nifti_file: str) -> np.ndarray:
