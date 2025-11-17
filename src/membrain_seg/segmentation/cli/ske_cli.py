@@ -27,6 +27,11 @@ def skeletonize(
         "the entire volume is processed at once. If operating with limited GPU "
         "resources, a batch size of 1,000,000 is recommended.",
     ),
+    device: str = Option(  # noqa: B008
+        None,
+        help="Device to use for processing. If not specified, the default device "
+        "will be used. Options are 'cpu' or 'cuda'.",
+    ),
 ):
     """
     Perform skeletonization on labeled tomograms using nonmax-suppression technique.

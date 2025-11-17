@@ -26,7 +26,7 @@ from membrain_seg.segmentation.skeletonization.nonmaxsup import nonmaxsup
 from membrain_seg.segmentation.training.surface_dice import apply_gaussian_filter
 
 
-def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
+def skeletonization(segmentation: np.ndarray, batch_size: int, device: str=None) -> np.ndarray:
     """
     Perform skeletonization on a tomogram segmentation.
 
@@ -79,7 +79,11 @@ def skeletonization(segmentation: np.ndarray, batch_size: int) -> np.ndarray:
 
     # Apply Gaussian filter with the same sigma value for all dimensions
     # Load hessian tensors on GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        assert device in ["cuda", "cpu"], "Device must be either 'cuda' or 'cpu'."
+        device = torch.device(device)
 
     filtered_hessian = [
         apply_gaussian_filter(

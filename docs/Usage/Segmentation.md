@@ -23,10 +23,11 @@ It may make sense to use a preprocessed tomogram.
 2. A **pre-trained MemBrain segmentation model**
 
 
-We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. However, our current best model is available for download [here](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing) and should also work on non-denoised data. Please let us know how it works for you.
+We recommend to use denoised (ideally Cryo-CARE<sup>1</sup>) tomograms for segmentation. However, our current best model is available for download [here](https://drive.google.com/file/d/1hruug1GbO4V8C4bkE5DZJeybDyOxZ7PX/view?usp=sharing) and should also work on non-denoised data. Please let us know how it works for you.
 If the given model does not work properly, you may want to try one of our previous versions:
 
 Other (older) model versions:
+- [v10_alpha -- standard model until 24th April 2025](https://drive.google.com/file/d/1tSQIz_UCsQZNfyHg0RxD-4meFgolszo8/view?usp=sharing)
 - [v9 -- best model until 10th Aug 2023](https://drive.google.com/file/d/15ZL5Ao7EnPwMHa8yq5CIkanuNyENrDeK/view?usp=sharing)
 - [v9b -- model for non-denoised data until 10th Aug 2023](https://drive.google.com/file/d/1TGpQ1WyLHgXQIdZ8w4KFZo_Kkoj0vIt7/view?usp=sharing)
 
@@ -51,20 +52,24 @@ will display the segmentation command line interface and show available options.
 For example, for the prediction, you only need to type
 
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model>
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --rescale-patches
 ```
 
 Running this will segment your tomogram, and store the resulting .mrc file into the ./predictions 
-folder. If you would like to change this folder, you can simply specify another folder using
+folder. The `--rescale-patches` flag is important to rescale your tomogram to our training pixel size
+of 10 Angstrom. If your header information (pixel size) is corrupt, make sure to manually pass the
+correct pixel size with `--in-pixel-size`.
+
+If you would like to change the output folder, you can simply specify another folder using
 the `--out_folder` argument:
 
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --out-folder <your-preferred-folder>
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --out-folder <your-preferred-folder> --rescale-patches
 ```
 
 It is now also possible to assign different labels to different membrane instances via computing connected components and also remove small connected components:
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --store-connected-components
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --store-connected-components --rescale-patches
 ```
 
 You can also compute the connected components [after you have segmented your tomogram](#connected-components).
@@ -91,6 +96,8 @@ You can also compute the connected components [after you have segmented your tom
 
 **--test-time-augmentation / --no-test-time-augmentation**: Should 8-fold test time augmentation be used? If activated (default), segmentations tendo be slightly better, but runtime is increased.
 
+**--store-uncertainty-map / --no-store-uncertainty-map**: Should uncertainty map be output in addition to segmentations? [default: no-store-uncertainty-map]
+
 **--segmentation-threshold**: Set a custom threshold for thresholding your membrane scoremap to increase / decrease segmented membranes (default: 0.0).
 
 **--sliding-window-size** INTEGER Sliding window size used for inference. Smaller values than 160 consume less GPU, but also lead to worse segmentation results! [default: 160] 
@@ -114,12 +121,12 @@ Instead, you can set the `--rescale-patches` flag and membrain-seg will do every
 
 Example: Your tomogram has pixel size 17.92:
 ```shell
-membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --rescale-patches --input-pixel-size 17.92
+membrain segment --tomogram-path <path-to-your-tomo> --ckpt-path <path-to-your-model> --rescale-patches --in-pixel-size 17.92
 ```
 
 This will rescale small patches of your tomogram internally to 10A, feed them into our network, and scale back to the original pixel size. That means, your output segmentation mask corresponds directly to your input tomogram.
 
-Note: MemBrain-seg automatically reads teh pixel size also from your tomogram header. That means, you only need to pas the `--input-pixel-size` flag if your header is corrupt, e.g. after processing in Cryo-CARE.
+Note: MemBrain-seg automatically reads teh pixel size also from your tomogram header. That means, you only need to pass the `--in-pixel-size` flag if your header is corrupt, e.g. after processing in Cryo-CARE.
 
 ## Connected components
 If you have segmented your tomograms already, but would still like to extract the connected components of the segmentation, you don't need to re-do the segmentation, but can simply use the following command:

@@ -149,7 +149,13 @@ def match_spectrum(
     input_spectrum = radial_average(np.abs(t))
 
     # Resize the target spectrum to match the input spectrum's length
-    target_spectrum = np.resize(target_spectrum, len(input_spectrum))
+    if len(target_spectrum) > len(input_spectrum):
+        target_spectrum = target_spectrum[: len(input_spectrum)]
+    elif len(target_spectrum) < len(input_spectrum):
+        target_spectrum = np.pad(
+            target_spectrum, (0, len(input_spectrum) - len(target_spectrum)), "edge"
+        )
+
 
     almost_zeros_input = np.argwhere(input_spectrum < 1e-1)
     almost_zeros_target = np.argwhere(target_spectrum < 1e-4)
