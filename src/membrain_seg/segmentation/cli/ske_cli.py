@@ -16,6 +16,11 @@ def skeletonize(
     out_folder: str = Option(  # noqa: B008
         "./predictions", help="Directory to save the resulting skeletons."
     ),
+    method: str = Option(  # noqa: B008
+        "3D-NMS",
+        help="Skeletonization method to use. Currently, only '3D-NMS' and"
+        " '2D-skimage' are supported. Default is '3D-NMS'.",
+    ),
     batch_size: int = Option(  # noqa: B008
         None,
         help="Optional batch size for processing the tomogram. If not specified, "
@@ -40,6 +45,9 @@ def skeletonize(
         File path to the tomogram to be skeletonized.
     out_folder : str
         Output folder path for the skeletonized tomogram.
+    method : str
+        Skeletonization method to use. Supported methods are '3D-NMS' and '2D-skimage'.
+        Default is '3D-NMS'.
     batch_size : int, optional
         The size of the batch to process the tomogram. Defaults to None, which processes
         the entire volume at once. For large volumes, consider setting it to a specific
@@ -57,6 +65,7 @@ def skeletonize(
     )
 
     from ..skeletonize import skeletonization as _skeletonization
+    from ..skeletonize import skeletonize_skimage as _skeletonize_skimage
 
     print("Skeletonizing the segmentation")
     print("")
@@ -72,7 +81,15 @@ def skeletonize(
     print("")
 
     segmentation = load_tomogram(label_path)
-    ske = _skeletonization(segmentation=segmentation.data, batch_size=batch_size)
+    if method == "3D-NMS":
+        ske = _skeletonization(segmentation=segmentation.data, batch_size=batch_size)
+    elif method == "2D-skimage":
+        ske = _skeletonize_skimage(segmentation=segmentation.data)
+    else:
+        raise ValueError(
+            f"Unsupported skeletonization method: {method}. Supported methods are \
+            '3D-NMS' and '2D-skimage'."
+        )
 
     # Update the segmentation data with the skeletonized output while preserving the
     # original header and voxel_size
