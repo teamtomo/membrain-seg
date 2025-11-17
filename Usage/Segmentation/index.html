@@ -21,8 +21,11 @@
         <link rel="next" href="../Training/">
       
       
+        
+      
+      
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.22">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
     
     
       
@@ -30,10 +33,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.84d31ad4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -56,7 +59,6 @@
     
       
 
-    
     
     
   </head>
@@ -253,9 +255,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     MemBrain-seg
+  
+
     
   </span>
+  
   
 
       </a>
@@ -275,9 +282,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Installation
+  
+
     
   </span>
+  
   
 
       </a>
@@ -310,9 +322,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Usage
+  
+
     
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -321,7 +338,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            Usage
+            
+  
+    Usage
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -337,9 +358,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     How to create training annotations from your own dataset?
+  
+
     
   </span>
+  
   
 
       </a>
@@ -360,9 +386,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Benchmarking
+  
+
     
   </span>
+  
   
 
       </a>
@@ -383,9 +414,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Fine-tuning
+  
+
     
   </span>
+  
   
 
       </a>
@@ -406,9 +442,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Preprocessing
+  
+
     
   </span>
+  
   
 
       </a>
@@ -438,9 +479,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Segmentation
+  
+
     
   </span>
+  
   
 
           <span class="md-nav__icon md-icon"></span>
@@ -451,9 +497,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Segmentation
+  
+
     
   </span>
+  
   
 
       </a>
@@ -476,7 +527,9 @@
         <li class="md-nav__item">
   <a href="#membrain-seg-workflow" class="md-nav__link">
     <span class="md-ellipsis">
-      MemBrain-seg Workflow
+      
+        MemBrain-seg Workflow
+      
     </span>
   </a>
   
@@ -485,7 +538,9 @@
         <li class="md-nav__item">
   <a href="#preparations" class="md-nav__link">
     <span class="md-ellipsis">
-      Preparations
+      
+        Preparations
+      
     </span>
   </a>
   
@@ -494,7 +549,9 @@
         <li class="md-nav__item">
   <a href="#prediction" class="md-nav__link">
     <span class="md-ellipsis">
-      Prediction
+      
+        Prediction
+      
     </span>
   </a>
   
@@ -504,7 +561,9 @@
           <li class="md-nav__item">
   <a href="#more-membrain-segment-arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      more membrain segment arguments:
+      
+        more membrain segment arguments:
+      
     </span>
   </a>
   
@@ -513,7 +572,9 @@
           <li class="md-nav__item">
   <a href="#note" class="md-nav__link">
     <span class="md-ellipsis">
-      Note:
+      
+        Note:
+      
     </span>
   </a>
   
@@ -522,7 +583,9 @@
           <li class="md-nav__item">
   <a href="#note2" class="md-nav__link">
     <span class="md-ellipsis">
-      Note#2:
+      
+        Note#2:
+      
     </span>
   </a>
   
@@ -531,7 +594,9 @@
           <li class="md-nav__item">
   <a href="#emergency-tip" class="md-nav__link">
     <span class="md-ellipsis">
-      Emergency tip:
+      
+        Emergency tip:
+      
     </span>
   </a>
   
@@ -545,7 +610,9 @@
         <li class="md-nav__item">
   <a href="#on-the-fly-rescaling" class="md-nav__link">
     <span class="md-ellipsis">
-      On-the-fly rescaling
+      
+        On-the-fly rescaling
+      
     </span>
   </a>
   
@@ -554,7 +621,9 @@
         <li class="md-nav__item">
   <a href="#connected-components" class="md-nav__link">
     <span class="md-ellipsis">
-      Connected components
+      
+        Connected components
+      
     </span>
   </a>
   
@@ -564,7 +633,9 @@
           <li class="md-nav__item">
   <a href="#note_1" class="md-nav__link">
     <span class="md-ellipsis">
-      Note:
+      
+        Note:
+      
     </span>
   </a>
   
@@ -578,7 +649,9 @@
         <li class="md-nav__item">
   <a href="#custom-thresholding" class="md-nav__link">
     <span class="md-ellipsis">
-      Custom thresholding
+      
+        Custom thresholding
+      
     </span>
   </a>
   
@@ -587,7 +660,9 @@
         <li class="md-nav__item">
   <a href="#skeletonization" class="md-nav__link">
     <span class="md-ellipsis">
-      Skeletonization
+      
+        Skeletonization
+      
     </span>
   </a>
   
@@ -596,7 +671,9 @@
         <li class="md-nav__item">
   <a href="#post-processing" class="md-nav__link">
     <span class="md-ellipsis">
-      Post-Processing
+      
+        Post-Processing
+      
     </span>
   </a>
   
@@ -623,9 +700,14 @@
   
   
   <span class="md-ellipsis">
+    
+  
     Training
+  
+
     
   </span>
+  
   
 
       </a>
@@ -670,7 +752,9 @@
         <li class="md-nav__item">
   <a href="#membrain-seg-workflow" class="md-nav__link">
     <span class="md-ellipsis">
-      MemBrain-seg Workflow
+      
+        MemBrain-seg Workflow
+      
     </span>
   </a>
   
@@ -679,7 +763,9 @@
         <li class="md-nav__item">
   <a href="#preparations" class="md-nav__link">
     <span class="md-ellipsis">
-      Preparations
+      
+        Preparations
+      
     </span>
   </a>
   
@@ -688,7 +774,9 @@
         <li class="md-nav__item">
   <a href="#prediction" class="md-nav__link">
     <span class="md-ellipsis">
-      Prediction
+      
+        Prediction
+      
     </span>
   </a>
   
@@ -698,7 +786,9 @@
           <li class="md-nav__item">
   <a href="#more-membrain-segment-arguments" class="md-nav__link">
     <span class="md-ellipsis">
-      more membrain segment arguments:
+      
+        more membrain segment arguments:
+      
     </span>
   </a>
   
@@ -707,7 +797,9 @@
           <li class="md-nav__item">
   <a href="#note" class="md-nav__link">
     <span class="md-ellipsis">
-      Note:
+      
+        Note:
+      
     </span>
   </a>
   
@@ -716,7 +808,9 @@
           <li class="md-nav__item">
   <a href="#note2" class="md-nav__link">
     <span class="md-ellipsis">
-      Note#2:
+      
+        Note#2:
+      
     </span>
   </a>
   
@@ -725,7 +819,9 @@
           <li class="md-nav__item">
   <a href="#emergency-tip" class="md-nav__link">
     <span class="md-ellipsis">
-      Emergency tip:
+      
+        Emergency tip:
+      
     </span>
   </a>
   
@@ -739,7 +835,9 @@
         <li class="md-nav__item">
   <a href="#on-the-fly-rescaling" class="md-nav__link">
     <span class="md-ellipsis">
-      On-the-fly rescaling
+      
+        On-the-fly rescaling
+      
     </span>
   </a>
   
@@ -748,7 +846,9 @@
         <li class="md-nav__item">
   <a href="#connected-components" class="md-nav__link">
     <span class="md-ellipsis">
-      Connected components
+      
+        Connected components
+      
     </span>
   </a>
   
@@ -758,7 +858,9 @@
           <li class="md-nav__item">
   <a href="#note_1" class="md-nav__link">
     <span class="md-ellipsis">
-      Note:
+      
+        Note:
+      
     </span>
   </a>
   
@@ -772,7 +874,9 @@
         <li class="md-nav__item">
   <a href="#custom-thresholding" class="md-nav__link">
     <span class="md-ellipsis">
-      Custom thresholding
+      
+        Custom thresholding
+      
     </span>
   </a>
   
@@ -781,7 +885,9 @@
         <li class="md-nav__item">
   <a href="#skeletonization" class="md-nav__link">
     <span class="md-ellipsis">
-      Skeletonization
+      
+        Skeletonization
+      
     </span>
   </a>
   
@@ -790,7 +896,9 @@
         <li class="md-nav__item">
   <a href="#post-processing" class="md-nav__link">
     <span class="md-ellipsis">
-      Post-Processing
+      
+        Post-Processing
+      
     </span>
   </a>
   
@@ -806,6 +914,7 @@
           
           
             <div class="md-content" data-md-component="content">
+              
               <article class="md-content__inner md-typeset">
                 
                   
@@ -974,10 +1083,11 @@ segmentation back to the shape of the original tomogram.</p>
     
     
       
-      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "search.highlight", "search.suggest", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "search.highlight", "search.suggest", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
       
     
   </body>
