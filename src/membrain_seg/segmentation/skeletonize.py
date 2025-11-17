@@ -13,6 +13,7 @@ import logging
 import numpy as np
 import scipy.ndimage as ndimage
 import torch
+from skimage.morphology import skeletonize
 
 from membrain_seg.segmentation.skeletonization.diff3d import (
     compute_gradients,
@@ -116,3 +117,37 @@ def skeletonization(segmentation: np.ndarray, batch_size: int, device: str=None)
         labels,
     )
     return skeleton
+
+
+def skeletonize_skimage(segmentation: np.ndarray) -> np.ndarray:
+    """
+    Perform skeletonization using skimage's skeletonize function.
+
+    Skeletonization is performed slice by slice on the input segmentation where
+    the non-zero labels represent the structures of interest. The resulting
+    skeleton is saved with '_skel' appended after the filename.
+
+    Parameters
+    ----------
+    segmentation : ndarray
+        Tomogram segmentation as a numpy array, where non-zero values represent
+        the structures of interest.
+
+    Returns
+    -------
+    ndarray
+        Returns the skeletonized image as a numpy array.
+    """
+    # Convert non-zero segmentation values to 1
+    binary_seg = (segmentation > 0).astype(np.uint8)
+    new_seg = np.zeros_like(binary_seg)
+
+    for i in range(binary_seg.shape[2]):
+        slice_skel = binary_seg[:, :, i]
+        if np.sum(slice_skel) > 0:
+            # make contiguous
+            slice_skel = np.ascontiguousarray(slice_skel)
+            # skeletonize
+            slice_skel = skeletonize(slice_skel)
+            new_seg[:, :, i] = slice_skel.astype(np.uint8)
+    return new_seg
