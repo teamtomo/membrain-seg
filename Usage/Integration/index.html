@@ -12,13 +12,13 @@
         <meta name="author" content="teamtomo">
       
       
-        <link rel="canonical" href="https://teamtomo.org/membrain-seg/Usage/Fine-tuning/">
+        <link rel="canonical" href="https://teamtomo.org/membrain-seg/Usage/Integration/">
       
       
-        <link rel="prev" href="../Benchmarking/">
+        <link rel="prev" href="../Fine-tuning/">
       
       
-        <link rel="next" href="../Integration/">
+        <link rel="next" href="../Preprocessing/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>Fine-tuning - membrain-seg</title>
+        <title>MemBrain-seg: segment() Function Reference - membrain-seg</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fine-tuning" class="md-skip">
+        <a href="#membrain-seg-segment-function-reference" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Fine-tuning
+              MemBrain-seg: segment() Function Reference
             
           </span>
         </div>
@@ -406,19 +406,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Fine-tuning/" class="md-nav__link">
         
   
   
@@ -434,7 +425,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -444,10 +434,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../Integration/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MemBrain-seg: segment() Function Reference
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -463,6 +480,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#function-signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Function Signature
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Returns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -579,6 +682,80 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#function-signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Function Signature
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Returns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -597,52 +774,98 @@
   
 
 
-<h1 id="fine-tuning">Fine-tuning</h1>
-<p>MemBrain-seg is built to function optimally out-of-the-box, eliminating the need for most users to train the model themselves.</p>
-<p>However, if your tomograms differ significantly from the images used in our training dataset, fine-tuning the model on your own data may enhance performance. In this case, it can make sense to <a href="../Annotations/">annotate</a> several patches extracted from your tomogram, and fine-tune the pretrained MemBrain-seg model using your corrected data.</p>
-<p>Here are some steps you can follow in order to fine-tune MemBrain-seg:</p>
-<h1 id="step-1-prepare-your-fine-tuning-dataset">Step 1: Prepare your fine-tuning dataset</h1>
-<p>MemBrain-seg assumes a specific data structure for creating the fine-tuning dataloaders, which can be a smaller or corrected version of your tomograms:</p>
-<div class="highlight"><pre><span></span><code>data_dir/
-├──<span class="w"> </span>imagesTr/<span class="w">       </span><span class="c1"># Directory containing training images</span>
-│<span class="w">   </span>├──<span class="w"> </span>img1.nii.gz<span class="w">    </span><span class="c1"># Image file (currently requires nii.gz format)</span>
-│<span class="w">   </span>├──<span class="w"> </span>img2.nii.gz<span class="w">    </span><span class="c1"># Image file</span>
-│<span class="w">   </span>└──<span class="w"> </span>...
-├──<span class="w"> </span>imagesVal/<span class="w">      </span><span class="c1"># Directory containing validation images</span>
-│<span class="w">   </span>├──<span class="w"> </span>img3.nii.gz<span class="w">    </span><span class="c1"># Image file</span>
-│<span class="w">   </span>├──<span class="w"> </span>img4.nii.gz<span class="w">    </span><span class="c1"># Image file</span>
-│<span class="w">   </span>└──<span class="w"> </span>...
-├──<span class="w"> </span>labelsTr/<span class="w">       </span><span class="c1"># Directory containing training labels</span>
-│<span class="w">   </span>├──<span class="w"> </span>img1.nii.gz<span class="w">  </span><span class="c1"># Label file (currently requires nii.gz format)</span>
-│<span class="w">   </span>├──<span class="w"> </span>img2.nii.gz<span class="w">  </span><span class="c1"># Label file</span>
-│<span class="w">   </span>└──<span class="w"> </span>...
-└──<span class="w"> </span>labelsVal/<span class="w">      </span><span class="c1"># Directory containing validation labels</span>
-<span class="w">    </span>├──<span class="w"> </span>img3.nii.gz<span class="w">  </span><span class="c1"># Label file</span>
-<span class="w">    </span>├──<span class="w"> </span>img4.nii.gz<span class="w">  </span><span class="c1"># Label file</span>
-<span class="w">    </span>└──<span class="w"> </span>...
+<h1 id="membrain-seg-segment-function-reference">MemBrain-seg: <code>segment()</code> Function Reference</h1>
+<p>The <code>segment()</code> function is the main entry point for membrane segmentation using a trained MemBrain-seg model. It supports inference with sliding windows and test-time augmentation. Results are written to disk and can be directly used for downstream analysis (e.g. MemBrain-pick, MemBrain-stats, anything else you would like to analyze with it).</p>
+<p>If you plan to use this function in your own workflow and need support or adjustments of the API for additional use cases, feel free to open an issue on <a href="https://github.com/teamtomo/membrain-seg/issues">GitHub</a>.</p>
+<hr />
+<h2 id="function-signature">Function Signature</h2>
+<div class="highlight"><pre><span></span><code><span class="n">segment</span><span class="p">(</span>
+    <span class="n">tomogram_path</span><span class="p">,</span>
+    <span class="n">ckpt_path</span><span class="p">,</span>
+    <span class="n">out_folder</span><span class="p">,</span>
+    <span class="n">rescale_patches</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">in_pixel_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">out_pixel_size</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+    <span class="n">store_probabilities</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">sw_roi_size</span><span class="o">=</span><span class="mi">160</span><span class="p">,</span>
+    <span class="n">store_connected_components</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">connected_component_thres</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">test_time_augmentation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">store_uncertainty_map</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">segmentation_threshold</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
-<p>The data_dir argument is then passed to the fine-tuning procedure (see <a href="#step-2-perform-fine-tuning">Step 2</a>).</p>
-<p>To fine-tune the pretrained model on your own tomograms, you need to add some corrected patches from your own tomograms to improve the network's performance on these.</p>
-<p>You can find some instructions here: <a href="../Annotations/">How to create training annotations from your own tomogram?</a></p>
-<h1 id="step-2-perform-fine-tuning">Step 2: Perform fine-tuning</h1>
-<p>Fine-tuning starts from a pretrained model checkpoint. After activating your virtual Python environment, you can type:
-<div class="highlight"><pre><span></span><code>membrain finetune
+<hr />
+<h2 id="parameters">Parameters</h2>
+<p><strong>tomogram_path</strong> (<code>str</code>)<br />
+Path to the input tomogram. Supported formats are common cryo-et formats: <code>.mrc</code>, <code>.rec</code>, <code>.map</code>.</p>
+<p><strong>ckpt_path</strong> (<code>str</code>)<br />
+Path to the <code>.ckpt</code> file of the trained MemBrain-seg model.</p>
+<p><strong>out_folder</strong> (<code>str</code>)<br />
+Directory where the segmentation results will be saved.</p>
+<p><strong>rescale_patches</strong> (<code>bool</code>, default: <code>False</code>)<br />
+If <code>True</code>, rescale input patches to match the network's expected pixel size.</p>
+<p><strong>in_pixel_size</strong> (<code>float</code> or <code>None</code>, default: <code>None</code>)<br />
+Pixel size (in Ångström) of the input tomogram. Required if rescaling is enabled or the header is invalid.</p>
+<p><strong>out_pixel_size</strong> (<code>float</code>, default: <code>10.0</code>)<br />
+Target pixel size used during model training. Used for patch rescaling.</p>
+<p><strong>store_probabilities</strong> (<code>bool</code>, default: <code>False</code>)<br />
+If <code>True</code>, saves the raw membrane probability map alongside the binary segmentation.</p>
+<p><strong>sw_roi_size</strong> (<code>int</code>, default: <code>160</code>)<br />
+Patch size used for sliding window inference. Must be divisible by 32.</p>
+<p><strong>store_connected_components</strong> (<code>bool</code>, default: <code>False</code>)<br />
+If <code>True</code>, extracts and stores connected membrane components.</p>
+<p><strong>connected_component_thres</strong> (<code>int</code> or <code>None</code>, default: <code>None</code>)<br />
+If set, removes connected components smaller than the threshold (in voxel count).</p>
+<p><strong>test_time_augmentation</strong> (<code>bool</code>, default: <code>True</code>)<br />
+Apply 8-fold test-time augmentation (TTA) by mirroring input volumes.</p>
+<p><strong>store_uncertainty_map</strong> (<code>bool</code>, default: <code>False</code>)<br />
+If <code>True</code>, computes and saves voxel-wise prediction variance from TTA.</p>
+<p><strong>segmentation_threshold</strong> (<code>float</code>, default: <code>0.0</code>)<br />
+Threshold used to binarize the predicted membrane probability map.</p>
+<hr />
+<h2 id="returns">Returns</h2>
+<p><strong>segmentation_file</strong> (<code>str</code>)<br />
+Path to the final saved segmentation file (<code>*_seg.mrc</code>).</p>
+<p>Additional outputs may be saved to <code>out_folder</code>, depending on selected options:
+- <code>*_scores.mrc</code>: membrane probability map (if <code>store_probabilities=True</code>)
+- <code>*_uncertainty_map.mrc</code>: voxel-wise variance map (if <code>store_uncertainty_map=True</code>)
+- <code>*_components.mrc</code>: connected components mask (if <code>store_connected_components=True</code>)</p>
+<hr />
+<h2 id="example">Example</h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">membrain_seg.segmentation.segment</span><span class="w"> </span><span class="kn">import</span> <span class="n">segment</span>
+
+<span class="n">segment</span><span class="p">(</span>
+    <span class="n">tomogram_path</span><span class="o">=</span><span class="s2">&quot;data/tomo_01.mrc&quot;</span><span class="p">,</span>
+    <span class="n">ckpt_path</span><span class="o">=</span><span class="s2">&quot;models/membrain_seg.ckpt&quot;</span><span class="p">,</span>
+    <span class="n">out_folder</span><span class="o">=</span><span class="s2">&quot;results/&quot;</span><span class="p">,</span>
+    <span class="n">in_pixel_size</span><span class="o">=</span><span class="mf">13.2</span><span class="p">,</span>
+    <span class="n">rescale_patches</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">store_probabilities</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">test_time_augmentation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">store_uncertainty_map</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">segmentation_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
-to receive help with the input arguments. You will see that the two parameters you need to provide are the --pretrained-checkpoint-path and the --data-dir argument:</p>
-<p><div class="highlight"><pre><span></span><code>membrain finetune --pretrained-checkpoint-path &lt;path-to-the-pretrained-checkpoint&gt; --finetune-data-dir &lt;path-to-your-finetuning-data&gt;
+<hr />
+<h2 id="batch-example">Batch Example</h2>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">membrain_seg.segmentation.segment</span><span class="w"> </span><span class="kn">import</span> <span class="n">segment</span>
+
+<span class="n">tomos</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;data/*.mrc&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">tomo</span> <span class="ow">in</span> <span class="n">tomos</span><span class="p">:</span>
+    <span class="n">segment</span><span class="p">(</span>
+        <span class="n">tomogram_path</span><span class="o">=</span><span class="n">tomo</span><span class="p">,</span>
+        <span class="n">ckpt_path</span><span class="o">=</span><span class="s2">&quot;models/model.ckpt&quot;</span><span class="p">,</span>
+        <span class="n">out_folder</span><span class="o">=</span><span class="s2">&quot;results/&quot;</span>
+    <span class="p">)</span>
 </code></pre></div>
-This command fine-tunes the pretrained MemBrain-seg model using your fine-tuning dataset. Be sure to point to the correct checkpoint path containing the pretrained weights, as well as the fine-tuning data directory.</p>
-<p>This is exactly the folder you prepared in <a href="#step-1-prepare-your-fine-tuning-dataset">Step 1</a>.</p>
-<p>Running this command should start the fine-tuning process and store the fine-tuned model in the ./finetuned_checkpoints folder.</p>
-<p><strong>Note:</strong> Fine-tuning can take up to 24 hours. We therefore recommend that you perform training on a device with a CUDA-enabled GPU.</p>
-<h1 id="advanced-settings">Advanced settings</h1>
-<p>In case you feel fancy and would like to adjust some of the default settings of MemBrain-seg, you can also use the following command to get access to more customizable options:
-```
-membrain finetune_advanced
-````
-This will display all available options that can be activated or deactivated. For example, when fine-tuning, you might want to lower the learning rate compared to training from scratch to prevent the model from "forgetting" the knowledge it learned during pretraining. For more in-depth adjustments, you will need to dig into MemBrain-seg's code or contact us.</p>
-<h1 id="contact">Contact</h1>
-<p>If there are any problems coming up when running the code or anything else is unclear, do not hesitate to contact us (Lorenz.Lamm@helmholtz-munich.de). We are more than happy to help.</p>
+<hr />
+<h2 id="integration-notes">Integration Notes</h2>
+<p>All outputs are written to disk and referenced by path, making downstream integration seamless.</p>
+<p>For the latest updates, issues, or to contribute, visit:<br />
+https://github.com/teamtomo/membrain-seg</p>
 
 
 
