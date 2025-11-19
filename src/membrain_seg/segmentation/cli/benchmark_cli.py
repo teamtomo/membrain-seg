@@ -85,7 +85,7 @@ def benchmark(
 
     Compares predicted segmentations against ground truth segmentations
     using Dice score and Surface-Dice score metrics.
-    Saves the benchmarking results as a CSV file and generates plots.
+    Saves the benchmarking results as a CSV file.
 
 
     Parameters
@@ -99,7 +99,7 @@ def benchmark(
         If not done yet, download the MemBrain-seg dataset using the
         'download_data' command.
     out_dir : str
-        Output directory to store the benchmarking results (CSV file and plots).
+        Output directory to store the benchmarking results (CSV file).
     out_file_token : Optional[str]
         Optional token to append to the output filenames.
     skeletonization_method : str
