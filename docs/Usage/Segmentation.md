@@ -146,7 +146,7 @@ membrain thresholds --scoremap-path <path-to-scoremap>
 In this way, you can pass as many thresholds as you would like and the function will output one segmentation for each.
 
 ## Skeletonization
-It is now also possible to generate a skeletonized version of the membrane segmentations, similar to the output of [TomoSegMemTV](https://github.com/anmartinezs/pyseg_system/tree/master/code/tomosegmemtv).
+It is now also possible to generate a skeletonized version of the membrane segmentations, similar to the output of [TomoSegMemTV](https://github.com/anmartinezs/pyseg_system/tree/master/code/tomosegmemtv). This method performs 3D skeletonization of the membrane segmentation to obtain a one-voxel thick representation of the membranes. Alternatively, you can also use 2D skeletonization as implemented in scikit-image by applying it slice-by-slice.
 
 For this, you can ue the `membrain skeletonize` command:
 ```shell
@@ -154,6 +154,11 @@ membrain skeletonize --label-path <path-to-your-segmentation>
 ```
 
 You only need to input the path to the segmentation that has been generated my MemBrain-seg. The output of this function will be a skeletonized version of this.
+
+### Additional arguments:
+**--out-folder:** Path to the folder where skeletonizations should be stored. [default: ./skeletonizations]
+**--method:** Skeletonization method to use. Choose between '3D-NMS' and '2D-skimage'. [default: 3D-NMS]
+**--batch-size:** Optional batch size for processing the tomogram with 3D-NMS. If not specified, the entire volume is processed at once. If operating with limited GPU resources, a batch size of 1,000,000 is recommended. [default: 16]
 
 ## Post-Processing
 If you have pre-processed your tomogram using pixel size matching, you may want to [rescale](./Preprocessing.md#pixel-size-matching) your 

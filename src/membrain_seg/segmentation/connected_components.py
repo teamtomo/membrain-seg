@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 from scipy import ndimage
 
@@ -33,21 +31,28 @@ def connected_components(binary_seg: np.ndarray, size_thres: int = None):
         the number of connected components found. All background voxels
         are zero.
     """
-    logging.info("Computing connected components.")
-    # Get 3D connected components
-    structure = np.ones((3, 3, 3))
+    structure = np.ones((3, 3, 3), dtype=bool)
     labeled_array, num_features = ndimage.label(binary_seg, structure=structure)
-
-    # remove small clusters
+    print(f"Found {num_features} connected components.")
     if size_thres is not None and size_thres > 1:
-        logging.info(
-            "Removing components smaller than "
-            + str(size_thres)
-            + " voxels. (This can take a while)",
-        )
-        sizes = ndimage.sum(binary_seg, labeled_array, range(1, num_features + 1))
-        too_small = np.nonzero(sizes < size_thres)[0] + 1  # features labeled from 1
-        for feat_nr in too_small[::-1]:  # iterate in reverse order
-            labeled_array[labeled_array == feat_nr] = 0
-            labeled_array[labeled_array > feat_nr] -= 1
+        sizes = np.bincount(labeled_array.ravel())
+        print(f"Removing components smaller than {size_thres} voxels.")
+        # keep only components above threshold
+        keep_mask = np.isin(labeled_array, np.where(sizes >= size_thres)[0])
+        labeled_array = labeled_array * keep_mask
+        # relabel to make them contiguous 1..N
+        labeled_array, _, _ = relabel_sequential(labeled_array)
+
     return labeled_array
+
+
+def relabel_sequential(labeled_array):
+    """Make labels contiguous 1..N."""
+    unique = np.unique(labeled_array)
+    unique = unique[unique != 0]  # skip background
+    mapping = {old: new for new, old in enumerate(unique, 1)}
+    relabeled = np.zeros_like(labeled_array)
+    print(f"Relabeled to {len(unique)} connected components.")
+    for old, new in mapping.items():
+        relabeled[labeled_array == old] = new
+    return relabeled, mapping, len(unique)
