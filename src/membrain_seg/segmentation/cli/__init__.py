@@ -1,6 +1,7 @@
 """CLI init function."""
 
 # These imports are necessary to register CLI commands. Do not remove!
+from .benchmark_cli import download_data  # noqa: F401
 from .cli import cli  # noqa: F401
 from .fine_tune_cli import finetune  # noqa: F401
 from .segment_cli import segment  # noqa: F401
