@@ -22,7 +22,7 @@ from membrain_seg.segmentation.dataloading.data_utils import (
     load_tomogram,
     read_nifti,
 )
-from membrain_seg.segmentation.skeletonize import skeletonization
+from membrain_seg.segmentation.skeletonize import skeletonization, skeletonize_skimage
 
 ds_dict = {}
 
@@ -79,13 +79,35 @@ def get_filepaths(dir_gt: str, dir_pred: str):
     gt_files.sort()
     pred_files.sort()
 
+    # for each gt file, find the corresponding pred file
+    filtered_gt_files = []
+    filtered_pred_files = []
+    for i in range(len(gt_files)):
+        gt_token = gt_files[i][:-7]  # remove .nii.gz
+        if is_mrc:
+            pred_file = gt_token + ".mrc"
+        else:
+            pred_file = gt_token + ".nii.gz"
+        if pred_file not in pred_files:
+            # only do a warning here
+            print(f"Warning: No prediction found for {gt_files[i]}. Skipping.")
+            continue
+        filtered_gt_files.append(gt_files[i])
+        filtered_pred_files.append(pred_file)
+
+    print(len(filtered_gt_files), "matching files found.")
+    print(
+        len(gt_files) - len(filtered_gt_files),
+        "files skipped due to missing predictions.",
+    )
+
     # make sure gt_files and pred_files are the same before the extension
-    for gt, pred in zip(gt_files, pred_files):
+    for gt, pred in zip(filtered_gt_files, filtered_pred_files):
         if is_mrc:
             assert gt[:-7] == pred[:-4]
         else:
             assert gt[:-7] == pred[:-7]
-    return gt_files, pred_files
+    return filtered_gt_files, filtered_pred_files
 
 
 def read_nifti_or_mrc(file_path: str):
@@ -102,7 +124,7 @@ def read_nifti_or_mrc(file_path: str):
         The data.
     """
     if file_path.endswith(".mrc"):
-        return load_tomogram(file_path)
+        return load_tomogram(file_path).data
     else:
         return read_nifti(file_path)
 
@@ -235,6 +257,7 @@ def get_global_stats(
                 / (ds_dict[ds_token]["all_pred_sdice"] + 1e-6)
                 + ds_dict[ds_token]["tp_gt_sdice"]
                 / (ds_dict[ds_token]["all_gt_sdice"] + 1e-6)
+                + 1e-6
             )
         )
     else:
@@ -242,17 +265,18 @@ def get_global_stats(
             2.0
             * (
                 ds_dict[ds_token]["tp"]
-                / (ds_dict[ds_token]["tp"] + ds_dict[ds_token]["fp"])
+                / (ds_dict[ds_token]["tp"] + ds_dict[ds_token]["fp"] + 1e-6)
             )
             * (
                 ds_dict[ds_token]["tp"]
-                / (ds_dict[ds_token]["tp"] + ds_dict[ds_token]["fn"])
+                / (ds_dict[ds_token]["tp"] + ds_dict[ds_token]["fn"] + 1e-6)
             )
             / (
                 ds_dict[ds_token]["tp"]
-                / (ds_dict[ds_token]["tp"] + ds_dict[ds_token]["fp"])
+                / (ds_dict[ds_token]["tp"] + ds_dict[ds_token]["fp"] + 1e-6)
                 + ds_dict[ds_token]["tp"]
-                / (ds_dict[ds_token]["tp"] + ds_dict[ds_token]["fn"])
+                / (ds_dict[ds_token]["tp"] + ds_dict[ds_token]["fn"] + 1e-6)
+                + 1e-6
             )
         )
     return global_dice
@@ -293,6 +317,7 @@ def compute_stats(
     dir_pred: str,
     out_dir: str,
     out_file_token: str = "stats",
+    skeletonization_method: str = "3D-NMS",
 ):
     """
     Compute statistics for segmentations on the entire dataset.
@@ -307,6 +332,8 @@ def compute_stats(
         Directory to save the results.
     out_file_token : str
         Token to append to the output file.
+    skeletonization_method : str
+        Skeletonization method to use. Supported: "3D-NMS", "2D-skimage".
     """
     reset_ds_dict()
     gt_files, pred_files = get_filepaths(dir_gt, dir_pred)
@@ -322,9 +349,18 @@ def compute_stats(
         # Load ground truth and prediction
         gt = read_nifti_or_mrc(os.path.join(dir_gt, gt_file))
         pred = read_nifti_or_mrc(os.path.join(dir_pred, pred_file))
+
         # Skeletonize both segmentations
-        gt_skeleton = skeletonization(gt == 1, batch_size=100000)
-        pred_skeleton = skeletonization(pred, batch_size=100000)
+        if skeletonization_method == "3D-NMS":
+            gt_skeleton = skeletonization(gt == 1, batch_size=100000)
+            pred_skeleton = skeletonization(pred, batch_size=100000)
+        elif skeletonization_method == "2D-skimage":
+            gt_skeleton = skeletonize_skimage(gt == 1)
+            pred_skeleton = skeletonize_skimage(pred)
+        else:
+            raise ValueError(
+                f"Unsupported skeletonization method: {skeletonization_method}"
+            )
         mask = gt != 2
 
         # Compute surface dice
@@ -332,8 +368,18 @@ def compute_stats(
             pred_skeleton, gt_skeleton, pred, gt, mask
         )
         dice, dice_dict = masked_dice(pred, gt, mask)
+        print(
+            "Iteration:",
+            i,
+            "Surface dice:",
+            surf_dice,
+            "Dice:",
+            dice,
+            os.path.basename(gt_file),
+        )
         update_ds_dict_entry(ds_token, surf_dice, confusion_dict, dice, dice_dict)
     print_ds_dict()
     os.makedirs(out_dir, exist_ok=True)
     out_file = os.path.join(out_dir, f"{out_file_token}.csv")
     store_stats(out_file)
+    return out_file
