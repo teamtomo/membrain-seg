@@ -56,3 +56,7 @@ It is also possible to use this package to train your own model. Instructions ca
 ## Patch annotations
 In case you would like to train a model that works better for your tomograms, it may be beneficial to add some more patches from your tomograms to the training dataset. 
 Recommendations on how to to this can be found [here](https://teamtomo.github.io/membrain-seg/Usage/Annotations/).
+
+## Integrating MemBrain-seg into your workflow
+The main function for membrane segmentation is `segment()`, which can be easily integrated into your own workflows and pipelines. 
+Please find the full function reference and usage examples [here](https://teamtomo.github.io/membrain-seg/Usage/Integration/).
