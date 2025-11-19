@@ -38,6 +38,7 @@ membrain benchmark --pred-path <path-to-your-predictions> --gt-path <path-to-gro
 **--gt-path:** Path to the folder containing the ground truth segmentations. 
 **--out-folder:** Path to the folder where the benchmarking results should be stored. 
 **--out-file-token:** Token to be added to the output file name. [default: stats]
+**--skeletonization-method:** Skeletonization method to use. Supported methods are "3D-NMS" (default) and "2D-skimage". 3D-NMS is supposed to be a bit more accurate, especially for horizontal densities, while 2D-skimage is much faster. [default: 3D-NMS]
 
 
 ### Downloading the dataset

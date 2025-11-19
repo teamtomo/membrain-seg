@@ -34,6 +34,10 @@ Preliminary [documentation](https://teamtomo.github.io/membrain-seg/) is availab
 For detailed installation instructions, please look [here](https://teamtomo.github.io/membrain-seg/installation/).
 
 # Features
+## Data availability
+We provide a well-annotated dataset for training and benchmarking.
+You can find more information about the dataset and how to download it [here](./Usage/Benchmarking.md#downloading-the-dataset) or on [Zenodo](https://zenodo.org/records/15089686).
+
 ## Segmentation
 Segmenting the membranes in your tomograms is the main feature of this repository. 
 Please find more detailed instructions [here](https://teamtomo.github.io/membrain-seg/Usage/Segmentation/).

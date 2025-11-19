@@ -5,8 +5,8 @@ However, in some cases, your tomograms may be too far out of the distribution of
 it can make sense to [annotate](./Annotations.md) several patches extracted from your tomogram, and re-train the model
 using your corrected data, together with our main training dataset.
 
-Our main training dataset is not publicly accessible yet, but if you would like to re-train MemBrain-seg, please contact us (Lorenz.Lamm@helmholtz-munich.de)
-and we will to find a solution.
+Our main training dataset is publicly accessible on Zenodo: https://zenodo.org/records/15089686
+You can also download it conveniently using the command line interface of MemBrain-seg (see [here](./Usage/Benchmarking.md#downloading-the-dataset)).
 
 Here are some steps you can follow in order to re-train MemBrain-seg:
 
