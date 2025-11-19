@@ -472,6 +472,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Running the benchmarking script">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#downloading-the-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Downloading the dataset
+      
+    </span>
+  </a>
+  
 </li>
         
       </ul>
@@ -665,6 +693,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Running the benchmarking script">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#downloading-the-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Downloading the dataset
+      
+    </span>
+  </a>
+  
 </li>
         
       </ul>
@@ -698,11 +754,11 @@ To do so, we provide a script that can be used to evaluate the performance of a 
 <h2 id="usage">Usage</h2>
 <h3 id="preparations">Preparations</h3>
 <ol>
-<li>Have the MemBrain-seg dataset ready, i.e. the imagesTest and labelsTest folders.</li>
+<li>Have the MemBrain-seg dataset ready, i.e. the imagesTest and labelsTest folders. For 1-line download, see <a href="#downloading-the-dataset">below</a>.</li>
 <li>Perform predictions on the imagesTest folder using your model. Store the predictions in a folder of your choice.</li>
 </ol>
 <p><strong>Important</strong>: To match the predictions and ground truth labels, the predictions should have the same name as the input patch, respectively, but without the "_0000"-suffix.
-E.g. if the input patch is called "patch_0000.nii.gz", the prediction should be called "patch.nii.gz" (but also .mrc is possible).</p>
+E.g. if the input patch is called "patch_0000.nii.gz", the prediction should be called "patch.nii.gz" (but also .mrc is possible; can sometimes lead to flipped tomograms, be careful!).</p>
 <h3 id="running-the-benchmarking-script">Running the benchmarking script</h3>
 <p>The benchmarking script does not provide. Instead, it is a Python function that you can integrate into your own code:</p>
 <div class="highlight"><pre><span></span><code>```python
@@ -718,6 +774,22 @@ compute_stats(dir_gt, dir_pred, out_dir, out_file_token)
 </code></pre></div>
 <p>This will compute the statistics for the segmentations on the entire dataset and store the results in the specified output directory.
 As metrics, the script computes the surface dice and the dice score for each segmentation. To learn more about the surface dice, please refer to our <a href="https://www.biorxiv.org/content/10.1101/2024.01.05.574336v1">manuscript</a>.</p>
+<p>Alternatively, you can also run the benchmarking script from the command line using the following command:</p>
+<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>benchmark<span class="w"> </span>--pred-path<span class="w"> </span>&lt;path-to-your-predictions&gt;<span class="w"> </span>--gt-path<span class="w"> </span>&lt;path-to-ground-truth&gt;<span class="w"> </span>--out-folder<span class="w"> </span>&lt;path-to-output-folder&gt;<span class="w"> </span>--out-file-token<span class="w"> </span>&lt;output-file-token&gt;
+</code></pre></div>
+<h4 id="arguments">Arguments:</h4>
+<p><strong>--pred-path:</strong> Path to the folder containing the predicted segmentations.
+<strong>--gt-path:</strong> Path to the folder containing the ground truth segmentations. 
+<strong>--out-folder:</strong> Path to the folder where the benchmarking results should be stored. 
+<strong>--out-file-token:</strong> Token to be added to the output file name. [default: stats]
+<strong>--skeletonization-method:</strong> Skeletonization method to use. Supported methods are "3D-NMS" (default) and "2D-skimage". 3D-NMS is supposed to be a bit more accurate, especially for horizontal densities, while 2D-skimage is much faster. [default: 3D-NMS]</p>
+<h3 id="downloading-the-dataset">Downloading the dataset</h3>
+<p>To download the MemBrain-seg benchmarking dataset, you can use the following command:
+<div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>download_data<span class="w"> </span>--out-folder<span class="w"> </span>&lt;path-to-download-folder&gt;<span class="w"> </span>--num-parallel-processes<span class="w"> </span>&lt;number-of-parallel-processes&gt;
+</code></pre></div>
+This will download the dataset to the specified folder. The <code>--num-parallel-processes</code> argument allows you to specify how many parallel processes should be used for downloading the dataset. Since the dataset is hosted on Zenodo with limited bandwidth, using multiple parallel processes can speed up the download.
+The default value is 1, i.e. single-process download.
+The dataset consists of four folders, but all data is contained in the two folders: <code>imagesTr</code> and <code>labelsTr</code>, which contain the training images and the corresponding ground truth labels, respectively. For the purpose of benchmarking, you can use the ìmagesTr<code>and</code>labelsTr<code>folders as</code>imagesTest<code>and</code>labelsTest`, respectively.</p>
 
 
 

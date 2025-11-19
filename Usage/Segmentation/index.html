@@ -666,6 +666,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Skeletonization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#additional-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional arguments:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -891,6 +908,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Skeletonization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#additional-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional arguments:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1021,11 +1055,15 @@ the <code>--out_folder</code> argument:</p>
 </code></pre></div>
 In this way, you can pass as many thresholds as you would like and the function will output one segmentation for each.</p>
 <h2 id="skeletonization">Skeletonization</h2>
-<p>It is now also possible to generate a skeletonized version of the membrane segmentations, similar to the output of <a href="https://github.com/anmartinezs/pyseg_system/tree/master/code/tomosegmemtv">TomoSegMemTV</a>.</p>
+<p>It is now also possible to generate a skeletonized version of the membrane segmentations, similar to the output of <a href="https://github.com/anmartinezs/pyseg_system/tree/master/code/tomosegmemtv">TomoSegMemTV</a>. This method performs 3D skeletonization of the membrane segmentation to obtain a one-voxel thick representation of the membranes. Alternatively, you can also use 2D skeletonization as implemented in scikit-image by applying it slice-by-slice.</p>
 <p>For this, you can ue the <code>membrain skeletonize</code> command:
 <div class="highlight"><pre><span></span><code>membrain<span class="w"> </span>skeletonize<span class="w"> </span>--label-path<span class="w"> </span>&lt;path-to-your-segmentation&gt;
 </code></pre></div></p>
 <p>You only need to input the path to the segmentation that has been generated my MemBrain-seg. The output of this function will be a skeletonized version of this.</p>
+<h3 id="additional-arguments">Additional arguments:</h3>
+<p><strong>--out-folder:</strong> Path to the folder where skeletonizations should be stored. [default: ./skeletonizations]
+<strong>--method:</strong> Skeletonization method to use. Choose between '3D-NMS' and '2D-skimage'. [default: 3D-NMS]
+<strong>--batch-size:</strong> Optional batch size for processing the tomogram with 3D-NMS. If not specified, the entire volume is processed at once. If operating with limited GPU resources, a batch size of 1,000,000 is recommended. [default: 16]</p>
 <h2 id="post-processing">Post-Processing</h2>
 <p>If you have pre-processed your tomogram using pixel size matching, you may want to <a href="../Preprocessing/#pixel-size-matching">rescale</a> your 
 segmentation back to the shape of the original tomogram.</p>
