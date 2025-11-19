@@ -226,7 +226,7 @@ def download_data(out_folder, num_parallel_processes=1):
         processes, pass "4". Default is "1" (single process).
     """
     out_path = os.path.join(out_folder, FILENAME)
-    out_path = FILENAME
+    os.makedirs(out_folder, exist_ok=True)
 
     if os.path.exists(out_path):
         print(f"{out_path} already exists, skipping download.")
