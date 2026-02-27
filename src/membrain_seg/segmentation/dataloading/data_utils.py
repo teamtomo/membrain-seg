@@ -8,9 +8,9 @@ from typing import Any, Callable, Optional, Union
 import mrcfile
 import numpy as np
 import SimpleITK as sitk
+from scipy.ndimage import binary_erosion, distance_transform_edt, median_filter
 from skimage.util import img_as_float32
 from torch import Tensor, device
-from scipy.ndimage import binary_erosion, distance_transform_edt, median_filter
 
 from membrain_seg.segmentation.connected_components import connected_components
 
@@ -231,10 +231,11 @@ def store_segmented_tomograms(
         )
     return out_file_thres
 
+
 def _uncertainty_from_variance_map(
-        variance_map: Tensor,
-        predictions_np_thres: np.ndarray,
-    ) -> np.ndarray:
+    variance_map: Tensor,
+    predictions_np_thres: np.ndarray,
+) -> np.ndarray:
 
     variance_map = variance_map.squeeze().cpu().numpy()
     # Process uncertainty map
@@ -254,6 +255,7 @@ def _uncertainty_from_variance_map(
 
     return smoothed_uncertainty_map
 
+
 def _store_uncertainty_map(
     out_folder: str,
     orig_data_path: str,
@@ -263,14 +265,17 @@ def _store_uncertainty_map(
     mrc_header: np.recarray,
     voxel_size: float,
 ):
-    assert variance_map is not None, \
-        "variance_map must be provided when store_uncertainty_map=True"
-    
+    assert (
+        variance_map is not None
+    ), "variance_map must be provided when store_uncertainty_map=True"
+
     smoothed_uncertainty_map = _uncertainty_from_variance_map(
         variance_map,
         predictions_np_thres,
     )
-    smoothed_uncertainty_map_tomo = Tomogram(data=smoothed_uncertainty_map, header=mrc_header, voxel_size=voxel_size)
+    smoothed_uncertainty_map_tomo = Tomogram(
+        data=smoothed_uncertainty_map, header=mrc_header, voxel_size=voxel_size
+    )
 
     # Build filename
     uncertainty_map_path = os.path.join(
@@ -424,7 +429,7 @@ def convert_dtype(tomogram: np.ndarray) -> np.ndarray:
     """
     dtype = tomogram.dtype
     # Check if data can be represented as int or uint
-    if np.allclose(tomogram, tomogram.astype(int)):
+    if dtype.kind in ["b", "i", "u"] or np.allclose(tomogram, tomogram.astype(int)):
         if (
             tomogram.min() >= np.iinfo("int8").min
             and tomogram.max() <= np.iinfo("int8").max
