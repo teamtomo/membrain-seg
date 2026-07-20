@@ -170,7 +170,7 @@ def segment(
         )
     for m in range(8 if test_time_augmentation else 1):
         with torch.no_grad():
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 mirrored_input = get_mirrored_img(new_data.clone(), m).to(device)
                 mirrored_pred = inferer(mirrored_input, pl_model)
                 if not (
